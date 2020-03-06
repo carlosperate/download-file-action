@@ -1,11 +1,13 @@
 {
   "name": "download-file-action",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "GitHub Action to download a file to the environment",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint index.js",
-    "test": "eslint index.js"
+    "build": "tsc",
+    "package": "npm run build && ncc build ./build -o ./dist",
+    "lint": "eslint index.ts",
+    "test": "eslint index.ts"
   },
   "repository": {
     "type": "git",
@@ -13,8 +15,11 @@
   },
   "keywords": [
     "GitHub",
+    "github",
     "Action",
-    "github-action",
+    "action",
+    "Actions",
+    "actions",
     "download",
     "file"
   ],
@@ -28,6 +33,12 @@
     "@actions/core": "^1.2.3"
   },
   "devDependencies": {
-    "eslint": "^6.8.0"
+    "@typescript-eslint/eslint-plugin": "^2.22.0",
+    "@typescript-eslint/parser": "^2.22.0",
+    "@zeit/ncc": "^0.21.1",
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.20.1",
+    "typescript": "^3.8.3"
   }
 }

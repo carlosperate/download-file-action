@@ -20,4 +20,4 @@ outputs:
     description: 'The full path to the downloaded file'
 runs:
   using: 'node12'
-  main: 'index.js'
+  main: 'dist/index.js'
