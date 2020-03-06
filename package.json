@@ -1,0 +1,33 @@
+{
+  "name": "download-file-action",
+  "version": "0.1.0",
+  "description": "GitHub Action to download a file to the environment",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint index.js",
+    "test": "eslint index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/carlosperate/download-file-action.git"
+  },
+  "keywords": [
+    "GitHub",
+    "Action",
+    "github-action",
+    "download",
+    "file"
+  ],
+  "author": "Carlos Pereira Atencio",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/carlosperate/download-file-action/issues"
+  },
+  "homepage": "https://github.com/carlosperate/download-file-action#readme",
+  "dependencies": {
+    "@actions/core": "^1.2.3"
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0"
+  }
+}

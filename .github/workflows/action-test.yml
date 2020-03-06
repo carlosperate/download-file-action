@@ -1,0 +1,20 @@
+on: [push]
+
+jobs:
+  action-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-16.04, macos-10.15, windows-2019]
+      fail-fast: false
+    name: Test Action - ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Simple test to download a file
+        uses: ./
+        id: download-poetry
+        with:
+          file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
+      - name: Print the file path
+        run: echo "The file was downloaded to ${{ steps.download-poetry.outputs.file-path }}"

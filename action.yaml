@@ -1,0 +1,23 @@
+name: 'Download File'
+description: 'Download a file from the internet'
+author: 'Carlos Pereira Atencio'
+branding:
+  icon: 'download-cloud'
+  color: 'blue'
+inputs:
+  file-url:
+    description: 'URL of the file to download'
+    required: true
+  file-name:
+    description: 'New filename to rename the downloaded file'
+    required: false
+  location:
+    description: 'Path to download the file'
+    required: false
+    default: "."
+outputs:
+  file-path:
+    description: 'The full path to the downloaded file'
+runs:
+  using: 'node12'
+  main: 'index.js'
