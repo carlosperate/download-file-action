@@ -1,3 +1,5 @@
+name: Workflow To Test Action
+
 on: [push]
 
 jobs:
