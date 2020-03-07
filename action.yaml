@@ -1,4 +1,4 @@
-name: 'Download File'
+name: 'Download File To Workspace'
 description: 'Download a file from the internet'
 author: 'Carlos Pereira Atencio'
 branding:
