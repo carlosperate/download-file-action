@@ -1,11 +1,11 @@
 {
   "name": "download-file-action",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "GitHub Action to download a file to the environment",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "package": "npm run build && ncc build ./build -o ./dist",
+    "package": "npm run build && ncc build ./build/src -o ./dist",
     "lint": "eslint ./src/*",
     "test": "npm run lint"
   },
@@ -31,10 +31,18 @@
   "homepage": "https://github.com/carlosperate/download-file-action#readme",
   "dependencies": {
     "@actions/core": "^1.2.3",
-    "download": "^7.1.0"
+    "content-disposition": "^0.5.2",
+    "ext-name": "^5.0.0",
+    "file-type": "^11.1.0",
+    "filenamify": "^3.0.0",
+    "get-stream": "^4.1.0",
+    "got": "^8.3.1",
+    "make-dir": "^2.1.0",
+    "p-event": "^2.1.0",
+    "pify": "^4.0.1"
   },
   "devDependencies": {
-    "@types/download": "^6.2.4",
+    "@types/node": "^13.9.0",
     "@typescript-eslint/eslint-plugin": "^2.22.0",
     "@typescript-eslint/parser": "^2.22.0",
     "@zeit/ncc": "^0.21.1",

@@ -14,12 +14,11 @@ async function main(): Promise<void> {
     core.info(`url: ${fileURL}`);
     core.info(`name: ${fileName}`);
     core.info(`location: ${fileLocation}`);
-    await download(fileURL, fileLocation, {
-      extract: false,
+    const filePath = await download(fileURL, fileLocation, {
       filename: fileName,
     });
 
-    core.setOutput('file-path', `${fileLocation}/${fileName}`);
+    core.setOutput('file-path', filePath);
   } catch (error) {
     core.setFailed(error.message);
   }

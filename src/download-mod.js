@@ -1,4 +1,14 @@
 /*
+ * This file was originally the main source code for the nodejs download lib:
+ * https://github.com/kevva/download commit a16ba04b30dafbe7d9246db93f1534320d8e0dd3
+ *
+ * It has been modified:
+ * - Set the path as a required argument
+ * - Removed decompressing functionality
+ * - Return the file path instead of the file data
+ *
+ * Original license can be found below:
+ *
  * MIT License
  *
  * Copyright (c) Kevin Mårtensson <kevinmartensson@gmail.com> (github.com/kevva)
@@ -26,8 +36,6 @@ const fs = require('fs');
 const path = require('path');
 const {URL} = require('url');
 const contentDisposition = require('content-disposition');
-const archiveType = require('archive-type');
-const decompress = require('decompress');
 const filenamify = require('filenamify');
 const getStream = require('get-stream');
 const got = require('got');
@@ -81,11 +89,7 @@ const getFilename = (res, data) => {
 };
 
 module.exports = (uri, output, opts) => {
-  if (typeof output === 'object') {
-    opts = output;
-    output = null;
-  }
-
+  output = output || process.cwd();
   opts = Object.assign({
     encoding: null,
     rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false'
@@ -98,21 +102,12 @@ module.exports = (uri, output, opts) => {
     return Promise.all([getStream(stream, {encoding}), res]);
   }).then(result => {
     const [data, res] = result;
-
-    if (!output) {
-      return opts.extract && archiveType(data) ? decompress(data, opts) : data;
-    }
-
     const filename = opts.filename || filenamify(getFilename(res, data));
     const outputFilepath = path.join(output, filename);
 
-    if (opts.extract && archiveType(data)) {
-      return decompress(data, path.dirname(outputFilepath), opts);
-    }
-
     return makeDir(path.dirname(outputFilepath))
       .then(() => fsP.writeFile(outputFilepath, data))
-      .then(() => data);
+      .then(() => outputFilepath);
   });
 
   stream.then = promise.then.bind(promise);
