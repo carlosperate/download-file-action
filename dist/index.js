@@ -6399,11 +6399,12 @@ function main() {
             const fileName = core.getInput('file-name') || undefined;
             const fileLocation = core.getInput('location') || process.cwd();
             if (!fileURL) {
-                core.warning('the file-url input was not set.');
+                core.warning('The file-url input was not set.');
             }
-            core.info(`url: ${fileURL}`);
-            core.info(`name: ${fileName}`);
-            core.info(`location: ${fileLocation}`);
+            core.info('Downloading file:');
+            core.info(`\turl: ${fileURL}`);
+            core.info(`\tname: ${fileName || 'Not set'}`);
+            core.info(`\tlocation: ${fileLocation}`);
             const filePath = yield download(fileURL, fileLocation, {
                 filename: fileName,
             });
@@ -6423,6 +6424,7 @@ main();
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
 "use strict";
+
 /*
  * This file was originally the main source code for the nodejs download lib:
  * https://github.com/kevva/download commit a16ba04b30dafbe7d9246db93f1534320d8e0dd3
@@ -6456,7 +6458,6 @@ main();
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-
 const fs = __webpack_require__(747);
 const path = __webpack_require__(622);
 const { URL } = __webpack_require__(835);
@@ -6470,8 +6471,8 @@ const pEvent = __webpack_require__(148);
 const fileType = __webpack_require__(631);
 const extName = __webpack_require__(547);
 const fsP = pify(fs);
-const filenameFromPath = res => path.basename(new URL(res.requestUrl).pathname);
-const getExtFromMime = res => {
+const filenameFromPath = (res) => path.basename(new URL(res.requestUrl).pathname);
+const getExtFromMime = (res) => {
     const header = res.headers['content-type'];
     if (!header) {
         return null;
@@ -6499,17 +6500,17 @@ const getFilename = (res, data) => {
     }
     return filename;
 };
-module.exports = (uri, output, opts) => {
-    output = output || process.cwd();
-    opts = Object.assign({
+module.exports = (uri, output_, opts_) => {
+    const output = output_ || process.cwd();
+    const opts = Object.assign({
         encoding: null,
-        rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false'
-    }, opts);
+        rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false',
+    }, ...opts_);
     const stream = got.stream(uri, opts);
-    const promise = pEvent(stream, 'response').then(res => {
+    const promise = pEvent(stream, 'response').then((res) => {
         const encoding = opts.encoding === null ? 'buffer' : opts.encoding;
         return Promise.all([getStream(stream, { encoding }), res]);
-    }).then(result => {
+    }).then((result) => {
         const [data, res] = result;
         const filename = opts.filename || filenamify(getFilename(res, data));
         const outputFilepath = path.join(output, filename);
@@ -6934,7 +6935,7 @@ module.exports = function (obj) {
 /***/ 482:
 /***/ (function(module) {
 
-module.exports = {"_from":"got@^8.3.1","_id":"got@8.3.2","_inBundle":false,"_integrity":"sha512-qjUJ5U/hawxosMryILofZCkm3C84PLJS/0grRIpjAwu+Lkxxj5cxeCU25BG0/3mDSpXKTyZr8oh8wIgLaH0QCw==","_location":"/got","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"got@^8.3.1","name":"got","escapedName":"got","rawSpec":"^8.3.1","saveSpec":null,"fetchSpec":"^8.3.1"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/got/-/got-8.3.2.tgz","_shasum":"1d23f64390e97f776cac52e5b936e5f514d2e937","_spec":"got@^8.3.1","_where":"/Users/microbit-carlos/workspace/mine/download-file-action","ava":{"concurrency":4},"browser":{"decompress-response":false,"electron":false},"bugs":{"url":"https://github.com/sindresorhus/got/issues"},"bundleDependencies":false,"dependencies":{"@sindresorhus/is":"^0.7.0","cacheable-request":"^2.1.1","decompress-response":"^3.3.0","duplexer3":"^0.1.4","get-stream":"^3.0.0","into-stream":"^3.1.0","is-retry-allowed":"^1.1.0","isurl":"^1.0.0-alpha5","lowercase-keys":"^1.0.0","mimic-response":"^1.0.0","p-cancelable":"^0.4.0","p-timeout":"^2.0.1","pify":"^3.0.0","safe-buffer":"^5.1.1","timed-out":"^4.0.1","url-parse-lax":"^3.0.0","url-to-options":"^1.0.1"},"deprecated":false,"description":"Simplified HTTP requests","devDependencies":{"ava":"^0.25.0","coveralls":"^3.0.0","form-data":"^2.1.1","get-port":"^3.0.0","nyc":"^11.0.2","p-event":"^1.3.0","pem":"^1.4.4","proxyquire":"^1.8.0","sinon":"^4.0.0","slow-stream":"0.0.4","tempfile":"^2.0.0","tempy":"^0.2.1","universal-url":"1.0.0-alpha","xo":"^0.20.0"},"engines":{"node":">=4"},"files":["index.js","errors.js"],"homepage":"https://github.com/sindresorhus/got#readme","keywords":["http","https","get","got","url","uri","request","util","utility","simple","curl","wget","fetch","net","network","electron"],"license":"MIT","maintainers":[{"name":"Sindre Sorhus","email":"sindresorhus@gmail.com","url":"sindresorhus.com"},{"name":"Vsevolod Strukchinsky","email":"floatdrop@gmail.com","url":"github.com/floatdrop"},{"name":"Alexander Tesfamichael","email":"alex.tesfamichael@gmail.com","url":"alextes.me"}],"name":"got","repository":{"type":"git","url":"git+https://github.com/sindresorhus/got.git"},"scripts":{"coveralls":"nyc report --reporter=text-lcov | coveralls","test":"xo && nyc ava"},"version":"8.3.2"};
+module.exports = {"_args":[["got@8.3.2","/Users/microbit-carlos/workspace/mine/download-file-action"]],"_from":"got@8.3.2","_id":"got@8.3.2","_inBundle":false,"_integrity":"sha512-qjUJ5U/hawxosMryILofZCkm3C84PLJS/0grRIpjAwu+Lkxxj5cxeCU25BG0/3mDSpXKTyZr8oh8wIgLaH0QCw==","_location":"/got","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"got@8.3.2","name":"got","escapedName":"got","rawSpec":"8.3.2","saveSpec":null,"fetchSpec":"8.3.2"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/got/-/got-8.3.2.tgz","_spec":"8.3.2","_where":"/Users/microbit-carlos/workspace/mine/download-file-action","ava":{"concurrency":4},"browser":{"decompress-response":false,"electron":false},"bugs":{"url":"https://github.com/sindresorhus/got/issues"},"dependencies":{"@sindresorhus/is":"^0.7.0","cacheable-request":"^2.1.1","decompress-response":"^3.3.0","duplexer3":"^0.1.4","get-stream":"^3.0.0","into-stream":"^3.1.0","is-retry-allowed":"^1.1.0","isurl":"^1.0.0-alpha5","lowercase-keys":"^1.0.0","mimic-response":"^1.0.0","p-cancelable":"^0.4.0","p-timeout":"^2.0.1","pify":"^3.0.0","safe-buffer":"^5.1.1","timed-out":"^4.0.1","url-parse-lax":"^3.0.0","url-to-options":"^1.0.1"},"description":"Simplified HTTP requests","devDependencies":{"ava":"^0.25.0","coveralls":"^3.0.0","form-data":"^2.1.1","get-port":"^3.0.0","nyc":"^11.0.2","p-event":"^1.3.0","pem":"^1.4.4","proxyquire":"^1.8.0","sinon":"^4.0.0","slow-stream":"0.0.4","tempfile":"^2.0.0","tempy":"^0.2.1","universal-url":"1.0.0-alpha","xo":"^0.20.0"},"engines":{"node":">=4"},"files":["index.js","errors.js"],"homepage":"https://github.com/sindresorhus/got#readme","keywords":["http","https","get","got","url","uri","request","util","utility","simple","curl","wget","fetch","net","network","electron"],"license":"MIT","maintainers":[{"name":"Sindre Sorhus","email":"sindresorhus@gmail.com","url":"sindresorhus.com"},{"name":"Vsevolod Strukchinsky","email":"floatdrop@gmail.com","url":"github.com/floatdrop"},{"name":"Alexander Tesfamichael","email":"alex.tesfamichael@gmail.com","url":"alextes.me"}],"name":"got","repository":{"type":"git","url":"git+https://github.com/sindresorhus/got.git"},"scripts":{"coveralls":"nyc report --reporter=text-lcov | coveralls","test":"xo && nyc ava"},"version":"8.3.2"};
 
 /***/ }),
 

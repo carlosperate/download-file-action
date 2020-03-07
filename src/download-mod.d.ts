@@ -5,8 +5,10 @@ interface DownloadOptions {
     filename?: string;
 }
 
-export declare function download(
+declare function download(
     url: string,
-    destination: string,
-    options?: DownloadOptions
+    output_: string,
+    opts_?: DownloadOptions
 ): Promise<string>;
+
+export = download;

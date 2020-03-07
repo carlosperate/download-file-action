@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+
 const download = require('./download-mod');
 
 async function main(): Promise<void> {
@@ -8,12 +9,13 @@ async function main(): Promise<void> {
     const fileLocation: string = core.getInput('location') || process.cwd();
 
     if (!fileURL) {
-      core.warning('the file-url input was not set.');
+      core.warning('The file-url input was not set.');
     }
 
-    core.info(`url: ${fileURL}`);
-    core.info(`name: ${fileName}`);
-    core.info(`location: ${fileLocation}`);
+    core.info('Downloading file:');
+    core.info(`\turl: ${fileURL}`);
+    core.info(`\tname: ${fileName || 'Not set'}`);
+    core.info(`\tlocation: ${fileLocation}`);
     const filePath = await download(fileURL, fileLocation, {
       filename: fileName,
     });

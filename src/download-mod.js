@@ -16,7 +16,7 @@
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
  *
@@ -31,10 +31,10 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-'use strict';
+
 const fs = require('fs');
 const path = require('path');
-const {URL} = require('url');
+const { URL } = require('url');
 const contentDisposition = require('content-disposition');
 const filenamify = require('filenamify');
 const getStream = require('get-stream');
@@ -46,9 +46,9 @@ const fileType = require('file-type');
 const extName = require('ext-name');
 
 const fsP = pify(fs);
-const filenameFromPath = res => path.basename(new URL(res.requestUrl).pathname);
+const filenameFromPath = (res) => path.basename(new URL(res.requestUrl).pathname);
 
-const getExtFromMime = res => {
+const getExtFromMime = (res) => {
   const header = res.headers['content-type'];
 
   if (!header) {
@@ -88,19 +88,19 @@ const getFilename = (res, data) => {
   return filename;
 };
 
-module.exports = (uri, output, opts) => {
-  output = output || process.cwd();
-  opts = Object.assign({
+module.exports = (uri, output_, opts_) => {
+  const output = output_ || process.cwd();
+  const opts = Object.assign({
     encoding: null,
-    rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false'
-  }, opts);
+    rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false',
+  }, ...opts_);
 
   const stream = got.stream(uri, opts);
 
-  const promise = pEvent(stream, 'response').then(res => {
+  const promise = pEvent(stream, 'response').then((res) => {
     const encoding = opts.encoding === null ? 'buffer' : opts.encoding;
-    return Promise.all([getStream(stream, {encoding}), res]);
-  }).then(result => {
+    return Promise.all([getStream(stream, { encoding }), res]);
+  }).then((result) => {
     const [data, res] = result;
     const filename = opts.filename || filenamify(getFilename(res, data));
     const outputFilepath = path.join(output, filename);
