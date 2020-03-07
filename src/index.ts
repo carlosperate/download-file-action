@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-const download = require('download');
+const download = require('./download-mod');
 
 async function main(): Promise<void> {
   try {

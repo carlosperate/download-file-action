@@ -184,13 +184,6 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 16:
-/***/ (function(module) {
-
-module.exports = require("tls");
-
-/***/ }),
-
 /***/ 27:
 /***/ (function(module) {
 
@@ -977,207 +970,6 @@ module.exports = (str, opts) => {
 
 /***/ }),
 
-/***/ 62:
-/***/ (function(__unusedmodule, exports) {
-
-exports.parse = exports.decode = decode
-
-exports.stringify = exports.encode = encode
-
-exports.safe = safe
-exports.unsafe = unsafe
-
-var eol = typeof process !== 'undefined' &&
-  process.platform === 'win32' ? '\r\n' : '\n'
-
-function encode (obj, opt) {
-  var children = []
-  var out = ''
-
-  if (typeof opt === 'string') {
-    opt = {
-      section: opt,
-      whitespace: false
-    }
-  } else {
-    opt = opt || {}
-    opt.whitespace = opt.whitespace === true
-  }
-
-  var separator = opt.whitespace ? ' = ' : '='
-
-  Object.keys(obj).forEach(function (k, _, __) {
-    var val = obj[k]
-    if (val && Array.isArray(val)) {
-      val.forEach(function (item) {
-        out += safe(k + '[]') + separator + safe(item) + '\n'
-      })
-    } else if (val && typeof val === 'object') {
-      children.push(k)
-    } else {
-      out += safe(k) + separator + safe(val) + eol
-    }
-  })
-
-  if (opt.section && out.length) {
-    out = '[' + safe(opt.section) + ']' + eol + out
-  }
-
-  children.forEach(function (k, _, __) {
-    var nk = dotSplit(k).join('\\.')
-    var section = (opt.section ? opt.section + '.' : '') + nk
-    var child = encode(obj[k], {
-      section: section,
-      whitespace: opt.whitespace
-    })
-    if (out.length && child.length) {
-      out += eol
-    }
-    out += child
-  })
-
-  return out
-}
-
-function dotSplit (str) {
-  return str.replace(/\1/g, '\u0002LITERAL\\1LITERAL\u0002')
-    .replace(/\\\./g, '\u0001')
-    .split(/\./).map(function (part) {
-      return part.replace(/\1/g, '\\.')
-      .replace(/\2LITERAL\\1LITERAL\2/g, '\u0001')
-    })
-}
-
-function decode (str) {
-  var out = {}
-  var p = out
-  var section = null
-  //          section     |key      = value
-  var re = /^\[([^\]]*)\]$|^([^=]+)(=(.*))?$/i
-  var lines = str.split(/[\r\n]+/g)
-
-  lines.forEach(function (line, _, __) {
-    if (!line || line.match(/^\s*[;#]/)) return
-    var match = line.match(re)
-    if (!match) return
-    if (match[1] !== undefined) {
-      section = unsafe(match[1])
-      p = out[section] = out[section] || {}
-      return
-    }
-    var key = unsafe(match[2])
-    var value = match[3] ? unsafe(match[4]) : true
-    switch (value) {
-      case 'true':
-      case 'false':
-      case 'null': value = JSON.parse(value)
-    }
-
-    // Convert keys with '[]' suffix to an array
-    if (key.length > 2 && key.slice(-2) === '[]') {
-      key = key.substring(0, key.length - 2)
-      if (!p[key]) {
-        p[key] = []
-      } else if (!Array.isArray(p[key])) {
-        p[key] = [p[key]]
-      }
-    }
-
-    // safeguard against resetting a previously defined
-    // array by accidentally forgetting the brackets
-    if (Array.isArray(p[key])) {
-      p[key].push(value)
-    } else {
-      p[key] = value
-    }
-  })
-
-  // {a:{y:1},"a.b":{x:2}} --> {a:{y:1,b:{x:2}}}
-  // use a filter to return the keys that have to be deleted.
-  Object.keys(out).filter(function (k, _, __) {
-    if (!out[k] ||
-      typeof out[k] !== 'object' ||
-      Array.isArray(out[k])) {
-      return false
-    }
-    // see if the parent section is also an object.
-    // if so, add it to that, and mark this one for deletion
-    var parts = dotSplit(k)
-    var p = out
-    var l = parts.pop()
-    var nl = l.replace(/\\\./g, '.')
-    parts.forEach(function (part, _, __) {
-      if (!p[part] || typeof p[part] !== 'object') p[part] = {}
-      p = p[part]
-    })
-    if (p === out && nl === l) {
-      return false
-    }
-    p[nl] = out[k]
-    return true
-  }).forEach(function (del, _, __) {
-    delete out[del]
-  })
-
-  return out
-}
-
-function isQuoted (val) {
-  return (val.charAt(0) === '"' && val.slice(-1) === '"') ||
-    (val.charAt(0) === "'" && val.slice(-1) === "'")
-}
-
-function safe (val) {
-  return (typeof val !== 'string' ||
-    val.match(/[=\r\n]/) ||
-    val.match(/^\[/) ||
-    (val.length > 1 &&
-     isQuoted(val)) ||
-    val !== val.trim())
-      ? JSON.stringify(val)
-      : val.replace(/;/g, '\\;').replace(/#/g, '\\#')
-}
-
-function unsafe (val, doUnesc) {
-  val = (val || '').trim()
-  if (isQuoted(val)) {
-    // remove the single quotes before calling JSON.parse
-    if (val.charAt(0) === "'") {
-      val = val.substr(1, val.length - 2)
-    }
-    try { val = JSON.parse(val) } catch (_) {}
-  } else {
-    // walk the val to find the first not-escaped ; character
-    var esc = false
-    var unesc = ''
-    for (var i = 0, l = val.length; i < l; i++) {
-      var c = val.charAt(i)
-      if (esc) {
-        if ('\\;#'.indexOf(c) !== -1) {
-          unesc += c
-        } else {
-          unesc += '\\' + c
-        }
-        esc = false
-      } else if (';#'.indexOf(c) !== -1) {
-        break
-      } else if (c === '\\') {
-        esc = true
-      } else {
-        unesc += c
-      }
-    }
-    if (esc) {
-      unesc += '\\'
-    }
-    return unesc.trim()
-  }
-  return val
-}
-
-
-/***/ }),
-
 /***/ 65:
 /***/ (function(module) {
 
@@ -1641,295 +1433,6 @@ module.exports = function (obj) {
 
 /***/ }),
 
-/***/ 105:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-var ProtoList = __webpack_require__(467)
-  , path = __webpack_require__(622)
-  , fs = __webpack_require__(747)
-  , ini = __webpack_require__(62)
-  , EE = __webpack_require__(614).EventEmitter
-  , url = __webpack_require__(835)
-  , http = __webpack_require__(605)
-
-var exports = module.exports = function () {
-  var args = [].slice.call(arguments)
-    , conf = new ConfigChain()
-
-  while(args.length) {
-    var a = args.shift()
-    if(a) conf.push
-          ( 'string' === typeof a
-            ? json(a)
-            : a )
-  }
-
-  return conf
-}
-
-//recursively find a file...
-
-var find = exports.find = function () {
-  var rel = path.join.apply(null, [].slice.call(arguments))
-
-  function find(start, rel) {
-    var file = path.join(start, rel)
-    try {
-      fs.statSync(file)
-      return file
-    } catch (err) {
-      if(path.dirname(start) !== start) // root
-        return find(path.dirname(start), rel)
-    }
-  }
-  return find(__dirname, rel)
-}
-
-var parse = exports.parse = function (content, file, type) {
-  content = '' + content
-  // if we don't know what it is, try json and fall back to ini
-  // if we know what it is, then it must be that.
-  if (!type) {
-    try { return JSON.parse(content) }
-    catch (er) { return ini.parse(content) }
-  } else if (type === 'json') {
-    if (this.emit) {
-      try { return JSON.parse(content) }
-      catch (er) { this.emit('error', er) }
-    } else {
-      return JSON.parse(content)
-    }
-  } else {
-    return ini.parse(content)
-  }
-}
-
-var json = exports.json = function () {
-  var args = [].slice.call(arguments).filter(function (arg) { return arg != null })
-  var file = path.join.apply(null, args)
-  var content
-  try {
-    content = fs.readFileSync(file,'utf-8')
-  } catch (err) {
-    return
-  }
-  return parse(content, file, 'json')
-}
-
-var env = exports.env = function (prefix, env) {
-  env = env || process.env
-  var obj = {}
-  var l = prefix.length
-  for(var k in env) {
-    if(k.indexOf(prefix) === 0)
-      obj[k.substring(l)] = env[k]
-  }
-
-  return obj
-}
-
-exports.ConfigChain = ConfigChain
-function ConfigChain () {
-  EE.apply(this)
-  ProtoList.apply(this, arguments)
-  this._awaiting = 0
-  this._saving = 0
-  this.sources = {}
-}
-
-// multi-inheritance-ish
-var extras = {
-  constructor: { value: ConfigChain }
-}
-Object.keys(EE.prototype).forEach(function (k) {
-  extras[k] = Object.getOwnPropertyDescriptor(EE.prototype, k)
-})
-ConfigChain.prototype = Object.create(ProtoList.prototype, extras)
-
-ConfigChain.prototype.del = function (key, where) {
-  // if not specified where, then delete from the whole chain, scorched
-  // earth style
-  if (where) {
-    var target = this.sources[where]
-    target = target && target.data
-    if (!target) {
-      return this.emit('error', new Error('not found '+where))
-    }
-    delete target[key]
-  } else {
-    for (var i = 0, l = this.list.length; i < l; i ++) {
-      delete this.list[i][key]
-    }
-  }
-  return this
-}
-
-ConfigChain.prototype.set = function (key, value, where) {
-  var target
-
-  if (where) {
-    target = this.sources[where]
-    target = target && target.data
-    if (!target) {
-      return this.emit('error', new Error('not found '+where))
-    }
-  } else {
-    target = this.list[0]
-    if (!target) {
-      return this.emit('error', new Error('cannot set, no confs!'))
-    }
-  }
-  target[key] = value
-  return this
-}
-
-ConfigChain.prototype.get = function (key, where) {
-  if (where) {
-    where = this.sources[where]
-    if (where) where = where.data
-    if (where && Object.hasOwnProperty.call(where, key)) return where[key]
-    return undefined
-  }
-  return this.list[0][key]
-}
-
-ConfigChain.prototype.save = function (where, type, cb) {
-  if (typeof type === 'function') cb = type, type = null
-  var target = this.sources[where]
-  if (!target || !(target.path || target.source) || !target.data) {
-    // TODO: maybe save() to a url target could be a PUT or something?
-    // would be easy to swap out with a reddis type thing, too
-    return this.emit('error', new Error('bad save target: '+where))
-  }
-
-  if (target.source) {
-    var pref = target.prefix || ''
-    Object.keys(target.data).forEach(function (k) {
-      target.source[pref + k] = target.data[k]
-    })
-    return this
-  }
-
-  var type = type || target.type
-  var data = target.data
-  if (target.type === 'json') {
-    data = JSON.stringify(data)
-  } else {
-    data = ini.stringify(data)
-  }
-
-  this._saving ++
-  fs.writeFile(target.path, data, 'utf8', function (er) {
-    this._saving --
-    if (er) {
-      if (cb) return cb(er)
-      else return this.emit('error', er)
-    }
-    if (this._saving === 0) {
-      if (cb) cb()
-      this.emit('save')
-    }
-  }.bind(this))
-  return this
-}
-
-ConfigChain.prototype.addFile = function (file, type, name) {
-  name = name || file
-  var marker = {__source__:name}
-  this.sources[name] = { path: file, type: type }
-  this.push(marker)
-  this._await()
-  fs.readFile(file, 'utf8', function (er, data) {
-    if (er) this.emit('error', er)
-    this.addString(data, file, type, marker)
-  }.bind(this))
-  return this
-}
-
-ConfigChain.prototype.addEnv = function (prefix, env, name) {
-  name = name || 'env'
-  var data = exports.env(prefix, env)
-  this.sources[name] = { data: data, source: env, prefix: prefix }
-  return this.add(data, name)
-}
-
-ConfigChain.prototype.addUrl = function (req, type, name) {
-  this._await()
-  var href = url.format(req)
-  name = name || href
-  var marker = {__source__:name}
-  this.sources[name] = { href: href, type: type }
-  this.push(marker)
-  http.request(req, function (res) {
-    var c = []
-    var ct = res.headers['content-type']
-    if (!type) {
-      type = ct.indexOf('json') !== -1 ? 'json'
-           : ct.indexOf('ini') !== -1 ? 'ini'
-           : href.match(/\.json$/) ? 'json'
-           : href.match(/\.ini$/) ? 'ini'
-           : null
-      marker.type = type
-    }
-
-    res.on('data', c.push.bind(c))
-    .on('end', function () {
-      this.addString(Buffer.concat(c), href, type, marker)
-    }.bind(this))
-    .on('error', this.emit.bind(this, 'error'))
-
-  }.bind(this))
-  .on('error', this.emit.bind(this, 'error'))
-  .end()
-
-  return this
-}
-
-ConfigChain.prototype.addString = function (data, file, type, marker) {
-  data = this.parse(data, file, type)
-  this.add(data, marker)
-  return this
-}
-
-ConfigChain.prototype.add = function (data, marker) {
-  if (marker && typeof marker === 'object') {
-    var i = this.list.indexOf(marker)
-    if (i === -1) {
-      return this.emit('error', new Error('bad marker'))
-    }
-    this.splice(i, 1, data)
-    marker = marker.__source__
-    this.sources[marker] = this.sources[marker] || {}
-    this.sources[marker].data = data
-    // we were waiting for this.  maybe emit 'load'
-    this._resolve()
-  } else {
-    if (typeof marker === 'string') {
-      this.sources[marker] = this.sources[marker] || {}
-      this.sources[marker].data = data
-    }
-    // trigger the load event if nothing was already going to do so.
-    this._await()
-    this.push(data)
-    process.nextTick(this._resolve.bind(this))
-  }
-  return this
-}
-
-ConfigChain.prototype.parse = exports.parse
-
-ConfigChain.prototype._await = function () {
-  this._awaiting++
-}
-
-ConfigChain.prototype._resolve = function () {
-  this._awaiting--
-  if (this._awaiting === 0) this.emit('load', this)
-}
-
-
-/***/ }),
-
 /***/ 108:
 /***/ (function(module) {
 
@@ -2078,14 +1581,60 @@ module.exports = Response;
 /***/ }),
 
 /***/ 145:
-/***/ (function(module) {
+/***/ (function(module, __unusedexports, __webpack_require__) {
 
 "use strict";
 
+const bufferStream = __webpack_require__(966);
 
-module.exports = function isObject(x) {
-	return typeof x === "object" && x !== null;
-};
+function getStream(inputStream, opts) {
+	if (!inputStream) {
+		return Promise.reject(new Error('Expected a stream'));
+	}
+
+	opts = Object.assign({maxBuffer: Infinity}, opts);
+
+	const maxBuffer = opts.maxBuffer;
+	let stream;
+	let clean;
+
+	const p = new Promise((resolve, reject) => {
+		const error = err => {
+			if (err) { // null check
+				err.bufferedData = stream.getBufferedValue();
+			}
+
+			reject(err);
+		};
+
+		stream = bufferStream(opts);
+		inputStream.once('error', error);
+		inputStream.pipe(stream);
+
+		stream.on('data', () => {
+			if (stream.getBufferedLength() > maxBuffer) {
+				reject(new Error('maxBuffer exceeded'));
+			}
+		});
+		stream.once('error', error);
+		stream.on('end', resolve);
+
+		clean = () => {
+			// some streams doesn't implement the `stream.Readable` interface correctly
+			if (inputStream.unpipe) {
+				inputStream.unpipe(stream);
+			}
+		};
+	});
+
+	p.then(clean, clean);
+
+	return p.then(() => stream.getBufferedValue());
+}
+
+module.exports = getStream;
+module.exports.buffer = (stream, opts) => getStream(stream, Object.assign({}, opts, {encoding: 'buffer'}));
+module.exports.array = (stream, opts) => getStream(stream, Object.assign({}, opts, {array: true}));
 
 
 /***/ }),
@@ -2831,6 +2380,19 @@ exports.decode = function (buf, filenameEncoding) {
 
 /***/ }),
 
+/***/ 163:
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = function isObject(x) {
+	return typeof x === "object" && x !== null;
+};
+
+
+/***/ }),
+
 /***/ 173:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -2847,183 +2409,6 @@ module.exports = (input, options) => {
 	const finalUrl = prependHttp(input, Object.assign({https: true}, options));
 	return url.parse(finalUrl);
 };
-
-
-/***/ }),
-
-/***/ 180:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-	// Generated with `lib/make.js`
-	
-	const os = __webpack_require__(87);
-	const path = __webpack_require__(622);
-
-	const temp = os.tmpdir();
-	const uidOrPid = process.getuid ? process.getuid() : process.pid;
-	const hasUnicode = () => true;
-	const isWindows = process.platform === 'win32';
-
-	const osenv = {
-		editor: () => process.env.EDITOR || process.env.VISUAL || (isWindows ? 'notepad.exe' : 'vi'),
-		shell: () => isWindows ? (process.env.COMSPEC || 'cmd.exe') : (process.env.SHELL || '/bin/bash')
-	};
-
-	const umask = {
-		fromString: () => process.umask()
-	};
-
-	let home = os.homedir();
-
-	if (home) {
-		process.env.HOME = home;
-	} else {
-		home = path.resolve(temp, 'npm-' + uidOrPid);
-	}
-
-	const cacheExtra = process.platform === 'win32' ? 'npm-cache' : '.npm';
-	const cacheRoot = process.platform === 'win32' ? process.env.APPDATA : home;
-	const cache = path.resolve(cacheRoot, cacheExtra);
-
-	let defaults;
-	let globalPrefix;
-
-	Object.defineProperty(exports, 'defaults', {
-  get: function () {
-    if (defaults) return defaults;
-
-    if (process.env.PREFIX) {
-      globalPrefix = process.env.PREFIX;
-    } else if (process.platform === 'win32') {
-      // c:\node\node.exe --> prefix=c:\node\
-      globalPrefix = path.dirname(process.execPath);
-    } else {
-      // /usr/local/bin/node --> prefix=/usr/local
-      globalPrefix = path.dirname(path.dirname(process.execPath)); // destdir only is respected on Unix
-
-      if (process.env.DESTDIR) {
-        globalPrefix = path.join(process.env.DESTDIR, globalPrefix);
-      }
-    }
-
-    defaults = {
-      access: null,
-      'allow-same-version': false,
-      'always-auth': false,
-      also: null,
-      'auth-type': 'legacy',
-      'bin-links': true,
-      browser: null,
-      ca: null,
-      cafile: null,
-      cache: cache,
-      'cache-lock-stale': 60000,
-      'cache-lock-retries': 10,
-      'cache-lock-wait': 10000,
-      'cache-max': Infinity,
-      'cache-min': 10,
-      cert: null,
-      color: true,
-      depth: Infinity,
-      description: true,
-      dev: false,
-      'dry-run': false,
-      editor: osenv.editor(),
-      'engine-strict': false,
-      force: false,
-      'fetch-retries': 2,
-      'fetch-retry-factor': 10,
-      'fetch-retry-mintimeout': 10000,
-      'fetch-retry-maxtimeout': 60000,
-      git: 'git',
-      'git-tag-version': true,
-      global: false,
-      globalconfig: path.resolve(globalPrefix, 'etc', 'npmrc'),
-      'global-style': false,
-      group: process.platform === 'win32' ? 0 : process.env.SUDO_GID || process.getgid && process.getgid(),
-      'ham-it-up': false,
-      heading: 'npm',
-      'if-present': false,
-      'ignore-prepublish': false,
-      'ignore-scripts': false,
-      'init-module': path.resolve(home, '.npm-init.js'),
-      'init-author-name': '',
-      'init-author-email': '',
-      'init-author-url': '',
-      'init-version': '1.0.0',
-      'init-license': 'ISC',
-      json: false,
-      key: null,
-      'legacy-bundling': false,
-      link: false,
-      'local-address': undefined,
-      loglevel: 'notice',
-      logstream: process.stderr,
-      'logs-max': 10,
-      long: false,
-      maxsockets: 50,
-      message: '%s',
-      'metrics-registry': null,
-      'node-version': process.version,
-      'offline': false,
-      'onload-script': false,
-      only: null,
-      optional: true,
-      'package-lock': true,
-      parseable: false,
-      'prefer-offline': false,
-      'prefer-online': false,
-      prefix: globalPrefix,
-      production: process.env.NODE_ENV === 'production',
-      'progress': !process.env.TRAVIS && !process.env.CI,
-      'proprietary-attribs': true,
-      proxy: null,
-      'https-proxy': null,
-      'user-agent': 'npm/{npm-version} ' + 'node/{node-version} ' + '{platform} ' + '{arch}',
-      'rebuild-bundle': true,
-      registry: 'https://registry.npmjs.org/',
-      rollback: true,
-      save: true,
-      'save-bundle': false,
-      'save-dev': false,
-      'save-exact': false,
-      'save-optional': false,
-      'save-prefix': '^',
-      'save-prod': false,
-      scope: '',
-      'script-shell': null,
-      'scripts-prepend-node-path': 'warn-only',
-      searchopts: '',
-      searchexclude: null,
-      searchlimit: 20,
-      searchstaleness: 15 * 60,
-      'send-metrics': false,
-      shell: osenv.shell(),
-      shrinkwrap: true,
-      'sign-git-tag': false,
-      'sso-poll-frequency': 500,
-      'sso-type': 'oauth',
-      'strict-ssl': true,
-      tag: 'latest',
-      'tag-version-prefix': 'v',
-      timing: false,
-      tmp: temp,
-      unicode: hasUnicode(),
-      'unsafe-perm': process.platform === 'win32' || process.platform === 'cygwin' || !(process.getuid && process.setuid && process.getgid && process.setgid) || process.getuid() !== 0,
-      usage: false,
-      user: process.platform === 'win32' ? 0 : 'nobody',
-      userconfig: path.resolve(home, '.npmrc'),
-      umask: process.umask ? process.umask() : umask.fromString('022'),
-      version: false,
-      versions: false,
-      viewer: process.platform === 'win32' ? 'browser' : 'man',
-      _exit: true
-    };
-    return defaults;
-  }
-})
 
 
 /***/ }),
@@ -3267,141 +2652,6 @@ module.exports = require("querystring");
 
 /***/ }),
 
-/***/ 197:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-	// Generated with `lib/make.js`
-	
-	const path = __webpack_require__(622);
-	const Stream = __webpack_require__(413).Stream;
-	const url = __webpack_require__(835);
-
-	const Umask = () => {};
-	const getLocalAddresses = () => [];
-	const semver = () => {};
-
-	exports.types = {
-  access: [null, 'restricted', 'public'],
-  'allow-same-version': Boolean,
-  'always-auth': Boolean,
-  also: [null, 'dev', 'development'],
-  'auth-type': ['legacy', 'sso', 'saml', 'oauth'],
-  'bin-links': Boolean,
-  browser: [null, String],
-  ca: [null, String, Array],
-  cafile: path,
-  cache: path,
-  'cache-lock-stale': Number,
-  'cache-lock-retries': Number,
-  'cache-lock-wait': Number,
-  'cache-max': Number,
-  'cache-min': Number,
-  cert: [null, String],
-  color: ['always', Boolean],
-  depth: Number,
-  description: Boolean,
-  dev: Boolean,
-  'dry-run': Boolean,
-  editor: String,
-  'engine-strict': Boolean,
-  force: Boolean,
-  'fetch-retries': Number,
-  'fetch-retry-factor': Number,
-  'fetch-retry-mintimeout': Number,
-  'fetch-retry-maxtimeout': Number,
-  git: String,
-  'git-tag-version': Boolean,
-  global: Boolean,
-  globalconfig: path,
-  'global-style': Boolean,
-  group: [Number, String],
-  'https-proxy': [null, url],
-  'user-agent': String,
-  'ham-it-up': Boolean,
-  'heading': String,
-  'if-present': Boolean,
-  'ignore-prepublish': Boolean,
-  'ignore-scripts': Boolean,
-  'init-module': path,
-  'init-author-name': String,
-  'init-author-email': String,
-  'init-author-url': ['', url],
-  'init-license': String,
-  'init-version': semver,
-  json: Boolean,
-  key: [null, String],
-  'legacy-bundling': Boolean,
-  link: Boolean,
-  // local-address must be listed as an IP for a local network interface
-  // must be IPv4 due to node bug
-  'local-address': getLocalAddresses(),
-  loglevel: ['silent', 'error', 'warn', 'notice', 'http', 'timing', 'info', 'verbose', 'silly'],
-  logstream: Stream,
-  'logs-max': Number,
-  long: Boolean,
-  maxsockets: Number,
-  message: String,
-  'metrics-registry': [null, String],
-  'node-version': [null, semver],
-  offline: Boolean,
-  'onload-script': [null, String],
-  only: [null, 'dev', 'development', 'prod', 'production'],
-  optional: Boolean,
-  'package-lock': Boolean,
-  parseable: Boolean,
-  'prefer-offline': Boolean,
-  'prefer-online': Boolean,
-  prefix: path,
-  production: Boolean,
-  progress: Boolean,
-  'proprietary-attribs': Boolean,
-  proxy: [null, false, url],
-  // allow proxy to be disabled explicitly
-  'rebuild-bundle': Boolean,
-  registry: [null, url],
-  rollback: Boolean,
-  save: Boolean,
-  'save-bundle': Boolean,
-  'save-dev': Boolean,
-  'save-exact': Boolean,
-  'save-optional': Boolean,
-  'save-prefix': String,
-  'save-prod': Boolean,
-  scope: String,
-  'script-shell': [null, String],
-  'scripts-prepend-node-path': [false, true, 'auto', 'warn-only'],
-  searchopts: String,
-  searchexclude: [null, String],
-  searchlimit: Number,
-  searchstaleness: Number,
-  'send-metrics': Boolean,
-  shell: String,
-  shrinkwrap: Boolean,
-  'sign-git-tag': Boolean,
-  'sso-poll-frequency': Number,
-  'sso-type': [null, 'oauth', 'saml'],
-  'strict-ssl': Boolean,
-  tag: String,
-  timing: Boolean,
-  tmp: path,
-  unicode: Boolean,
-  'unsafe-perm': Boolean,
-  usage: Boolean,
-  user: [Number, String],
-  userconfig: path,
-  umask: Umask,
-  version: Boolean,
-  'tag-version-prefix': String,
-  versions: Boolean,
-  viewer: String,
-  _exit: Boolean
-}
-
-
-/***/ }),
-
 /***/ 203:
 /***/ (function(module) {
 
@@ -3540,161 +2790,6 @@ module.exports.asc = function (obj) {
 /***/ (function(module) {
 
 module.exports = require("https");
-
-/***/ }),
-
-/***/ 212:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-const fs = __webpack_require__(747);
-const path = __webpack_require__(622);
-const types = __webpack_require__(197);
-
-// https://github.com/npm/npm/blob/latest/lib/config/core.js#L409-L423
-const envReplace = str => {
-	if (typeof str !== 'string' || !str) {
-		return str;
-	}
-
-	// Replace any ${ENV} values with the appropriate environment
-	const regex = /(\\*)\$\{([^}]+)\}/g;
-
-	return str.replace(regex, (orig, esc, name) => {
-		esc = esc.length > 0 && esc.length % 2;
-
-		if (esc) {
-			return orig;
-		}
-
-		if (process.env[name] === undefined) {
-			throw new Error(`Failed to replace env in config: ${orig}`);
-		}
-
-		return process.env[name];
-	});
-};
-
-// https://github.com/npm/npm/blob/latest/lib/config/core.js#L362-L407
-const parseField = (field, key) => {
-	if (typeof field !== 'string') {
-		return field;
-	}
-
-	const typeList = [].concat(types[key]);
-	const isPath = typeList.indexOf(path) !== -1;
-	const isBool = typeList.indexOf(Boolean) !== -1;
-	const isString = typeList.indexOf(String) !== -1;
-	const isNumber = typeList.indexOf(Number) !== -1;
-
-	field = `${field}`.trim();
-
-	if (/^".*"$/.test(field)) {
-		try {
-			field = JSON.parse(field);
-		} catch (err) {
-			throw new Error(`Failed parsing JSON config key ${key}: ${field}`);
-		}
-	}
-
-	if (isBool && !isString && field === '') {
-		return true;
-	}
-
-	switch (field) { // eslint-disable-line default-case
-		case 'true': {
-			return true;
-		}
-
-		case 'false': {
-			return false;
-		}
-
-		case 'null': {
-			return null;
-		}
-
-		case 'undefined': {
-			return undefined;
-		}
-	}
-
-	field = envReplace(field);
-
-	if (isPath) {
-		const regex = process.platform === 'win32' ? /^~(\/|\\)/ : /^~\//;
-
-		if (regex.test(field) && process.env.HOME) {
-			field = path.resolve(process.env.HOME, field.substr(2));
-		}
-
-		field = path.resolve(field);
-	}
-
-	if (isNumber && !field.isNan()) {
-		field = Number(field);
-	}
-
-	return field;
-};
-
-// https://github.com/npm/npm/blob/latest/lib/config/find-prefix.js
-const findPrefix = name => {
-	name = path.resolve(name);
-
-	let walkedUp = false;
-
-	while (path.basename(name) === 'node_modules') {
-		name = path.dirname(name);
-		walkedUp = true;
-	}
-
-	if (walkedUp) {
-		return name;
-	}
-
-	const find = (name, original) => {
-		const regex = /^[a-zA-Z]:(\\|\/)?$/;
-
-		if (name === '/' || (process.platform === 'win32' && regex.test(name))) {
-			return original;
-		}
-
-		try {
-			const files = fs.readdirSync(name);
-
-			if (files.indexOf('node_modules') !== -1 || files.indexOf('package.json') !== -1) {
-				return name;
-			}
-
-			const dirname = path.dirname(name);
-
-			if (dirname === name) {
-				return original;
-			}
-
-			return find(dirname, original);
-		} catch (err) {
-			if (name === original) {
-				if (err.code === 'ENOENT') {
-					return original;
-				}
-
-				throw err;
-			}
-
-			return original;
-		}
-	};
-
-	return find(name, name);
-};
-
-exports.envReplace = envReplace;
-exports.findPrefix = findPrefix;
-exports.parseField = parseField;
-
 
 /***/ }),
 
@@ -3872,7 +2967,7 @@ function _isUint8Array(obj) {
 
 /*<replacement>*/
 var util = Object.create(__webpack_require__(286));
-util.inherits = __webpack_require__(422);
+util.inherits = __webpack_require__(689);
 /*</replacement>*/
 
 /*<replacement>*/
@@ -5128,7 +4223,7 @@ Writable.WritableState = WritableState;
 
 /*<replacement>*/
 var util = Object.create(__webpack_require__(286));
-util.inherits = __webpack_require__(422);
+util.inherits = __webpack_require__(689);
 /*</replacement>*/
 
 /*<replacement>*/
@@ -5751,258 +4846,6 @@ Writable.prototype._destroy = function (err, cb) {
 
 /***/ }),
 
-/***/ 243:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-
-var net = __webpack_require__(631)
-  , tls = __webpack_require__(16)
-  , http = __webpack_require__(605)
-  , https = __webpack_require__(211)
-  , events = __webpack_require__(614)
-  , assert = __webpack_require__(357)
-  , util = __webpack_require__(669)
-  , Buffer = __webpack_require__(149).Buffer
-  ;
-
-exports.httpOverHttp = httpOverHttp
-exports.httpsOverHttp = httpsOverHttp
-exports.httpOverHttps = httpOverHttps
-exports.httpsOverHttps = httpsOverHttps
-
-
-function httpOverHttp(options) {
-  var agent = new TunnelingAgent(options)
-  agent.request = http.request
-  return agent
-}
-
-function httpsOverHttp(options) {
-  var agent = new TunnelingAgent(options)
-  agent.request = http.request
-  agent.createSocket = createSecureSocket
-  agent.defaultPort = 443
-  return agent
-}
-
-function httpOverHttps(options) {
-  var agent = new TunnelingAgent(options)
-  agent.request = https.request
-  return agent
-}
-
-function httpsOverHttps(options) {
-  var agent = new TunnelingAgent(options)
-  agent.request = https.request
-  agent.createSocket = createSecureSocket
-  agent.defaultPort = 443
-  return agent
-}
-
-
-function TunnelingAgent(options) {
-  var self = this
-  self.options = options || {}
-  self.proxyOptions = self.options.proxy || {}
-  self.maxSockets = self.options.maxSockets || http.Agent.defaultMaxSockets
-  self.requests = []
-  self.sockets = []
-
-  self.on('free', function onFree(socket, host, port) {
-    for (var i = 0, len = self.requests.length; i < len; ++i) {
-      var pending = self.requests[i]
-      if (pending.host === host && pending.port === port) {
-        // Detect the request to connect same origin server,
-        // reuse the connection.
-        self.requests.splice(i, 1)
-        pending.request.onSocket(socket)
-        return
-      }
-    }
-    socket.destroy()
-    self.removeSocket(socket)
-  })
-}
-util.inherits(TunnelingAgent, events.EventEmitter)
-
-TunnelingAgent.prototype.addRequest = function addRequest(req, options) {
-  var self = this
-
-   // Legacy API: addRequest(req, host, port, path)
-  if (typeof options === 'string') {
-    options = {
-      host: options,
-      port: arguments[2],
-      path: arguments[3]
-    };
-  }
-
-  if (self.sockets.length >= this.maxSockets) {
-    // We are over limit so we'll add it to the queue.
-    self.requests.push({host: options.host, port: options.port, request: req})
-    return
-  }
-
-  // If we are under maxSockets create a new one.
-  self.createConnection({host: options.host, port: options.port, request: req})
-}
-
-TunnelingAgent.prototype.createConnection = function createConnection(pending) {
-  var self = this
-
-  self.createSocket(pending, function(socket) {
-    socket.on('free', onFree)
-    socket.on('close', onCloseOrRemove)
-    socket.on('agentRemove', onCloseOrRemove)
-    pending.request.onSocket(socket)
-
-    function onFree() {
-      self.emit('free', socket, pending.host, pending.port)
-    }
-
-    function onCloseOrRemove(err) {
-      self.removeSocket(socket)
-      socket.removeListener('free', onFree)
-      socket.removeListener('close', onCloseOrRemove)
-      socket.removeListener('agentRemove', onCloseOrRemove)
-    }
-  })
-}
-
-TunnelingAgent.prototype.createSocket = function createSocket(options, cb) {
-  var self = this
-  var placeholder = {}
-  self.sockets.push(placeholder)
-
-  var connectOptions = mergeOptions({}, self.proxyOptions,
-    { method: 'CONNECT'
-    , path: options.host + ':' + options.port
-    , agent: false
-    }
-  )
-  if (connectOptions.proxyAuth) {
-    connectOptions.headers = connectOptions.headers || {}
-    connectOptions.headers['Proxy-Authorization'] = 'Basic ' +
-        Buffer.from(connectOptions.proxyAuth).toString('base64')
-  }
-
-  debug('making CONNECT request')
-  var connectReq = self.request(connectOptions)
-  connectReq.useChunkedEncodingByDefault = false // for v0.6
-  connectReq.once('response', onResponse) // for v0.6
-  connectReq.once('upgrade', onUpgrade)   // for v0.6
-  connectReq.once('connect', onConnect)   // for v0.7 or later
-  connectReq.once('error', onError)
-  connectReq.end()
-
-  function onResponse(res) {
-    // Very hacky. This is necessary to avoid http-parser leaks.
-    res.upgrade = true
-  }
-
-  function onUpgrade(res, socket, head) {
-    // Hacky.
-    process.nextTick(function() {
-      onConnect(res, socket, head)
-    })
-  }
-
-  function onConnect(res, socket, head) {
-    connectReq.removeAllListeners()
-    socket.removeAllListeners()
-
-    if (res.statusCode === 200) {
-      assert.equal(head.length, 0)
-      debug('tunneling connection has established')
-      self.sockets[self.sockets.indexOf(placeholder)] = socket
-      cb(socket)
-    } else {
-      debug('tunneling socket could not be established, statusCode=%d', res.statusCode)
-      var error = new Error('tunneling socket could not be established, ' + 'statusCode=' + res.statusCode)
-      error.code = 'ECONNRESET'
-      options.request.emit('error', error)
-      self.removeSocket(placeholder)
-    }
-  }
-
-  function onError(cause) {
-    connectReq.removeAllListeners()
-
-    debug('tunneling socket could not be established, cause=%s\n', cause.message, cause.stack)
-    var error = new Error('tunneling socket could not be established, ' + 'cause=' + cause.message)
-    error.code = 'ECONNRESET'
-    options.request.emit('error', error)
-    self.removeSocket(placeholder)
-  }
-}
-
-TunnelingAgent.prototype.removeSocket = function removeSocket(socket) {
-  var pos = this.sockets.indexOf(socket)
-  if (pos === -1) return
-
-  this.sockets.splice(pos, 1)
-
-  var pending = this.requests.shift()
-  if (pending) {
-    // If we have pending requests and a socket gets closed a new one
-    // needs to be created to take over in the pool for the one that closed.
-    this.createConnection(pending)
-  }
-}
-
-function createSecureSocket(options, cb) {
-  var self = this
-  TunnelingAgent.prototype.createSocket.call(self, options, function(socket) {
-    // 0 is dummy port for v0.6
-    var secureSocket = tls.connect(0, mergeOptions({}, self.options,
-      { servername: options.host
-      , socket: socket
-      }
-    ))
-    self.sockets[self.sockets.indexOf(socket)] = secureSocket
-    cb(secureSocket)
-  })
-}
-
-
-function mergeOptions(target) {
-  for (var i = 1, len = arguments.length; i < len; ++i) {
-    var overrides = arguments[i]
-    if (typeof overrides === 'object') {
-      var keys = Object.keys(overrides)
-      for (var j = 0, keyLen = keys.length; j < keyLen; ++j) {
-        var k = keys[j]
-        if (overrides[k] !== undefined) {
-          target[k] = overrides[k]
-        }
-      }
-    }
-  }
-  return target
-}
-
-
-var debug
-if (process.env.NODE_DEBUG && /\btunnel\b/.test(process.env.NODE_DEBUG)) {
-  debug = function() {
-    var args = Array.prototype.slice.call(arguments)
-    if (typeof args[0] === 'string') {
-      args[0] = 'TUNNEL: ' + args[0]
-    } else {
-      args.unshift('TUNNEL:')
-    }
-    console.error.apply(console, args)
-  }
-} else {
-  debug = function() {}
-}
-exports.debug = debug // for test
-
-
-/***/ }),
-
 /***/ 250:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -6360,6 +5203,72 @@ var toString = {}.toString;
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
+
+
+/***/ }),
+
+/***/ 277:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+const hasToStringTag = __webpack_require__(458);
+const isObject = __webpack_require__(163);
+
+const toString = Object.prototype.toString;
+const urlClass = "[object URL]";
+
+const hash = "hash";
+const host = "host";
+const hostname = "hostname";
+const href = "href";
+const password = "password";
+const pathname = "pathname";
+const port = "port";
+const protocol = "protocol";
+const search = "search";
+const username = "username";
+
+
+
+const isURL = (url, supportIncomplete/*=false*/) =>
+{
+	if (!isObject(url)) return false;
+
+	// Native implementation in older browsers
+	if (!hasToStringTag && toString.call(url) === urlClass) return true;
+
+	if (!(href     in url)) return false;
+	if (!(protocol in url)) return false;
+	if (!(username in url)) return false;
+	if (!(password in url)) return false;
+	if (!(hostname in url)) return false;
+	if (!(port     in url)) return false;
+	if (!(host     in url)) return false;
+	if (!(pathname in url)) return false;
+	if (!(search   in url)) return false;
+	if (!(hash     in url)) return false;
+
+	if (supportIncomplete !== true)
+	{
+		if (!isObject(url.searchParams)) return false;
+
+		// TODO :: write a separate isURLSearchParams ?
+	}
+
+	return true;
+}
+
+
+
+isURL.lenient = url =>
+{
+	return isURL(url, true);
+};
+
+
+
+module.exports = isURL;
 
 
 /***/ }),
@@ -8088,7 +6997,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
-const download = __webpack_require__(927);
+const download = __webpack_require__(818);
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -9181,22 +8090,6 @@ module.exports = typeof Promise === 'function' ? Promise : __webpack_require__(5
 
 /***/ }),
 
-/***/ 422:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-try {
-  var util = __webpack_require__(669);
-  /* istanbul ignore next */
-  if (typeof util.inherits !== 'function') throw '';
-  module.exports = util.inherits;
-} catch (e) {
-  /* istanbul ignore next */
-  module.exports = __webpack_require__(315);
-}
-
-
-/***/ }),
-
 /***/ 425:
 /***/ (function(module) {
 
@@ -9478,152 +8371,6 @@ module.exports = function (str, sub) {
  * @type boolean
  */
 module.exports = __webpack_require__(565) && typeof Symbol.toStringTag === 'symbol';
-
-
-/***/ }),
-
-/***/ 461:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-const path = __webpack_require__(622);
-const Conf = __webpack_require__(663);
-const defaults = __webpack_require__(180);
-
-// https://github.com/npm/npm/blob/latest/lib/config/core.js#L101-L200
-module.exports = opts => {
-	const conf = new Conf(Object.assign({}, defaults.defaults));
-
-	conf.add(Object.assign({}, opts), 'cli');
-	conf.addEnv();
-	conf.loadPrefix();
-
-	const projectConf = path.resolve(conf.localPrefix, '.npmrc');
-	const userConf = conf.get('userconfig');
-
-	if (!conf.get('global') && projectConf !== userConf) {
-		conf.addFile(projectConf, 'project');
-	} else {
-		conf.add({}, 'project');
-	}
-
-	conf.addFile(conf.get('userconfig'), 'user');
-
-	if (conf.get('prefix')) {
-		const etc = path.resolve(conf.get('prefix'), 'etc');
-		conf.root.globalconfig = path.resolve(etc, 'npmrc');
-		conf.root.globalignorefile = path.resolve(etc, 'npmignore');
-	}
-
-	conf.addFile(conf.get('globalconfig'), 'global');
-	conf.loadUser();
-
-	const caFile = conf.get('cafile');
-
-	if (caFile) {
-		conf.loadCAFile(caFile);
-	}
-
-	return conf;
-};
-
-module.exports.defaults = Object.assign({}, defaults.defaults);
-
-
-/***/ }),
-
-/***/ 467:
-/***/ (function(module) {
-
-
-module.exports = ProtoList
-
-function setProto(obj, proto) {
-  if (typeof Object.setPrototypeOf === "function")
-    return Object.setPrototypeOf(obj, proto)
-  else
-    obj.__proto__ = proto
-}
-
-function ProtoList () {
-  this.list = []
-  var root = null
-  Object.defineProperty(this, 'root', {
-    get: function () { return root },
-    set: function (r) {
-      root = r
-      if (this.list.length) {
-        setProto(this.list[this.list.length - 1], r)
-      }
-    },
-    enumerable: true,
-    configurable: true
-  })
-}
-
-ProtoList.prototype =
-  { get length () { return this.list.length }
-  , get keys () {
-      var k = []
-      for (var i in this.list[0]) k.push(i)
-      return k
-    }
-  , get snapshot () {
-      var o = {}
-      this.keys.forEach(function (k) { o[k] = this.get(k) }, this)
-      return o
-    }
-  , get store () {
-      return this.list[0]
-    }
-  , push : function (obj) {
-      if (typeof obj !== "object") obj = {valueOf:obj}
-      if (this.list.length >= 1) {
-        setProto(this.list[this.list.length - 1], obj)
-      }
-      setProto(obj, this.root)
-      return this.list.push(obj)
-    }
-  , pop : function () {
-      if (this.list.length >= 2) {
-        setProto(this.list[this.list.length - 2], this.root)
-      }
-      return this.list.pop()
-    }
-  , unshift : function (obj) {
-      setProto(obj, this.list[0] || this.root)
-      return this.list.unshift(obj)
-    }
-  , shift : function () {
-      if (this.list.length === 1) {
-        setProto(this.list[0], this.root)
-      }
-      return this.list.shift()
-    }
-  , get : function (key) {
-      return this.list[0][key]
-    }
-  , set : function (key, val, save) {
-      if (!this.length) this.push({})
-      if (save && this.list[0].hasOwnProperty(key)) this.push({})
-      return this.list[0][key] = val
-    }
-  , forEach : function (fn, thisp) {
-      for (var key in this.list[0]) fn.call(thisp, key, this.list[0][key])
-    }
-  , slice : function () {
-      return this.list.slice.apply(this.list, arguments)
-    }
-  , splice : function () {
-      // handle injections
-      var ret = this.list.splice.apply(this.list, arguments)
-      for (var i = 0, l = this.list.length; i < l; i++) {
-        setProto(this.list[i], this.list[i + 1] || this.root)
-      }
-      return ret
-    }
-  }
 
 
 /***/ }),
@@ -11332,27 +10079,6 @@ module.exports = x => (
 
 /***/ }),
 
-/***/ 521:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-const npmConf = __webpack_require__(461)();
-
-module.exports = () => {
-	return process.env.HTTPS_PROXY ||
-		process.env.https_proxy ||
-		process.env.HTTP_PROXY ||
-		process.env.http_proxy ||
-		npmConf.get('https-proxy') ||
-		npmConf.get('http-proxy') ||
-		npmConf.get('proxy') ||
-		null;
-};
-
-
-/***/ }),
-
 /***/ 525:
 /***/ (function(module) {
 
@@ -12613,7 +11339,415 @@ module.exports = {"_from":"seek-bzip@^1.0.5","_id":"seek-bzip@1.0.5","_inBundle"
 
 /***/ }),
 
-/***/ 582:
+/***/ 598:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+var fs = __webpack_require__(747)
+var polyfills = __webpack_require__(250)
+var legacy = __webpack_require__(93)
+var clone = __webpack_require__(608)
+
+var util = __webpack_require__(669)
+
+/* istanbul ignore next - node 0.x polyfill */
+var gracefulQueue
+var previousSymbol
+
+/* istanbul ignore else - node 0.x polyfill */
+if (typeof Symbol === 'function' && typeof Symbol.for === 'function') {
+  gracefulQueue = Symbol.for('graceful-fs.queue')
+  // This is used in testing by future versions
+  previousSymbol = Symbol.for('graceful-fs.previous')
+} else {
+  gracefulQueue = '___graceful-fs.queue'
+  previousSymbol = '___graceful-fs.previous'
+}
+
+function noop () {}
+
+var debug = noop
+if (util.debuglog)
+  debug = util.debuglog('gfs4')
+else if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || ''))
+  debug = function() {
+    var m = util.format.apply(util, arguments)
+    m = 'GFS4: ' + m.split(/\n/).join('\nGFS4: ')
+    console.error(m)
+  }
+
+// Once time initialization
+if (!global[gracefulQueue]) {
+  // This queue can be shared by multiple loaded instances
+  var queue = []
+  Object.defineProperty(global, gracefulQueue, {
+    get: function() {
+      return queue
+    }
+  })
+
+  // Patch fs.close/closeSync to shared queue version, because we need
+  // to retry() whenever a close happens *anywhere* in the program.
+  // This is essential when multiple graceful-fs instances are
+  // in play at the same time.
+  fs.close = (function (fs$close) {
+    function close (fd, cb) {
+      return fs$close.call(fs, fd, function (err) {
+        // This function uses the graceful-fs shared queue
+        if (!err) {
+          retry()
+        }
+
+        if (typeof cb === 'function')
+          cb.apply(this, arguments)
+      })
+    }
+
+    Object.defineProperty(close, previousSymbol, {
+      value: fs$close
+    })
+    return close
+  })(fs.close)
+
+  fs.closeSync = (function (fs$closeSync) {
+    function closeSync (fd) {
+      // This function uses the graceful-fs shared queue
+      fs$closeSync.apply(fs, arguments)
+      retry()
+    }
+
+    Object.defineProperty(closeSync, previousSymbol, {
+      value: fs$closeSync
+    })
+    return closeSync
+  })(fs.closeSync)
+
+  if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || '')) {
+    process.on('exit', function() {
+      debug(global[gracefulQueue])
+      __webpack_require__(357).equal(global[gracefulQueue].length, 0)
+    })
+  }
+}
+
+module.exports = patch(clone(fs))
+if (process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH && !fs.__patched) {
+    module.exports = patch(fs)
+    fs.__patched = true;
+}
+
+function patch (fs) {
+  // Everything that references the open() function needs to be in here
+  polyfills(fs)
+  fs.gracefulify = patch
+
+  fs.createReadStream = createReadStream
+  fs.createWriteStream = createWriteStream
+  var fs$readFile = fs.readFile
+  fs.readFile = readFile
+  function readFile (path, options, cb) {
+    if (typeof options === 'function')
+      cb = options, options = null
+
+    return go$readFile(path, options, cb)
+
+    function go$readFile (path, options, cb) {
+      return fs$readFile(path, options, function (err) {
+        if (err && (err.code === 'EMFILE' || err.code === 'ENFILE'))
+          enqueue([go$readFile, [path, options, cb]])
+        else {
+          if (typeof cb === 'function')
+            cb.apply(this, arguments)
+          retry()
+        }
+      })
+    }
+  }
+
+  var fs$writeFile = fs.writeFile
+  fs.writeFile = writeFile
+  function writeFile (path, data, options, cb) {
+    if (typeof options === 'function')
+      cb = options, options = null
+
+    return go$writeFile(path, data, options, cb)
+
+    function go$writeFile (path, data, options, cb) {
+      return fs$writeFile(path, data, options, function (err) {
+        if (err && (err.code === 'EMFILE' || err.code === 'ENFILE'))
+          enqueue([go$writeFile, [path, data, options, cb]])
+        else {
+          if (typeof cb === 'function')
+            cb.apply(this, arguments)
+          retry()
+        }
+      })
+    }
+  }
+
+  var fs$appendFile = fs.appendFile
+  if (fs$appendFile)
+    fs.appendFile = appendFile
+  function appendFile (path, data, options, cb) {
+    if (typeof options === 'function')
+      cb = options, options = null
+
+    return go$appendFile(path, data, options, cb)
+
+    function go$appendFile (path, data, options, cb) {
+      return fs$appendFile(path, data, options, function (err) {
+        if (err && (err.code === 'EMFILE' || err.code === 'ENFILE'))
+          enqueue([go$appendFile, [path, data, options, cb]])
+        else {
+          if (typeof cb === 'function')
+            cb.apply(this, arguments)
+          retry()
+        }
+      })
+    }
+  }
+
+  var fs$readdir = fs.readdir
+  fs.readdir = readdir
+  function readdir (path, options, cb) {
+    var args = [path]
+    if (typeof options !== 'function') {
+      args.push(options)
+    } else {
+      cb = options
+    }
+    args.push(go$readdir$cb)
+
+    return go$readdir(args)
+
+    function go$readdir$cb (err, files) {
+      if (files && files.sort)
+        files.sort()
+
+      if (err && (err.code === 'EMFILE' || err.code === 'ENFILE'))
+        enqueue([go$readdir, [args]])
+
+      else {
+        if (typeof cb === 'function')
+          cb.apply(this, arguments)
+        retry()
+      }
+    }
+  }
+
+  function go$readdir (args) {
+    return fs$readdir.apply(fs, args)
+  }
+
+  if (process.version.substr(0, 4) === 'v0.8') {
+    var legStreams = legacy(fs)
+    ReadStream = legStreams.ReadStream
+    WriteStream = legStreams.WriteStream
+  }
+
+  var fs$ReadStream = fs.ReadStream
+  if (fs$ReadStream) {
+    ReadStream.prototype = Object.create(fs$ReadStream.prototype)
+    ReadStream.prototype.open = ReadStream$open
+  }
+
+  var fs$WriteStream = fs.WriteStream
+  if (fs$WriteStream) {
+    WriteStream.prototype = Object.create(fs$WriteStream.prototype)
+    WriteStream.prototype.open = WriteStream$open
+  }
+
+  Object.defineProperty(fs, 'ReadStream', {
+    get: function () {
+      return ReadStream
+    },
+    set: function (val) {
+      ReadStream = val
+    },
+    enumerable: true,
+    configurable: true
+  })
+  Object.defineProperty(fs, 'WriteStream', {
+    get: function () {
+      return WriteStream
+    },
+    set: function (val) {
+      WriteStream = val
+    },
+    enumerable: true,
+    configurable: true
+  })
+
+  // legacy names
+  var FileReadStream = ReadStream
+  Object.defineProperty(fs, 'FileReadStream', {
+    get: function () {
+      return FileReadStream
+    },
+    set: function (val) {
+      FileReadStream = val
+    },
+    enumerable: true,
+    configurable: true
+  })
+  var FileWriteStream = WriteStream
+  Object.defineProperty(fs, 'FileWriteStream', {
+    get: function () {
+      return FileWriteStream
+    },
+    set: function (val) {
+      FileWriteStream = val
+    },
+    enumerable: true,
+    configurable: true
+  })
+
+  function ReadStream (path, options) {
+    if (this instanceof ReadStream)
+      return fs$ReadStream.apply(this, arguments), this
+    else
+      return ReadStream.apply(Object.create(ReadStream.prototype), arguments)
+  }
+
+  function ReadStream$open () {
+    var that = this
+    open(that.path, that.flags, that.mode, function (err, fd) {
+      if (err) {
+        if (that.autoClose)
+          that.destroy()
+
+        that.emit('error', err)
+      } else {
+        that.fd = fd
+        that.emit('open', fd)
+        that.read()
+      }
+    })
+  }
+
+  function WriteStream (path, options) {
+    if (this instanceof WriteStream)
+      return fs$WriteStream.apply(this, arguments), this
+    else
+      return WriteStream.apply(Object.create(WriteStream.prototype), arguments)
+  }
+
+  function WriteStream$open () {
+    var that = this
+    open(that.path, that.flags, that.mode, function (err, fd) {
+      if (err) {
+        that.destroy()
+        that.emit('error', err)
+      } else {
+        that.fd = fd
+        that.emit('open', fd)
+      }
+    })
+  }
+
+  function createReadStream (path, options) {
+    return new fs.ReadStream(path, options)
+  }
+
+  function createWriteStream (path, options) {
+    return new fs.WriteStream(path, options)
+  }
+
+  var fs$open = fs.open
+  fs.open = open
+  function open (path, flags, mode, cb) {
+    if (typeof mode === 'function')
+      cb = mode, mode = null
+
+    return go$open(path, flags, mode, cb)
+
+    function go$open (path, flags, mode, cb) {
+      return fs$open(path, flags, mode, function (err, fd) {
+        if (err && (err.code === 'EMFILE' || err.code === 'ENFILE'))
+          enqueue([go$open, [path, flags, mode, cb]])
+        else {
+          if (typeof cb === 'function')
+            cb.apply(this, arguments)
+          retry()
+        }
+      })
+    }
+  }
+
+  return fs
+}
+
+function enqueue (elem) {
+  debug('ENQUEUE', elem[0].name, elem[1])
+  global[gracefulQueue].push(elem)
+}
+
+function retry () {
+  var elem = global[gracefulQueue].shift()
+  if (elem) {
+    debug('RETRY', elem[0].name, elem[1])
+    elem[0].apply(null, elem[1])
+  }
+}
+
+
+/***/ }),
+
+/***/ 605:
+/***/ (function(module) {
+
+module.exports = require("http");
+
+/***/ }),
+
+/***/ 608:
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = clone
+
+function clone (obj) {
+  if (obj === null || typeof obj !== 'object')
+    return obj
+
+  if (obj instanceof Object)
+    var copy = { __proto__: obj.__proto__ }
+  else
+    var copy = Object.create(null)
+
+  Object.getOwnPropertyNames(obj).forEach(function (key) {
+    Object.defineProperty(copy, key, Object.getOwnPropertyDescriptor(obj, key))
+  })
+
+  return copy
+}
+
+
+/***/ }),
+
+/***/ 614:
+/***/ (function(module) {
+
+module.exports = require("events");
+
+/***/ }),
+
+/***/ 619:
+/***/ (function(module) {
+
+module.exports = require("constants");
+
+/***/ }),
+
+/***/ 622:
+/***/ (function(module) {
+
+module.exports = require("path");
+
+/***/ }),
+
+/***/ 631:
 /***/ (function(module) {
 
 "use strict";
@@ -13430,513 +12564,6 @@ module.exports = input => {
 
 /***/ }),
 
-/***/ 598:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-var fs = __webpack_require__(747)
-var polyfills = __webpack_require__(250)
-var legacy = __webpack_require__(93)
-var clone = __webpack_require__(608)
-
-var util = __webpack_require__(669)
-
-/* istanbul ignore next - node 0.x polyfill */
-var gracefulQueue
-var previousSymbol
-
-/* istanbul ignore else - node 0.x polyfill */
-if (typeof Symbol === 'function' && typeof Symbol.for === 'function') {
-  gracefulQueue = Symbol.for('graceful-fs.queue')
-  // This is used in testing by future versions
-  previousSymbol = Symbol.for('graceful-fs.previous')
-} else {
-  gracefulQueue = '___graceful-fs.queue'
-  previousSymbol = '___graceful-fs.previous'
-}
-
-function noop () {}
-
-var debug = noop
-if (util.debuglog)
-  debug = util.debuglog('gfs4')
-else if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || ''))
-  debug = function() {
-    var m = util.format.apply(util, arguments)
-    m = 'GFS4: ' + m.split(/\n/).join('\nGFS4: ')
-    console.error(m)
-  }
-
-// Once time initialization
-if (!global[gracefulQueue]) {
-  // This queue can be shared by multiple loaded instances
-  var queue = []
-  Object.defineProperty(global, gracefulQueue, {
-    get: function() {
-      return queue
-    }
-  })
-
-  // Patch fs.close/closeSync to shared queue version, because we need
-  // to retry() whenever a close happens *anywhere* in the program.
-  // This is essential when multiple graceful-fs instances are
-  // in play at the same time.
-  fs.close = (function (fs$close) {
-    function close (fd, cb) {
-      return fs$close.call(fs, fd, function (err) {
-        // This function uses the graceful-fs shared queue
-        if (!err) {
-          retry()
-        }
-
-        if (typeof cb === 'function')
-          cb.apply(this, arguments)
-      })
-    }
-
-    Object.defineProperty(close, previousSymbol, {
-      value: fs$close
-    })
-    return close
-  })(fs.close)
-
-  fs.closeSync = (function (fs$closeSync) {
-    function closeSync (fd) {
-      // This function uses the graceful-fs shared queue
-      fs$closeSync.apply(fs, arguments)
-      retry()
-    }
-
-    Object.defineProperty(closeSync, previousSymbol, {
-      value: fs$closeSync
-    })
-    return closeSync
-  })(fs.closeSync)
-
-  if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || '')) {
-    process.on('exit', function() {
-      debug(global[gracefulQueue])
-      __webpack_require__(357).equal(global[gracefulQueue].length, 0)
-    })
-  }
-}
-
-module.exports = patch(clone(fs))
-if (process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH && !fs.__patched) {
-    module.exports = patch(fs)
-    fs.__patched = true;
-}
-
-function patch (fs) {
-  // Everything that references the open() function needs to be in here
-  polyfills(fs)
-  fs.gracefulify = patch
-
-  fs.createReadStream = createReadStream
-  fs.createWriteStream = createWriteStream
-  var fs$readFile = fs.readFile
-  fs.readFile = readFile
-  function readFile (path, options, cb) {
-    if (typeof options === 'function')
-      cb = options, options = null
-
-    return go$readFile(path, options, cb)
-
-    function go$readFile (path, options, cb) {
-      return fs$readFile(path, options, function (err) {
-        if (err && (err.code === 'EMFILE' || err.code === 'ENFILE'))
-          enqueue([go$readFile, [path, options, cb]])
-        else {
-          if (typeof cb === 'function')
-            cb.apply(this, arguments)
-          retry()
-        }
-      })
-    }
-  }
-
-  var fs$writeFile = fs.writeFile
-  fs.writeFile = writeFile
-  function writeFile (path, data, options, cb) {
-    if (typeof options === 'function')
-      cb = options, options = null
-
-    return go$writeFile(path, data, options, cb)
-
-    function go$writeFile (path, data, options, cb) {
-      return fs$writeFile(path, data, options, function (err) {
-        if (err && (err.code === 'EMFILE' || err.code === 'ENFILE'))
-          enqueue([go$writeFile, [path, data, options, cb]])
-        else {
-          if (typeof cb === 'function')
-            cb.apply(this, arguments)
-          retry()
-        }
-      })
-    }
-  }
-
-  var fs$appendFile = fs.appendFile
-  if (fs$appendFile)
-    fs.appendFile = appendFile
-  function appendFile (path, data, options, cb) {
-    if (typeof options === 'function')
-      cb = options, options = null
-
-    return go$appendFile(path, data, options, cb)
-
-    function go$appendFile (path, data, options, cb) {
-      return fs$appendFile(path, data, options, function (err) {
-        if (err && (err.code === 'EMFILE' || err.code === 'ENFILE'))
-          enqueue([go$appendFile, [path, data, options, cb]])
-        else {
-          if (typeof cb === 'function')
-            cb.apply(this, arguments)
-          retry()
-        }
-      })
-    }
-  }
-
-  var fs$readdir = fs.readdir
-  fs.readdir = readdir
-  function readdir (path, options, cb) {
-    var args = [path]
-    if (typeof options !== 'function') {
-      args.push(options)
-    } else {
-      cb = options
-    }
-    args.push(go$readdir$cb)
-
-    return go$readdir(args)
-
-    function go$readdir$cb (err, files) {
-      if (files && files.sort)
-        files.sort()
-
-      if (err && (err.code === 'EMFILE' || err.code === 'ENFILE'))
-        enqueue([go$readdir, [args]])
-
-      else {
-        if (typeof cb === 'function')
-          cb.apply(this, arguments)
-        retry()
-      }
-    }
-  }
-
-  function go$readdir (args) {
-    return fs$readdir.apply(fs, args)
-  }
-
-  if (process.version.substr(0, 4) === 'v0.8') {
-    var legStreams = legacy(fs)
-    ReadStream = legStreams.ReadStream
-    WriteStream = legStreams.WriteStream
-  }
-
-  var fs$ReadStream = fs.ReadStream
-  if (fs$ReadStream) {
-    ReadStream.prototype = Object.create(fs$ReadStream.prototype)
-    ReadStream.prototype.open = ReadStream$open
-  }
-
-  var fs$WriteStream = fs.WriteStream
-  if (fs$WriteStream) {
-    WriteStream.prototype = Object.create(fs$WriteStream.prototype)
-    WriteStream.prototype.open = WriteStream$open
-  }
-
-  Object.defineProperty(fs, 'ReadStream', {
-    get: function () {
-      return ReadStream
-    },
-    set: function (val) {
-      ReadStream = val
-    },
-    enumerable: true,
-    configurable: true
-  })
-  Object.defineProperty(fs, 'WriteStream', {
-    get: function () {
-      return WriteStream
-    },
-    set: function (val) {
-      WriteStream = val
-    },
-    enumerable: true,
-    configurable: true
-  })
-
-  // legacy names
-  var FileReadStream = ReadStream
-  Object.defineProperty(fs, 'FileReadStream', {
-    get: function () {
-      return FileReadStream
-    },
-    set: function (val) {
-      FileReadStream = val
-    },
-    enumerable: true,
-    configurable: true
-  })
-  var FileWriteStream = WriteStream
-  Object.defineProperty(fs, 'FileWriteStream', {
-    get: function () {
-      return FileWriteStream
-    },
-    set: function (val) {
-      FileWriteStream = val
-    },
-    enumerable: true,
-    configurable: true
-  })
-
-  function ReadStream (path, options) {
-    if (this instanceof ReadStream)
-      return fs$ReadStream.apply(this, arguments), this
-    else
-      return ReadStream.apply(Object.create(ReadStream.prototype), arguments)
-  }
-
-  function ReadStream$open () {
-    var that = this
-    open(that.path, that.flags, that.mode, function (err, fd) {
-      if (err) {
-        if (that.autoClose)
-          that.destroy()
-
-        that.emit('error', err)
-      } else {
-        that.fd = fd
-        that.emit('open', fd)
-        that.read()
-      }
-    })
-  }
-
-  function WriteStream (path, options) {
-    if (this instanceof WriteStream)
-      return fs$WriteStream.apply(this, arguments), this
-    else
-      return WriteStream.apply(Object.create(WriteStream.prototype), arguments)
-  }
-
-  function WriteStream$open () {
-    var that = this
-    open(that.path, that.flags, that.mode, function (err, fd) {
-      if (err) {
-        that.destroy()
-        that.emit('error', err)
-      } else {
-        that.fd = fd
-        that.emit('open', fd)
-      }
-    })
-  }
-
-  function createReadStream (path, options) {
-    return new fs.ReadStream(path, options)
-  }
-
-  function createWriteStream (path, options) {
-    return new fs.WriteStream(path, options)
-  }
-
-  var fs$open = fs.open
-  fs.open = open
-  function open (path, flags, mode, cb) {
-    if (typeof mode === 'function')
-      cb = mode, mode = null
-
-    return go$open(path, flags, mode, cb)
-
-    function go$open (path, flags, mode, cb) {
-      return fs$open(path, flags, mode, function (err, fd) {
-        if (err && (err.code === 'EMFILE' || err.code === 'ENFILE'))
-          enqueue([go$open, [path, flags, mode, cb]])
-        else {
-          if (typeof cb === 'function')
-            cb.apply(this, arguments)
-          retry()
-        }
-      })
-    }
-  }
-
-  return fs
-}
-
-function enqueue (elem) {
-  debug('ENQUEUE', elem[0].name, elem[1])
-  global[gracefulQueue].push(elem)
-}
-
-function retry () {
-  var elem = global[gracefulQueue].shift()
-  if (elem) {
-    debug('RETRY', elem[0].name, elem[1])
-    elem[0].apply(null, elem[1])
-  }
-}
-
-
-/***/ }),
-
-/***/ 605:
-/***/ (function(module) {
-
-module.exports = require("http");
-
-/***/ }),
-
-/***/ 608:
-/***/ (function(module) {
-
-"use strict";
-
-
-module.exports = clone
-
-function clone (obj) {
-  if (obj === null || typeof obj !== 'object')
-    return obj
-
-  if (obj instanceof Object)
-    var copy = { __proto__: obj.__proto__ }
-  else
-    var copy = Object.create(null)
-
-  Object.getOwnPropertyNames(obj).forEach(function (key) {
-    Object.defineProperty(copy, key, Object.getOwnPropertyDescriptor(obj, key))
-  })
-
-  return copy
-}
-
-
-/***/ }),
-
-/***/ 610:
-/***/ (function(module) {
-
-"use strict";
-
-
-const processFn = (fn, opts) => function () {
-	const P = opts.promiseModule;
-	const args = new Array(arguments.length);
-
-	for (let i = 0; i < arguments.length; i++) {
-		args[i] = arguments[i];
-	}
-
-	return new P((resolve, reject) => {
-		if (opts.errorFirst) {
-			args.push(function (err, result) {
-				if (opts.multiArgs) {
-					const results = new Array(arguments.length - 1);
-
-					for (let i = 1; i < arguments.length; i++) {
-						results[i - 1] = arguments[i];
-					}
-
-					if (err) {
-						results.unshift(err);
-						reject(results);
-					} else {
-						resolve(results);
-					}
-				} else if (err) {
-					reject(err);
-				} else {
-					resolve(result);
-				}
-			});
-		} else {
-			args.push(function (result) {
-				if (opts.multiArgs) {
-					const results = new Array(arguments.length - 1);
-
-					for (let i = 0; i < arguments.length; i++) {
-						results[i] = arguments[i];
-					}
-
-					resolve(results);
-				} else {
-					resolve(result);
-				}
-			});
-		}
-
-		fn.apply(this, args);
-	});
-};
-
-module.exports = (obj, opts) => {
-	opts = Object.assign({
-		exclude: [/.+(Sync|Stream)$/],
-		errorFirst: true,
-		promiseModule: Promise
-	}, opts);
-
-	const filter = key => {
-		const match = pattern => typeof pattern === 'string' ? key === pattern : pattern.test(key);
-		return opts.include ? opts.include.some(match) : !opts.exclude.some(match);
-	};
-
-	let ret;
-	if (typeof obj === 'function') {
-		ret = function () {
-			if (opts.excludeMain) {
-				return obj.apply(this, arguments);
-			}
-
-			return processFn(obj, opts).apply(this, arguments);
-		};
-	} else {
-		ret = Object.create(Object.getPrototypeOf(obj));
-	}
-
-	for (const key in obj) { // eslint-disable-line guard-for-in
-		const x = obj[key];
-		ret[key] = typeof x === 'function' && filter(key) ? processFn(x, opts) : x;
-	}
-
-	return ret;
-};
-
-
-/***/ }),
-
-/***/ 614:
-/***/ (function(module) {
-
-module.exports = require("events");
-
-/***/ }),
-
-/***/ 619:
-/***/ (function(module) {
-
-module.exports = require("constants");
-
-/***/ }),
-
-/***/ 622:
-/***/ (function(module) {
-
-module.exports = require("path");
-
-/***/ }),
-
-/***/ 631:
-/***/ (function(module) {
-
-module.exports = require("net");
-
-/***/ }),
-
 /***/ 634:
 /***/ (function(module) {
 
@@ -13998,188 +12625,6 @@ module.exports = (promise, ms, fallback) => new Promise((resolve, reject) => {
 });
 
 module.exports.TimeoutError = TimeoutError;
-
-
-/***/ }),
-
-/***/ 663:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-const fs = __webpack_require__(747);
-const path = __webpack_require__(622);
-const ConfigChain = __webpack_require__(105).ConfigChain;
-const util = __webpack_require__(212);
-
-class Conf extends ConfigChain {
-	// https://github.com/npm/npm/blob/latest/lib/config/core.js#L208-L222
-	constructor(base) {
-		super(base);
-		this.root = base;
-	}
-
-	// https://github.com/npm/npm/blob/latest/lib/config/core.js#L332-L342
-	add(data, marker) {
-		try {
-			for (const x of Object.keys(data)) {
-				data[x] = util.parseField(data[x], x);
-			}
-		} catch (err) {
-			throw err;
-		}
-
-		return super.add(data, marker);
-	}
-
-	// https://github.com/npm/npm/blob/latest/lib/config/core.js#L312-L325
-	addFile(file, name) {
-		name = name || file;
-
-		const marker = {__source__: name};
-
-		this.sources[name] = {path: file, type: 'ini'};
-		this.push(marker);
-		this._await();
-
-		try {
-			const contents = fs.readFileSync(file, 'utf8');
-			this.addString(contents, file, 'ini', marker);
-		} catch (err) {
-			this.add({}, marker);
-		}
-
-		return this;
-	}
-
-	// https://github.com/npm/npm/blob/latest/lib/config/core.js#L344-L360
-	addEnv(env) {
-		env = env || process.env;
-
-		const conf = {};
-
-		Object.keys(env)
-			.filter(x => /^npm_config_/i.test(x))
-			.forEach(x => {
-				if (!env[x]) {
-					return;
-				}
-
-				const p = x.toLowerCase()
-					.replace(/^npm_config_/, '')
-					.replace(/(?!^)_/g, '-');
-
-				conf[p] = env[x];
-			});
-
-		return super.addEnv('', conf, 'env');
-	}
-
-	// https://github.com/npm/npm/blob/latest/lib/config/load-prefix.js
-	loadPrefix() {
-		const cli = this.list[0];
-
-		Object.defineProperty(this, 'prefix', {
-			enumerable: true,
-			set: prefix => {
-				const g = this.get('global');
-				this[g ? 'globalPrefix' : 'localPrefix'] = prefix;
-			},
-			get: () => {
-				const g = this.get('global');
-				return g ? this.globalPrefix : this.localPrefix;
-			}
-		});
-
-		Object.defineProperty(this, 'globalPrefix', {
-			enumerable: true,
-			set: prefix => {
-				this.set('prefix', prefix);
-			},
-			get: () => {
-				return path.resolve(this.get('prefix'));
-			}
-		});
-
-		let p;
-
-		Object.defineProperty(this, 'localPrefix', {
-			enumerable: true,
-			set: prefix => {
-				p = prefix;
-			},
-			get: () => {
-				return p;
-			}
-		});
-
-		if (Object.prototype.hasOwnProperty.call(cli, 'prefix')) {
-			p = path.resolve(cli.prefix);
-		} else {
-			try {
-				const prefix = util.findPrefix(process.cwd());
-				p = prefix;
-			} catch (err) {
-				throw err;
-			}
-		}
-
-		return p;
-	}
-
-	// https://github.com/npm/npm/blob/latest/lib/config/load-cafile.js
-	loadCAFile(file) {
-		if (!file) {
-			return;
-		}
-
-		try {
-			const contents = fs.readFileSync(file, 'utf8');
-			const delim = '-----END CERTIFICATE-----';
-			const output = contents
-				.split(delim)
-				.filter(x => Boolean(x.trim()))
-				.map(x => x.trimLeft() + delim);
-
-			this.set('ca', output);
-		} catch (err) {
-			if (err.code === 'ENOENT') {
-				return;
-			}
-
-			throw err;
-		}
-	}
-
-	// https://github.com/npm/npm/blob/latest/lib/config/set-user.js
-	loadUser() {
-		const defConf = this.root;
-
-		if (this.get('global')) {
-			return;
-		}
-
-		if (process.env.SUDO_UID) {
-			defConf.user = Number(process.env.SUDO_UID);
-			return;
-		}
-
-		const prefix = path.resolve(this.get('prefix'));
-
-		try {
-			const stats = fs.statSync(prefix);
-			defConf.user = stats.uid;
-		} catch (err) {
-			if (err.code === 'ENOENT') {
-				return;
-			}
-
-			throw err;
-		}
-	}
-}
-
-module.exports = Conf;
 
 
 /***/ }),
@@ -14497,65 +12942,15 @@ function simpleEnd(buf) {
 /***/ 689:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
-"use strict";
-
-const hasToStringTag = __webpack_require__(458);
-const isObject = __webpack_require__(145);
-
-const toString = Object.prototype.toString;
-const urlClass = "[object URL]";
-
-const hash = "hash";
-const host = "host";
-const hostname = "hostname";
-const href = "href";
-const password = "password";
-const pathname = "pathname";
-const port = "port";
-const protocol = "protocol";
-const search = "search";
-const username = "username";
-
-
-
-const isURL = (url, supportIncomplete/*=false*/) =>
-{
-	if (!isObject(url)) return false;
-
-	// Native implementation in older browsers
-	if (!hasToStringTag && toString.call(url) === urlClass) return true;
-
-	if (!(href     in url)) return false;
-	if (!(protocol in url)) return false;
-	if (!(username in url)) return false;
-	if (!(password in url)) return false;
-	if (!(hostname in url)) return false;
-	if (!(port     in url)) return false;
-	if (!(host     in url)) return false;
-	if (!(pathname in url)) return false;
-	if (!(search   in url)) return false;
-	if (!(hash     in url)) return false;
-
-	if (supportIncomplete !== true)
-	{
-		if (!isObject(url.searchParams)) return false;
-
-		// TODO :: write a separate isURLSearchParams ?
-	}
-
-	return true;
+try {
+  var util = __webpack_require__(669);
+  /* istanbul ignore next */
+  if (typeof util.inherits !== 'function') throw '';
+  module.exports = util.inherits;
+} catch (e) {
+  /* istanbul ignore next */
+  module.exports = __webpack_require__(315);
 }
-
-
-
-isURL.lenient = url =>
-{
-	return isURL(url, true);
-};
-
-
-
-module.exports = isURL;
 
 
 /***/ }),
@@ -16340,61 +14735,86 @@ pify.all = pify;
 
 /***/ }),
 
-/***/ 813:
+/***/ 818:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
 "use strict";
 
-const bufferStream = __webpack_require__(966);
-
-function getStream(inputStream, opts) {
-	if (!inputStream) {
-		return Promise.reject(new Error('Expected a stream'));
-	}
-
-	opts = Object.assign({maxBuffer: Infinity}, opts);
-
-	const maxBuffer = opts.maxBuffer;
-	let stream;
-	let clean;
-
-	const p = new Promise((resolve, reject) => {
-		const error = err => {
-			if (err) { // null check
-				err.bufferedData = stream.getBufferedValue();
-			}
-
-			reject(err);
-		};
-
-		stream = bufferStream(opts);
-		inputStream.once('error', error);
-		inputStream.pipe(stream);
-
-		stream.on('data', () => {
-			if (stream.getBufferedLength() > maxBuffer) {
-				reject(new Error('maxBuffer exceeded'));
-			}
-		});
-		stream.once('error', error);
-		stream.on('end', resolve);
-
-		clean = () => {
-			// some streams doesn't implement the `stream.Readable` interface correctly
-			if (inputStream.unpipe) {
-				inputStream.unpipe(stream);
-			}
-		};
-	});
-
-	p.then(clean, clean);
-
-	return p.then(() => stream.getBufferedValue());
-}
-
-module.exports = getStream;
-module.exports.buffer = (stream, opts) => getStream(stream, Object.assign({}, opts, {encoding: 'buffer'}));
-module.exports.array = (stream, opts) => getStream(stream, Object.assign({}, opts, {array: true}));
+const fs = __webpack_require__(747);
+const path = __webpack_require__(622);
+const { URL } = __webpack_require__(835);
+const contentDisposition = __webpack_require__(492);
+const archiveType = __webpack_require__(446);
+const decompress = __webpack_require__(820);
+const filenamify = __webpack_require__(83);
+const getStream = __webpack_require__(145);
+const got = __webpack_require__(984);
+const makeDir = __webpack_require__(938);
+const pify = __webpack_require__(802);
+const pEvent = __webpack_require__(148);
+const fileType = __webpack_require__(631);
+const extName = __webpack_require__(547);
+const fsP = pify(fs);
+const filenameFromPath = res => path.basename(new URL(res.requestUrl).pathname);
+const getExtFromMime = res => {
+    const header = res.headers['content-type'];
+    if (!header) {
+        return null;
+    }
+    const exts = extName.mime(header);
+    if (exts.length !== 1) {
+        return null;
+    }
+    return exts[0].ext;
+};
+const getFilename = (res, data) => {
+    const header = res.headers['content-disposition'];
+    if (header) {
+        const parsed = contentDisposition.parse(header);
+        if (parsed.parameters && parsed.parameters.filename) {
+            return parsed.parameters.filename;
+        }
+    }
+    let filename = filenameFromPath(res);
+    if (!path.extname(filename)) {
+        const ext = (fileType(data) || {}).ext || getExtFromMime(res);
+        if (ext) {
+            filename = `${filename}.${ext}`;
+        }
+    }
+    return filename;
+};
+module.exports = (uri, output, opts) => {
+    if (typeof output === 'object') {
+        opts = output;
+        output = null;
+    }
+    opts = Object.assign({
+        encoding: null,
+        rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false'
+    }, opts);
+    const stream = got.stream(uri, opts);
+    const promise = pEvent(stream, 'response').then(res => {
+        const encoding = opts.encoding === null ? 'buffer' : opts.encoding;
+        return Promise.all([getStream(stream, { encoding }), res]);
+    }).then(result => {
+        const [data, res] = result;
+        if (!output) {
+            return opts.extract && archiveType(data) ? decompress(data, opts) : data;
+        }
+        const filename = opts.filename || filenamify(getFilename(res, data));
+        const outputFilepath = path.join(output, filename);
+        if (opts.extract && archiveType(data)) {
+            return decompress(data, path.dirname(outputFilepath), opts);
+        }
+        return makeDir(path.dirname(outputFilepath))
+            .then(() => fsP.writeFile(outputFilepath, data))
+            .then(() => data);
+    });
+    stream.then = promise.then.bind(promise);
+    stream.catch = promise.catch.bind(promise);
+    return stream;
+};
 
 
 /***/ }),
@@ -17213,7 +15633,7 @@ module.exports = Duplex;
 
 /*<replacement>*/
 var util = Object.create(__webpack_require__(286));
-util.inherits = __webpack_require__(422);
+util.inherits = __webpack_require__(689);
 /*</replacement>*/
 
 var Readable = __webpack_require__(226);
@@ -17500,7 +15920,7 @@ module.exports = response => {
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
 var Readable = __webpack_require__(574).Readable
-var inherits = __webpack_require__(422)
+var inherits = __webpack_require__(689)
 
 module.exports = from2
 
@@ -17657,7 +16077,7 @@ var Transform = __webpack_require__(925);
 
 /*<replacement>*/
 var util = Object.create(__webpack_require__(286));
-util.inherits = __webpack_require__(422);
+util.inherits = __webpack_require__(689);
 /*</replacement>*/
 
 util.inherits(PassThrough, Transform);
@@ -18356,51 +16776,6 @@ module.exports = __webpack_require__(669).deprecate;
 
 /***/ }),
 
-/***/ 918:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-const url = __webpack_require__(835);
-const getProxy = __webpack_require__(521);
-const isurl = __webpack_require__(689);
-const tunnelAgent = __webpack_require__(243);
-const urlToOptions = __webpack_require__(705);
-
-module.exports = (proxy, opts) => {
-	proxy = proxy || getProxy();
-	opts = Object.assign({}, opts);
-
-	if (typeof proxy === 'object') {
-		opts = proxy;
-		proxy = getProxy();
-	}
-
-	if (!proxy) {
-		return null;
-	}
-
-	proxy = isurl.lenient(proxy) ? urlToOptions(proxy) : url.parse(proxy);
-
-	const uriProtocol = opts.protocol === 'https' ? 'https' : 'http';
-	const proxyProtocol = proxy.protocol === 'https:' ? 'Https' : 'Http';
-	const port = proxy.port || (proxyProtocol === 'Https' ? 443 : 80);
-	const method = `${uriProtocol}Over${proxyProtocol}`;
-
-	delete opts.protocol;
-
-	return tunnelAgent[method](Object.assign({
-		proxy: {
-			port,
-			host: proxy.hostname,
-			proxyAuth: proxy.auth
-		}
-	}, opts));
-};
-
-
-/***/ }),
-
 /***/ 925:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -18476,7 +16851,7 @@ var Duplex = __webpack_require__(831);
 
 /*<replacement>*/
 var util = Object.create(__webpack_require__(286));
-util.inherits = __webpack_require__(422);
+util.inherits = __webpack_require__(689);
 /*</replacement>*/
 
 util.inherits(Transform, Duplex);
@@ -18619,133 +16994,6 @@ function done(stream, er, data) {
 
   return stream.push(null);
 }
-
-/***/ }),
-
-/***/ 927:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-const fs = __webpack_require__(747);
-const path = __webpack_require__(622);
-const url = __webpack_require__(835);
-const caw = __webpack_require__(918);
-const contentDisposition = __webpack_require__(492);
-const archiveType = __webpack_require__(446);
-const decompress = __webpack_require__(820);
-const filenamify = __webpack_require__(83);
-const getStream = __webpack_require__(813);
-const got = __webpack_require__(984);
-const makeDir = __webpack_require__(938);
-const pify = __webpack_require__(610);
-const pEvent = __webpack_require__(148);
-const fileType = __webpack_require__(582);
-const extName = __webpack_require__(547);
-
-const fsP = pify(fs);
-const filenameFromPath = res => path.basename(url.parse(res.requestUrl).pathname);
-
-const getExtFromMime = res => {
-	const header = res.headers['content-type'];
-
-	if (!header) {
-		return null;
-	}
-
-	const exts = extName.mime(header);
-
-	if (exts.length !== 1) {
-		return null;
-	}
-
-	return exts[0].ext;
-};
-
-const getFilename = (res, data) => {
-	const header = res.headers['content-disposition'];
-
-	if (header) {
-		const parsed = contentDisposition.parse(header);
-
-		if (parsed.parameters && parsed.parameters.filename) {
-			return parsed.parameters.filename;
-		}
-	}
-
-	let filename = filenameFromPath(res);
-
-	if (!path.extname(filename)) {
-		const ext = (fileType(data) || {}).ext || getExtFromMime(res);
-
-		if (ext) {
-			filename = `${filename}.${ext}`;
-		}
-	}
-
-	return filename;
-};
-
-const getProtocolFromUri = uri => {
-	let {protocol} = url.parse(uri);
-
-	if (protocol) {
-		protocol = protocol.slice(0, -1);
-	}
-
-	return protocol;
-};
-
-module.exports = (uri, output, opts) => {
-	if (typeof output === 'object') {
-		opts = output;
-		output = null;
-	}
-
-	const protocol = getProtocolFromUri(uri);
-
-	opts = Object.assign({
-		encoding: null,
-		rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false'
-	}, opts);
-
-	const agent = caw(opts.proxy, {protocol});
-	const stream = got.stream(uri, Object.assign({agent}, opts))
-		.on('redirect', (response, nextOptions) => {
-			const redirectProtocol = getProtocolFromUri(nextOptions.href);
-			if (redirectProtocol && redirectProtocol !== protocol) {
-				nextOptions.agent = caw(opts.proxy, {protocol: redirectProtocol});
-			}
-		});
-
-	const promise = pEvent(stream, 'response').then(res => {
-		const encoding = opts.encoding === null ? 'buffer' : opts.encoding;
-		return Promise.all([getStream(stream, {encoding}), res]);
-	}).then(result => {
-		const [data, res] = result;
-
-		if (!output) {
-			return opts.extract && archiveType(data) ? decompress(data, opts) : data;
-		}
-
-		const filename = opts.filename || filenamify(getFilename(res, data));
-		const outputFilepath = path.join(output, filename);
-
-		if (opts.extract && archiveType(data)) {
-			return decompress(data, path.dirname(outputFilepath), opts);
-		}
-
-		return makeDir(path.dirname(outputFilepath))
-			.then(() => fsP.writeFile(outputFilepath, data))
-			.then(() => data);
-	});
-
-	stream.then = promise.then.bind(promise);
-	stream.catch = promise.catch.bind(promise);
-
-	return stream;
-};
-
 
 /***/ }),
 
@@ -18989,7 +17237,7 @@ module.exports = function () {
 const EventEmitter = __webpack_require__(614);
 const urlLib = __webpack_require__(835);
 const normalizeUrl = __webpack_require__(53);
-const getStream = __webpack_require__(813);
+const getStream = __webpack_require__(145);
 const CachePolicy = __webpack_require__(27);
 const Response = __webpack_require__(141);
 const lowercaseKeys = __webpack_require__(97);
@@ -19569,7 +17817,7 @@ const CacheableRequest = __webpack_require__(946);
 const duplexer3 = __webpack_require__(718);
 const intoStream = __webpack_require__(351);
 const is = __webpack_require__(564);
-const getStream = __webpack_require__(813);
+const getStream = __webpack_require__(145);
 const timedOut = __webpack_require__(108);
 const urlParseLax = __webpack_require__(173);
 const urlToOptions = __webpack_require__(705);
@@ -19577,7 +17825,7 @@ const lowercaseKeys = __webpack_require__(474);
 const decompressResponse = __webpack_require__(861);
 const mimicResponse = __webpack_require__(89);
 const isRetryAllowed = __webpack_require__(308);
-const isURL = __webpack_require__(689);
+const isURL = __webpack_require__(277);
 const PCancelable = __webpack_require__(557);
 const pTimeout = __webpack_require__(654);
 const pify = __webpack_require__(525);
