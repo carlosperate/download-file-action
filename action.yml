@@ -1,5 +1,5 @@
 name: 'Download File To Workspace'
-description: 'Download a file from the internet'
+description: 'Download a file from the internet into the workspace.'
 author: 'Carlos Pereira Atencio'
 branding:
   icon: 'download-cloud'

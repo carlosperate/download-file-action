@@ -1,7 +1,7 @@
 {
   "name": "download-file-action",
-  "version": "1.0.0",
-  "description": "GitHub Action to download a file to the environment",
+  "version": "1.0.1",
+  "description": "GitHub Action to download a file from the internet into the workspace.",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

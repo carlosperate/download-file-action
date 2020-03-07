@@ -2,7 +2,7 @@
 
 ![Workflow To Test Action](https://github.com/carlosperate/download-file-action/workflows/Workflow%20To%20Test%20Action/badge.svg)
 
-Cross platform GH Action to download a file from the internet
+GitHub Action to download a file from the internet into the workspace.
 
 
 ## Inputs
