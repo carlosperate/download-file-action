@@ -35,7 +35,7 @@ jobs:
           file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
           location: 'new_folder'
       - run: echo "The file was downloaded to ${{ steps.download-poetry-location.outputs.file-path }}"
-      - run: ls && ls new_folder && rm ${{ steps.download-poetry-location.outputs.file-path }} && ls && ls new_folder
+      - run: ls new_folder && rm ${{ steps.download-poetry-location.outputs.file-path }} && ls new_folder
       - name: Test to download a file to a different filename and path
         uses: ./
         id: download-poetry-both
@@ -44,4 +44,4 @@ jobs:
           location: 'new_folder'
           file-name: 'new_name.py'
       - run: echo "The file was downloaded to ${{ steps.download-poetry-both.outputs.file-path }}"
-      - run: ls && ls new_folder && rm ${{ steps.download-poetry-both.outputs.file-path }} && ls && ls new_folder
+      - run: ls new_folder && rm ${{ steps.download-poetry-both.outputs.file-path }} && ls new_folder

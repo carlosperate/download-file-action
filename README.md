@@ -1,6 +1,6 @@
 # download-file-action
 
-![.github/workflows/action-test.yml](https://github.com/carlosperate/download-file-action/workflows/.github/workflows/action-test.yml/badge.svg)
+![Workflow To Test Action](https://github.com/carlosperate/download-file-action/workflows/Workflow%20To%20Test%20Action/badge.svg)
 
 Cross platform GH Action to download a file from the internet
 
@@ -35,4 +35,6 @@ The full path to the downloaded file.
     id: download-poetry
     with:
         file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
+- name: Print the file path
+    run: echo "The file was downloaded to ${{ steps.download-poetry.outputs.file-path }}"
 ```
