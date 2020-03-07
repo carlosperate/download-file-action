@@ -1,6 +1,6 @@
 {
   "name": "download-file-action",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "GitHub Action to download a file to the environment",
   "main": "dist/index.js",
   "scripts": {

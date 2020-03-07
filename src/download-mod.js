@@ -93,7 +93,7 @@ module.exports = (uri, output_, opts_) => {
   const opts = Object.assign({
     encoding: null,
     rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false',
-  }, ...opts_);
+  }, opts_);
 
   const stream = got.stream(uri, opts);
 
