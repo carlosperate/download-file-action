@@ -19,6 +19,8 @@ jobs:
         with:
           file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
       - run: echo "The file was downloaded to ${{ steps.download-poetry-simple.outputs.file-path }}"
+      - name: Test file exists
+        run: python -c "import os, sys; sys.exit(not os.path.isfile('get-poetry.py'))"
       - run: ls && rm ${{ steps.download-poetry-simple.outputs.file-path }} && ls
       - name: Test to download a file with a different filename
         uses: ./
@@ -27,6 +29,8 @@ jobs:
           file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
           file-name: 'new_name.py'
       - run: echo "The file was downloaded to ${{ steps.download-poetry-name.outputs.file-path }}"
+      - name: Test file exists
+        run: python -c "import os, sys; sys.exit(not os.path.isfile('new_name.py'))"
       - run: ls && rm ${{ steps.download-poetry-name.outputs.file-path }} && ls
       - name: Test to download a file to a different path
         uses: ./
@@ -35,6 +39,8 @@ jobs:
           file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
           location: 'new_folder'
       - run: echo "The file was downloaded to ${{ steps.download-poetry-location.outputs.file-path }}"
+      - name: Test file exists
+        run: python -c "import os, sys; sys.exit(not os.path.isfile('new_folder/get-poetry.py'))"
       - run: ls new_folder && rm ${{ steps.download-poetry-location.outputs.file-path }} && ls new_folder
       - name: Test to download a file to a different filename and path
         uses: ./
@@ -44,4 +50,6 @@ jobs:
           location: 'new_folder'
           file-name: 'new_name.py'
       - run: echo "The file was downloaded to ${{ steps.download-poetry-both.outputs.file-path }}"
+      - name: Test file exists
+        run: python -c "import os, sys; sys.exit(not os.path.isfile('new_folder/new_name.py'))"
       - run: ls new_folder && rm ${{ steps.download-poetry-both.outputs.file-path }} && ls new_folder
