@@ -9,7 +9,7 @@ async function main(): Promise<void> {
     const fileLocation: string = core.getInput('location') || process.cwd();
 
     if (!fileURL) {
-      core.warning('The file-url input was not set.');
+      core.setFailed('The file-url input was not set.');
     }
 
     core.info('Downloading file:');
@@ -20,6 +20,7 @@ async function main(): Promise<void> {
       filename: fileName,
     });
 
+    core.info('File successfully downloaded.');
     core.setOutput('file-path', filePath);
   } catch (error) {
     core.setFailed(error.message);

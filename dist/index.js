@@ -6399,7 +6399,7 @@ function main() {
             const fileName = core.getInput('file-name') || undefined;
             const fileLocation = core.getInput('location') || process.cwd();
             if (!fileURL) {
-                core.warning('The file-url input was not set.');
+                core.setFailed('The file-url input was not set.');
             }
             core.info('Downloading file:');
             core.info(`\turl: ${fileURL}`);
@@ -6408,6 +6408,7 @@ function main() {
             const filePath = yield download(fileURL, fileLocation, {
                 filename: fileName,
             });
+            core.info('File successfully downloaded.');
             core.setOutput('file-path', filePath);
         }
         catch (error) {
