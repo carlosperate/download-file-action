@@ -1,7 +1,7 @@
 {
   "name": "download-file-action",
-  "version": "1.0.1",
-  "description": "GitHub Action to download a file from the internet into the workspace.",
+  "version": "1.0.2",
+  "description": "GitHub Action to download a file from the internet into the workspace to use in your workflow.",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
