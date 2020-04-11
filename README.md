@@ -21,7 +21,7 @@ GitHub Action to download a file from the internet into the workspace.
 
 ```yml
 - name: Download a file
-    uses: carlosperate/download-file-action@v1.0.0
+    uses: carlosperate/download-file-action@v1.0.3
     id: download-poetry
     with:
         file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
