@@ -19,5 +19,5 @@ outputs:
   file-path:
     description: 'The full path to the downloaded file'
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'
