@@ -65,6 +65,19 @@ jobs:
         run: python -c "import os; exit(not '${{ steps.download-poetry-relative.outputs.file-path }}' == os.path.normpath('../get-poetry.py'))"
       - run: ls ../ && rm ${{ steps.download-poetry-relative.outputs.file-path }} && ls ../
 
+      - name: Test to download a file to an absolute path
+        uses: ./
+        id: download-poetry-absolute
+        with:
+          file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
+          location: '${{ github.workspace }}/a_folder'
+      - run: echo "The file was downloaded to ${{ steps.download-poetry-absolute.outputs.file-path }}"
+      - name: Test file exists
+        run: python -c "import os; exit(not os.path.isfile(r'${{ github.workspace }}/a_folder/get-poetry.py'))"
+      - name: Test action output path is correct
+        run: python -c "import os; exit(not os.path.normpath(r'${{ steps.download-poetry-absolute.outputs.file-path }}') == os.path.normpath(r'${{ github.workspace }}/a_folder/get-poetry.py'))"
+      - run: ls ${{ github.workspace }}/a_folder && rm -r ${{ github.workspace }}/a_folder
+
       - name: Test to download a file to a different filename and path
         uses: ./
         id: download-poetry-both
