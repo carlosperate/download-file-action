@@ -4,10 +4,10 @@ on: [push]
 
 jobs:
   action-test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-16.04, macos-10.15, windows-2019]
+        os: [ubuntu-latest, macos-latest, windows-latest]
       fail-fast: false
     name: Test Action - ${{ matrix.os }}
     steps:
@@ -21,7 +21,9 @@ jobs:
           file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
       - run: echo "The file was downloaded to ${{ steps.download-poetry-simple.outputs.file-path }}"
       - name: Test file exists
-        run: python -c "import os, sys; sys.exit(not os.path.isfile('get-poetry.py'))"
+        run: python -c "import os; exit(not os.path.isfile('get-poetry.py'))"
+      - name: Test action output path is correct
+        run: python -c "exit(not '${{ steps.download-poetry-simple.outputs.file-path }}' == 'get-poetry.py')"
       - run: ls && rm ${{ steps.download-poetry-simple.outputs.file-path }} && ls
 
       - name: Test to download a file with a different filename
@@ -32,7 +34,9 @@ jobs:
           file-name: 'new_name.py'
       - run: echo "The file was downloaded to ${{ steps.download-poetry-name.outputs.file-path }}"
       - name: Test file exists
-        run: python -c "import os, sys; sys.exit(not os.path.isfile('new_name.py'))"
+        run: python -c "import os; exit(not os.path.isfile('new_name.py'))"
+      - name: Test action output path is correct
+        run: python -c "exit(not '${{ steps.download-poetry-name.outputs.file-path }}' == 'new_name.py')"
       - run: ls && rm ${{ steps.download-poetry-name.outputs.file-path }} && ls
 
       - name: Test to download a file to a different path
@@ -43,8 +47,10 @@ jobs:
           location: 'new_folder'
       - run: echo "The file was downloaded to ${{ steps.download-poetry-location.outputs.file-path }}"
       - name: Test file exists
-        run: python -c "import os, sys; sys.exit(not os.path.isfile('new_folder/get-poetry.py'))"
-      - run: ls new_folder && rm ${{ steps.download-poetry-location.outputs.file-path }} && ls new_folder
+        run: python -c "import os; exit(not os.path.isfile('new_folder/get-poetry.py'))"
+      - name: Test action output path is correct
+        run: python -c "import os; exit(not '${{ steps.download-poetry-location.outputs.file-path }}' == os.path.normpath('new_folder/get-poetry.py'))"
+      - run: ls new_folder && rm -r new_folder
 
       - name: Test to download a file to a relative path
         uses: ./
@@ -54,7 +60,9 @@ jobs:
           location: '../'
       - run: echo "The file was downloaded to ${{ steps.download-poetry-relative.outputs.file-path }}"
       - name: Test file exists
-        run: python -c "import os, sys; sys.exit(not os.path.isfile('../get-poetry.py'))"
+        run: python -c "import os; exit(not os.path.isfile('../get-poetry.py'))"
+      - name: Test action output path is correct
+        run: python -c "import os; exit(not '${{ steps.download-poetry-relative.outputs.file-path }}' == os.path.normpath('../get-poetry.py'))"
       - run: ls ../ && rm ${{ steps.download-poetry-relative.outputs.file-path }} && ls ../
 
       - name: Test to download a file to a different filename and path
@@ -62,9 +70,8 @@ jobs:
         id: download-poetry-both
         with:
           file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
-          location: 'new_folder'
+          location: 'different_folder'
           file-name: 'new_name.py'
       - run: echo "The file was downloaded to ${{ steps.download-poetry-both.outputs.file-path }}"
       - name: Test file exists
-        run: python -c "import os, sys; sys.exit(not os.path.isfile('new_folder/new_name.py'))"
-      - run: ls new_folder && rm ${{ steps.download-poetry-both.outputs.file-path }} && ls new_folder
+        run: python -c "import os; exit(not os.path.isfile('different_folder/new_name.py'))"
