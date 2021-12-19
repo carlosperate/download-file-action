@@ -16,7 +16,10 @@ inputs:
     required: false
     default: "."
   md5:
-    description: 'MD5 has value to check against'
+    description: 'MD5 hash value to check against'
+    required: false
+  sha256:
+    description: 'SHA256 hash value to check against'
     required: false
 outputs:
   file-path:

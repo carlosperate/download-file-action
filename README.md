@@ -11,6 +11,7 @@ GitHub Action to download a file from the internet into the workspace.
 - `file-name`: (**Optional**) A new filename to rename the downloaded file.
 - `location`: (**Optional**) A path to download the file.
 - `md5`: (**Optional**) An MD5 hash to verify the download.
+- `sha256`: (**Optional**) An SHA256 hash to verify the download.
 
 
 ## Outputs
@@ -29,6 +30,7 @@ GitHub Action to download a file from the internet into the workspace.
         file-name: 'new_filename.tar.gz'
         location: './new-folder-to-be-created'
         md5: 'e3b51204dedc75588ca164a26b51610d'
+        sha256: '76ef5cf6e910a4955f713fb36cca6f90ffeee6ffafe743754716e149d68136de'
 - name: Print the file path
     run: echo "The file was downloaded to ${{ steps.download-file.outputs.file-path }}"
 ```

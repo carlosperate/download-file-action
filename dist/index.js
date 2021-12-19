@@ -6463,6 +6463,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const crypto = __importStar(__webpack_require__(417));
+const fs = __importStar(__webpack_require__(747));
 const path = __importStar(__webpack_require__(622));
 const core = __importStar(__webpack_require__(470));
 const md5_file_1 = __importDefault(__webpack_require__(813));
@@ -6474,6 +6476,7 @@ function main() {
             const fileName = core.getInput('file-name') || undefined;
             const fileLocation = core.getInput('location') || process.cwd();
             const fileMd5 = core.getInput('md5');
+            const fileSha256 = core.getInput('sha256');
             if (!fileURL) {
                 core.setFailed('The file-url input was not set.');
             }
@@ -6481,18 +6484,30 @@ function main() {
             core.info(`\turl: ${fileURL}`);
             core.info(`\tname: ${fileName || 'Not set'}`);
             core.info(`\tlocation: ${fileLocation}`);
-            core.info(`\tMD5: ${fileLocation}`);
+            core.info(`\tMD5: ${fileMd5}`);
+            core.info(`\tSHA256: ${fileSha256}`);
             let filePath = yield download(fileURL, fileLocation, {
                 filename: fileName,
             });
             filePath = path.normalize(filePath);
-            const downloadHash = yield md5_file_1.default(filePath);
-            core.info(`Downloaded file MD5: ${downloadHash}`);
-            if (fileMd5 && downloadHash !== fileMd5) {
-                throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadHash} != ${fileMd5}`);
+            const downloadMd5 = yield md5_file_1.default(filePath);
+            core.info(`Downloaded file MD5: ${downloadMd5}`);
+            if (fileMd5 && downloadMd5 !== fileMd5) {
+                throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadMd5} != ${fileMd5}`);
             }
             else {
                 core.info('Provided MD5 hash matches.');
+            }
+            const fileBuffer = fs.readFileSync(filePath);
+            const hashSum = crypto.createHash('sha256');
+            hashSum.update(fileBuffer);
+            const downloadSha256 = hashSum.digest('hex');
+            core.info(`Downloaded file SHA256: ${downloadSha256}`);
+            if (fileSha256 && downloadSha256 !== fileSha256) {
+                throw new Error(`File SHA256 (left) doesn't match expected value (right): ${downloadSha256} != ${fileSha256}`);
+            }
+            else {
+                core.info('Provided SHA256 hash matches.');
             }
             core.info('File successfully downloaded.');
             core.setOutput('file-path', filePath);
