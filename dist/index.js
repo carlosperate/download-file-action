@@ -6453,6 +6453,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const path = __importStar(__webpack_require__(622));
 const core = __importStar(__webpack_require__(470));
 const download = __webpack_require__(446);
 function main() {
@@ -6468,14 +6469,16 @@ function main() {
             core.info(`\turl: ${fileURL}`);
             core.info(`\tname: ${fileName || 'Not set'}`);
             core.info(`\tlocation: ${fileLocation}`);
-            const filePath = yield download(fileURL, fileLocation, {
+            let filePath = yield download(fileURL, fileLocation, {
                 filename: fileName,
             });
+            filePath = path.normalize(filePath);
             core.info('File successfully downloaded.');
             core.setOutput('file-path', filePath);
         }
         catch (error) {
-            core.setFailed(error.message);
+            if (error instanceof Error)
+                core.setFailed(error.message);
         }
     });
 }

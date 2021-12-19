@@ -1,3 +1,5 @@
+import * as path from 'path';
+
 import * as core from '@actions/core';
 
 const download = require('./download-mod');
@@ -16,14 +18,15 @@ async function main(): Promise<void> {
     core.info(`\turl: ${fileURL}`);
     core.info(`\tname: ${fileName || 'Not set'}`);
     core.info(`\tlocation: ${fileLocation}`);
-    const filePath = await download(fileURL, fileLocation, {
+    let filePath = await download(fileURL, fileLocation, {
       filename: fileName,
     });
+    filePath = path.normalize(filePath);
 
     core.info('File successfully downloaded.');
     core.setOutput('file-path', filePath);
   } catch (error) {
-    core.setFailed(error.message);
+    if (error instanceof Error) core.setFailed(error.message);
   }
 }
 
