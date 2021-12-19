@@ -88,3 +88,28 @@ jobs:
       - run: echo "The file was downloaded to ${{ steps.download-poetry-both.outputs.file-path }}"
       - name: Test file exists
         run: python -c "import os; exit(not os.path.isfile('different_folder/new_name.py'))"
+
+      - name: Test to download a file and match MD5
+        uses: ./
+        id: download-tar-md5
+        with:
+          file-url: 'https://github.com/carlosperate/download-file-action/archive/refs/tags/v1.0.3.tar.gz'
+          location: 'other_folder'
+          file-name: 'new_name.tar.gz'
+          md5: 'e3b51204dedc75588ca164a26b51610d'
+      - run: echo "The file was downloaded to ${{ steps.download-tar-md5.outputs.file-path }}"
+      - name: Test file exists
+        run: python -c "import os, sys; sys.exit(not os.path.isfile('other_folder/new_name.tar.gz'))"
+      - run: ls other_folder && rm -r other_folder
+
+      - name: Test bad MD5 value
+        continue-on-error: true
+        uses: ./
+        id: download-tar-md5-bad
+        with:
+          file-url: 'https://github.com/carlosperate/download-file-action/archive/refs/tags/v1.0.3.tar.gz'
+          md5: '12345678901234567890123456789012'
+      - name: Fail workflow if bad MD5 test didn't raise an error
+        if: steps.download-tar-md5-bad.outcome == 'success'
+        run: echo "The file was downloaded to ${{ steps.download-tar-md5-bad.outcome }}"
+      - run: rm download-file-action-1.0.3.tar.gz

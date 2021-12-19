@@ -15,6 +15,9 @@ inputs:
     description: 'Path to download the file'
     required: false
     default: "."
+  md5:
+    description: 'MD5 has value to check against'
+    required: false
 outputs:
   file-path:
     description: 'The full path to the downloaded file'

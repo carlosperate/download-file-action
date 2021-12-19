@@ -6337,6 +6337,13 @@ module.exports = require("stream");
 
 /***/ }),
 
+/***/ 417:
+/***/ (function(module) {
+
+module.exports = require("crypto");
+
+/***/ }),
+
 /***/ 427:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -6452,9 +6459,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const path = __importStar(__webpack_require__(622));
 const core = __importStar(__webpack_require__(470));
+const md5_file_1 = __importDefault(__webpack_require__(813));
 const download = __webpack_require__(446);
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -6462,6 +6473,7 @@ function main() {
             const fileURL = core.getInput('file-url');
             const fileName = core.getInput('file-name') || undefined;
             const fileLocation = core.getInput('location') || process.cwd();
+            const fileMd5 = core.getInput('md5');
             if (!fileURL) {
                 core.setFailed('The file-url input was not set.');
             }
@@ -6469,10 +6481,19 @@ function main() {
             core.info(`\turl: ${fileURL}`);
             core.info(`\tname: ${fileName || 'Not set'}`);
             core.info(`\tlocation: ${fileLocation}`);
+            core.info(`\tMD5: ${fileLocation}`);
             let filePath = yield download(fileURL, fileLocation, {
                 filename: fileName,
             });
             filePath = path.normalize(filePath);
+            const downloadHash = yield md5_file_1.default(filePath);
+            core.info(`Downloaded file MD5: ${downloadHash}`);
+            if (fileMd5 && downloadHash !== fileMd5) {
+                throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadHash} != ${fileMd5}`);
+            }
+            else {
+                core.info('Provided MD5 hash matches.');
+            }
             core.info('File successfully downloaded.');
             core.setOutput('file-path', filePath);
         }
@@ -9867,6 +9888,56 @@ module.exports = (input, options) => {
 
 	return ret;
 };
+
+
+/***/ }),
+
+/***/ 813:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const crypto = __webpack_require__(417)
+const fs = __webpack_require__(747)
+
+const BUFFER_SIZE = 8192
+
+function md5FileSync (path) {
+  const fd = fs.openSync(path, 'r')
+  const hash = crypto.createHash('md5')
+  const buffer = Buffer.alloc(BUFFER_SIZE)
+
+  try {
+    let bytesRead
+
+    do {
+      bytesRead = fs.readSync(fd, buffer, 0, BUFFER_SIZE)
+      hash.update(buffer.slice(0, bytesRead))
+    } while (bytesRead === BUFFER_SIZE)
+  } finally {
+    fs.closeSync(fd)
+  }
+
+  return hash.digest('hex')
+}
+
+function md5File (path) {
+  return new Promise((resolve, reject) => {
+    const output = crypto.createHash('md5')
+    const input = fs.createReadStream(path)
+
+    input.on('error', (err) => {
+      reject(err)
+    })
+
+    output.once('readable', () => {
+      resolve(output.read().toString('hex'))
+    })
+
+    input.pipe(output)
+  })
+}
+
+module.exports = md5File
+module.exports.sync = md5FileSync
 
 
 /***/ }),
