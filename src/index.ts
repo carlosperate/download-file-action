@@ -31,6 +31,9 @@ async function main(): Promise<void> {
     });
     filePath = path.normalize(filePath);
 
+    core.info(`Downloaded: ${filePath}`);
+    core.info('Verifying hash...')
+
     const downloadMd5 = await md5File(filePath);
     core.info(`Downloaded file MD5: ${downloadMd5}`);
     if (fileMd5 && downloadMd5 !== fileMd5) {
