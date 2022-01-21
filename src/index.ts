@@ -31,23 +31,27 @@ async function main(): Promise<void> {
     });
     filePath = path.normalize(filePath);
 
-    const downloadMd5 = await md5File(filePath);
-    core.info(`Downloaded file MD5: ${downloadMd5}`);
-    if (fileMd5 && downloadMd5 !== fileMd5) {
-      throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadMd5} != ${fileMd5}`);
-    } else {
-      core.info('Provided MD5 hash matches.');
+    if (fileMd5) {
+      const downloadMd5 = await md5File(filePath);
+      core.info(`Downloaded file MD5: ${downloadMd5}`);
+      if (downloadMd5 !== fileMd5) {
+        throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadMd5} != ${fileMd5}`);
+      } else {
+        core.info('Provided MD5 hash matches.');
+      }
     }
 
-    const fileBuffer = fs.readFileSync(filePath);
-    const hashSum = crypto.createHash('sha256');
-    hashSum.update(fileBuffer);
-    const downloadSha256 = hashSum.digest('hex');
-    core.info(`Downloaded file SHA256: ${downloadSha256}`);
-    if (fileSha256 && downloadSha256 !== fileSha256) {
-      throw new Error(`File SHA256 (left) doesn't match expected value (right): ${downloadSha256} != ${fileSha256}`);
-    } else {
-      core.info('Provided SHA256 hash matches.');
+    if (fileSha256) {
+      const fileBuffer = fs.readFileSync(filePath);
+      const hashSum = crypto.createHash('sha256');
+      hashSum.update(fileBuffer);
+      const downloadSha256 = hashSum.digest('hex');
+      core.info(`Downloaded file SHA256: ${downloadSha256}`);
+      if (downloadSha256 !== fileSha256) {
+        throw new Error(`File SHA256 (left) doesn't match expected value (right): ${downloadSha256} != ${fileSha256}`);
+      } else {
+        core.info('Provided SHA256 hash matches.');
+      }
     }
 
     core.info('File successfully downloaded.');
