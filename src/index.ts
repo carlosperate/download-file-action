@@ -32,6 +32,7 @@ async function main(): Promise<void> {
     filePath = path.normalize(filePath);
 
     if (fileMd5) {
+      core.info('Verifying MD5...');
       const downloadMd5 = await md5File(filePath);
       core.info(`Downloaded file MD5: ${downloadMd5}`);
       if (downloadMd5 !== fileMd5) {
@@ -42,6 +43,7 @@ async function main(): Promise<void> {
     }
 
     if (fileSha256) {
+      core.info('Verifying SHA256...');
       const fileBuffer = fs.readFileSync(filePath);
       const hashSum = crypto.createHash('sha256');
       hashSum.update(fileBuffer);
