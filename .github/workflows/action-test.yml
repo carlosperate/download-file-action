@@ -23,7 +23,7 @@ jobs:
       - name: Test file exists
         run: python -c "import os; exit(not os.path.isfile('get-poetry.py'))"
       - name: Test action output path is correct
-        run: python -c "exit(not '${{ steps.download-poetry-simple.outputs.file-path }}' == 'get-poetry.py')"
+        run: python -c "import os; exit(not r'${{ steps.download-poetry-simple.outputs.file-path }}' == os.path.abspath('get-poetry.py'))"
       - run: ls && rm ${{ steps.download-poetry-simple.outputs.file-path }} && ls
 
       - name: Test to download a file with a different filename
@@ -36,7 +36,7 @@ jobs:
       - name: Test file exists
         run: python -c "import os; exit(not os.path.isfile('new_name.py'))"
       - name: Test action output path is correct
-        run: python -c "exit(not '${{ steps.download-poetry-name.outputs.file-path }}' == 'new_name.py')"
+        run: python -c "import os; exit(not r'${{ steps.download-poetry-name.outputs.file-path }}' == os.path.abspath('new_name.py'))"
       - run: ls && rm ${{ steps.download-poetry-name.outputs.file-path }} && ls
 
       - name: Test to download a file to a different path
@@ -49,7 +49,7 @@ jobs:
       - name: Test file exists
         run: python -c "import os; exit(not os.path.isfile('new_folder/get-poetry.py'))"
       - name: Test action output path is correct
-        run: python -c "import os; exit(not '${{ steps.download-poetry-location.outputs.file-path }}' == os.path.normpath('new_folder/get-poetry.py'))"
+        run: python -c "import os; exit(not r'${{ steps.download-poetry-location.outputs.file-path }}' == os.path.abspath('new_folder/get-poetry.py'))"
       - run: ls new_folder && rm -r new_folder
 
       - name: Test to download a file to a relative path
@@ -62,7 +62,7 @@ jobs:
       - name: Test file exists
         run: python -c "import os; exit(not os.path.isfile('../get-poetry.py'))"
       - name: Test action output path is correct
-        run: python -c "import os; exit(not '${{ steps.download-poetry-relative.outputs.file-path }}' == os.path.normpath('../get-poetry.py'))"
+        run: python -c "import os; exit(not r'${{ steps.download-poetry-relative.outputs.file-path }}' == os.path.abspath('../get-poetry.py'))"
       - run: ls ../ && rm ${{ steps.download-poetry-relative.outputs.file-path }} && ls ../
 
       - name: Test to download a file to an absolute path
@@ -75,7 +75,7 @@ jobs:
       - name: Test file exists
         run: python -c "import os; exit(not os.path.isfile(r'${{ github.workspace }}/a_folder/get-poetry.py'))"
       - name: Test action output path is correct
-        run: python -c "import os; exit(not os.path.normpath(r'${{ steps.download-poetry-absolute.outputs.file-path }}') == os.path.normpath(r'${{ github.workspace }}/a_folder/get-poetry.py'))"
+        run: python -c "import os; exit(not r'${{ steps.download-poetry-absolute.outputs.file-path }}' == os.path.abspath(r'${{ github.workspace }}/a_folder/get-poetry.py'))"
       - run: ls ${{ github.workspace }}/a_folder && rm -r ${{ github.workspace }}/a_folder
 
       - name: Test to download a file to a different filename and path
