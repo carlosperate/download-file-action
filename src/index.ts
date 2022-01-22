@@ -30,6 +30,7 @@ async function main(): Promise<void> {
       filename: fileName,
     });
     filePath = path.normalize(filePath);
+    core.info(`Downloaded: ${filePath}`);
 
     const downloadMd5 = await md5File(filePath);
     core.info(`Downloaded file MD5: ${downloadMd5}`);
