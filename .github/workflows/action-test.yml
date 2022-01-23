@@ -26,6 +26,20 @@ jobs:
         run: python -c "exit(not '${{ steps.download-poetry-simple.outputs.file-path }}' == 'get-poetry.py')"
       - run: ls && rm ${{ steps.download-poetry-simple.outputs.file-path }} && ls
 
+      - name: Basic auth test to download a file
+        uses: ./
+        id: download-with-basic-auth
+        with:
+          file-url: 'https://httpbin.org/hidden-basic-auth/user/pass'
+          username: 'user'
+          password: 'pass'
+      - run: echo "The file was downloaded to ${{ steps.download-with-basic-auth.outputs.file-path }}"
+      - name: Test file exists
+        run: python -c "import os; exit(not os.path.isfile('pass'))"
+      - name: Test action output path is correct
+        run: python -c "exit(not '${{ steps.download-with-basic-auth.outputs.file-path }}' == 'pass')"
+      - run: ls && rm ${{ steps.download-with-basic-auth.outputs.file-path }} && ls
+
       - name: Test to download a file with a different filename
         uses: ./
         id: download-poetry-name

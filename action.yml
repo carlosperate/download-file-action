@@ -21,6 +21,15 @@ inputs:
   sha256:
     description: 'SHA256 hash value to check against'
     required: false
+  authentication:
+    description: '`None`|`Basic` to indicate authentication type'
+    required: false
+  username:
+    description: 'Used in `Basic` authentication'
+    required: false
+  password:
+    description: 'Used in `Basic` authentication'
+    required: false
 outputs:
   file-path:
     description: 'The full path to the downloaded file'

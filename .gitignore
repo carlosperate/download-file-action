@@ -74,3 +74,8 @@ $RECYCLE.BIN/
 .directory
 .Trash-*
 .nfs*
+
+######################
+# IDE generated files #
+######################
+.idea

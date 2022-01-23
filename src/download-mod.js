@@ -90,11 +90,15 @@ const getFilename = (res, data) => {
 
 module.exports = (uri, output_, opts_) => {
   const output = output_ || process.cwd();
-  const opts = Object.assign({
+  const buff = Buffer.from(`${opts_.username}:${opts_.password}`);
+  const opts = {
     encoding: null,
     rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false',
-  }, opts_);
-
+    headers: {
+      Authorization: `Basic ${buff.toString('base64')}`,
+    },
+    ...opts_,
+  };
   const stream = got.stream(uri, opts);
 
   const promise = pEvent(stream, 'response').then((res) => {

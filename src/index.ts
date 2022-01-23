@@ -14,6 +14,9 @@ async function main(): Promise<void> {
     const fileLocation: string = core.getInput('location') || process.cwd();
     const fileMd5: string = core.getInput('md5');
     const fileSha256: string = core.getInput('sha256');
+    const authentication: string = core.getInput('authentication') || 'None';
+    const username: string = core.getInput('username');
+    const password: string = core.getInput('password');
 
     if (!fileURL) {
       core.setFailed('The file-url input was not set.');
@@ -25,9 +28,16 @@ async function main(): Promise<void> {
     core.info(`\tlocation: ${fileLocation}`);
     core.info(`\tMD5: ${fileMd5}`);
     core.info(`\tSHA256: ${fileSha256}`);
+    core.info(`\tSHA256: ${fileSha256}`);
+    core.info(`\tAuthentication: ${authentication}`);
+    if (authentication === 'Basic') {
+      core.info(`\tUsername: ${username}`);
+    }
 
     let filePath = await download(fileURL, fileLocation, {
       filename: fileName,
+      username,
+      password,
     });
     filePath = path.normalize(filePath);
 
