@@ -17,6 +17,7 @@ async function main(): Promise<void> {
     const authentication: string = core.getInput('authentication') || 'None';
     const username: string = core.getInput('username');
     const password: string = core.getInput('password');
+    const authToken: string = core.getInput('token');
 
     if (!fileURL) {
       core.setFailed('The file-url input was not set.');
@@ -28,7 +29,6 @@ async function main(): Promise<void> {
     core.info(`\tlocation: ${fileLocation}`);
     core.info(`\tMD5: ${fileMd5}`);
     core.info(`\tSHA256: ${fileSha256}`);
-    core.info(`\tSHA256: ${fileSha256}`);
     core.info(`\tAuthentication: ${authentication}`);
     if (authentication === 'Basic') {
       core.info(`\tUsername: ${username}`);
@@ -38,6 +38,8 @@ async function main(): Promise<void> {
       filename: fileName,
       username,
       password,
+      token: authToken,
+      authentication,
     });
     filePath = path.normalize(filePath);
 

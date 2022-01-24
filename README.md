@@ -12,9 +12,10 @@ GitHub Action to download a file from the internet into the workspace.
 - `location`: (*Optional*) A path to download the file.
 - `md5`: (*Optional*) An MD5 hash to verify the download.
 - `sha256`: (*Optional*) An SHA256 hash to verify the download.
-- `authentication`: (*Optional*) Type of authentication - either (`None`|`Basic`).
+- `authentication`: (*Optional*) Type of authentication - either (`None`|`Basic`|`Token`).
 - `username`: (*Optional*) Used for `Basic` authentication.
 - `password`: (*Optional*) Used for `Basic` authentication.
+- `token`: (*Optional*) An authentication token to include in the `Authorization` header.
 
 
 ## Outputs

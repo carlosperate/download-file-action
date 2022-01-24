@@ -29,6 +29,8 @@ inputs:
     required: false
   password:
     description: 'Used in `Basic` authentication'
+  token:
+    description: 'A token to be used in authentication'
     required: false
 outputs:
   file-path:

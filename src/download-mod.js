@@ -90,12 +90,18 @@ const getFilename = (res, data) => {
 
 module.exports = (uri, output_, opts_) => {
   const output = output_ || process.cwd();
-  const buff = Buffer.from(`${opts_.username}:${opts_.password}`);
+  let authorizationHeader = '';
+  if (opts_.authentication === 'Basic') {
+    const buff = Buffer.from(`${opts_.username}:${opts_.password}`);
+    authorizationHeader = `Basic ${buff.toString('base64')}`;
+  } else if (opts_.authentication === 'Token') {
+    authorizationHeader = `token ${opts_.token}`;
+  }
   const opts = {
     encoding: null,
     rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false',
     headers: {
-      Authorization: `Basic ${buff.toString('base64')}`,
+      Authorization: authorizationHeader,
     },
     ...opts_,
   };

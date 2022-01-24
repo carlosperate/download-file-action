@@ -2032,7 +2032,7 @@ SafeBuffer.allocUnsafeSlow = function (size) {
 
 
 module.exports = function isObject(x) {
-	return typeof x === 'object' && x !== null;
+	return typeof x === "object" && x !== null;
 };
 
 
@@ -5776,7 +5776,7 @@ function coerce (version) {
 /***/ }),
 
 /***/ 286:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports) {
 
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -5880,7 +5880,7 @@ function isPrimitive(arg) {
 }
 exports.isPrimitive = isPrimitive;
 
-exports.isBuffer = __webpack_require__(293).Buffer.isBuffer;
+exports.isBuffer = Buffer.isBuffer;
 
 function objectToString(o) {
   return Object.prototype.toString.call(o);
@@ -6480,6 +6480,7 @@ function main() {
             const authentication = core.getInput('authentication') || 'None';
             const username = core.getInput('username');
             const password = core.getInput('password');
+            const authToken = core.getInput('token');
             if (!fileURL) {
                 core.setFailed('The file-url input was not set.');
             }
@@ -6489,7 +6490,6 @@ function main() {
             core.info(`\tlocation: ${fileLocation}`);
             core.info(`\tMD5: ${fileMd5}`);
             core.info(`\tSHA256: ${fileSha256}`);
-            core.info(`\tSHA256: ${fileSha256}`);
             core.info(`\tAuthentication: ${authentication}`);
             if (authentication === 'Basic') {
                 core.info(`\tUsername: ${username}`);
@@ -6498,6 +6498,8 @@ function main() {
                 filename: fileName,
                 username,
                 password,
+                token: authToken,
+                authentication,
             });
             filePath = path.normalize(filePath);
             const downloadMd5 = yield md5_file_1.default(filePath);
@@ -6615,9 +6617,16 @@ const getFilename = (res, data) => {
 };
 module.exports = (uri, output_, opts_) => {
     const output = output_ || process.cwd();
-    const buff = Buffer.from(`${opts_.username}:${opts_.password}`);
+    let authorizationHeader = '';
+    if (opts_.authentication === 'Basic') {
+        const buff = Buffer.from(`${opts_.username}:${opts_.password}`);
+        authorizationHeader = `Basic ${buff.toString('base64')}`;
+    }
+    else if (opts_.authentication === 'Token') {
+        authorizationHeader = `token ${opts_.token}`;
+    }
     const opts = Object.assign({ encoding: null, rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false', headers: {
-            Authorization: `Basic ${buff.toString('base64')}`,
+            Authorization: authorizationHeader,
         } }, opts_);
     const stream = got.stream(uri, opts);
     const promise = pEvent(stream, 'response').then((res) => {

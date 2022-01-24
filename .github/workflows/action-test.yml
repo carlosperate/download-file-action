@@ -33,12 +33,26 @@ jobs:
           file-url: 'https://httpbin.org/hidden-basic-auth/user/pass'
           username: 'user'
           password: 'pass'
+          authentication: Basic
       - run: echo "The file was downloaded to ${{ steps.download-with-basic-auth.outputs.file-path }}"
       - name: Test file exists
         run: python -c "import os; exit(not os.path.isfile('pass'))"
       - name: Test action output path is correct
         run: python -c "exit(not '${{ steps.download-with-basic-auth.outputs.file-path }}' == 'pass')"
       - run: ls && rm ${{ steps.download-with-basic-auth.outputs.file-path }} && ls
+      
+      - name: Download file with token authentication
+        uses: ./
+        id: download-with-token
+        with:
+          file-url: 'http://httpbin.org/get'
+          file-name: test-token.json
+          token: a_random_token
+          authentication: Token
+      - run: echo "The file was downloaded to ${{ steps.download-with-token.outputs.file-path }}"
+      - name: Test request includes token in query param
+        run: python -c "import json; exit(not 'token a_random_token' == json.loads(open('test-token.json').read())['headers']['Authorization'])"
+      - run: ls && rm ${{ steps.download-with-token.outputs.file-path }} && ls
 
       - name: Test to download a file with a different filename
         uses: ./
