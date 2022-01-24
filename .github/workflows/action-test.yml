@@ -1,6 +1,6 @@
 name: Workflow To Test Action
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   action-test:
