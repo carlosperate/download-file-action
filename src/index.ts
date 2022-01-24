@@ -9,15 +9,11 @@ const download = require('./download-mod');
 
 async function main(): Promise<void> {
   try {
-    const fileURL: string = core.getInput('file-url');
+    const fileURL: string = core.getInput('file-url', { required: true });
     const fileName: string | undefined = core.getInput('file-name') || undefined;
     const fileLocation: string = core.getInput('location') || process.cwd();
     const fileMd5: string = core.getInput('md5').toLowerCase();
     const fileSha256: string = core.getInput('sha256').toLowerCase();
-
-    if (!fileURL) {
-      core.setFailed('The file-url input was not set.');
-    }
 
     core.info('Downloading file:');
     core.info(`\turl: ${fileURL}`);

@@ -6472,14 +6472,12 @@ const download = __webpack_require__(446);
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const fileURL = core.getInput('file-url');
+            const fileURL = core.getInput('file-url', { required: true });
             const fileName = core.getInput('file-name') || undefined;
             const fileLocation = core.getInput('location') || process.cwd();
             const fileMd5 = core.getInput('md5').toLowerCase();
             const fileSha256 = core.getInput('sha256').toLowerCase();
-            if (!fileURL) {
-                core.setFailed('The file-url input was not set.');
-            }
+
             core.info('Downloading file:');
             core.info(`\turl: ${fileURL}`);
             core.info(`\tname: ${fileName || 'Not set'}`);
