@@ -21,6 +21,9 @@ inputs:
   sha256:
     description: 'SHA256 hash value to check against'
     required: false
+  token:
+    description: 'A token to be used in authentication'
+    required: false
 outputs:
   file-path:
     description: 'The full path to the downloaded file'

@@ -12,6 +12,7 @@ GitHub Action to download a file from the internet into the workspace.
 - `location`: (*Optional*) A path to download the file.
 - `md5`: (*Optional*) An MD5 hash to verify the download.
 - `sha256`: (*Optional*) An SHA256 hash to verify the download.
+- `token`: (*Optional*) An authentication token to include in the query parameter under `?token=<MY_TOKEN>` - needed for private repo `raw` access.
 
 
 ## Outputs

@@ -26,6 +26,20 @@ jobs:
         run: python -c "exit(not '${{ steps.download-poetry-simple.outputs.file-path }}' == 'get-poetry.py')"
       - run: ls && rm ${{ steps.download-poetry-simple.outputs.file-path }} && ls
 
+      - name: Download file with token query parameter authentication
+        uses: ./
+        id: download-with-token-query-param
+        with:
+          file-url: 'http://httpbin.org/get'
+          file-name: test-token-query-param.json
+          token: a_random_token
+      - run: echo "The file was downloaded to ${{ steps.download-with-token-query-param.outputs.file-path }}"
+      - run: cat ${{ steps.download-with-token-query-param.outputs.file-path }}
+      - name: Test request includes token in query param
+        run: |
+          echo `cat ${{ steps.download-with-token-query-param.outputs.file-path }}` | grep 'a_random_token'
+      - run: ls && rm ${{ steps.download-with-token-query-param.outputs.file-path }} && ls
+
       - name: Test to download a file with a different filename
         uses: ./
         id: download-poetry-name
