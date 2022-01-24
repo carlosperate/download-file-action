@@ -103,7 +103,7 @@ jobs:
 
       - name: Test to download a file and match MD5 in UPPERCASE
         uses: ./
-        id: download-tar-md5
+        id: download-tar-md5-uppercase
         with:
           file-url: 'https://github.com/carlosperate/download-file-action/archive/refs/tags/v1.0.3.tar.gz'
           file-name: 'name_md5.tar.gz'
@@ -137,7 +137,7 @@ jobs:
 
       - name: Test to download a file and match SHA256 in UPPERCASE
         uses: ./
-        id: download-tar-sha256
+        id: download-tar-sha256-uppercase
         with:
           file-url: 'https://github.com/carlosperate/download-file-action/archive/refs/tags/v1.0.3.tar.gz'
           file-name: 'name_sha256.tar.gz'
