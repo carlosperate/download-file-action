@@ -26,6 +26,7 @@ async function main(): Promise<void> {
       filename: fileName,
     });
     filePath = path.normalize(filePath);
+    core.info(`Downloaded: ${filePath}`);
 
     if (fileMd5) {
       core.info('Verifying MD5...');
