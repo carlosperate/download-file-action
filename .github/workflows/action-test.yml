@@ -1,6 +1,6 @@
 name: Workflow To Test Action
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   action-test:
@@ -13,6 +13,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Test no "file-url" parameter
+        continue-on-error: true
+        uses: ./
+        id: no-param-file-url
+      - name: Fail workflow if no file-url test didn't raise an error
+        if: steps.no-param-file-url == 'success'
+        run: exit 1
 
       - name: Simple test to download a file
         uses: ./
@@ -90,13 +98,24 @@ jobs:
         run: python -c "import os; exit(not os.path.isfile('different_folder/new_name.py'))"
       - run: ls different_folder && rm -r different_folder
 
-      - name: Test to download a file and match MD5
+      - name: Test to download a file and match MD5 in lowercase
         uses: ./
         id: download-tar-md5
         with:
           file-url: 'https://github.com/carlosperate/download-file-action/archive/refs/tags/v1.0.3.tar.gz'
           file-name: 'name_md5.tar.gz'
           md5: 'e3b51204dedc75588ca164a26b51610d'
+      - name: Test file exists
+        run: python -c "import os, sys; sys.exit(not os.path.isfile('name_md5.tar.gz'))"
+      - run: rm name_md5.tar.gz
+
+      - name: Test to download a file and match MD5 in UPPERCASE
+        uses: ./
+        id: download-tar-md5-uppercase
+        with:
+          file-url: 'https://github.com/carlosperate/download-file-action/archive/refs/tags/v1.0.3.tar.gz'
+          file-name: 'name_md5.tar.gz'
+          md5: 'E3B51204DEDC75588CA164A26B51610D'
       - name: Test file exists
         run: python -c "import os, sys; sys.exit(not os.path.isfile('name_md5.tar.gz'))"
       - run: rm name_md5.tar.gz
@@ -113,13 +132,24 @@ jobs:
         run: exit 1
       - run: rm download-file-action-1.0.3.tar.gz
 
-      - name: Test to download a file and match SHA256
+      - name: Test to download a file and match SHA256 in lowercase
         uses: ./
         id: download-tar-sha256
         with:
           file-url: 'https://github.com/carlosperate/download-file-action/archive/refs/tags/v1.0.3.tar.gz'
           file-name: 'name_sha256.tar.gz'
           sha256: '76ef5cf6e910a4955f713fb36cca6f90ffeee6ffafe743754716e149d68136de'
+      - name: Test file exists
+        run: python -c "import os, sys; sys.exit(not os.path.isfile('name_sha256.tar.gz'))"
+      - run: rm name_sha256.tar.gz
+
+      - name: Test to download a file and match SHA256 in UPPERCASE
+        uses: ./
+        id: download-tar-sha256-uppercase
+        with:
+          file-url: 'https://github.com/carlosperate/download-file-action/archive/refs/tags/v1.0.3.tar.gz'
+          file-name: 'name_sha256.tar.gz'
+          sha256: '76EF5CF6E910A4955F713FB36CCA6F90FFEEE6FFAFE743754716E149D68136DE'
       - name: Test file exists
         run: python -c "import os, sys; sys.exit(not os.path.isfile('name_sha256.tar.gz'))"
       - run: rm name_sha256.tar.gz

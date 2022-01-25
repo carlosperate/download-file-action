@@ -9,15 +9,11 @@ const download = require('./download-mod');
 
 async function main(): Promise<void> {
   try {
-    const fileURL: string = core.getInput('file-url');
+    const fileURL: string = core.getInput('file-url', { required: true });
     const fileName: string | undefined = core.getInput('file-name') || undefined;
     const fileLocation: string = core.getInput('location') || process.cwd();
-    const fileMd5: string = core.getInput('md5');
-    const fileSha256: string = core.getInput('sha256');
-
-    if (!fileURL) {
-      core.setFailed('The file-url input was not set.');
-    }
+    const fileMd5: string = core.getInput('md5').toLowerCase();
+    const fileSha256: string = core.getInput('sha256').toLowerCase();
 
     core.info('Downloading file:');
     core.info(`\turl: ${fileURL}`);
@@ -31,7 +27,7 @@ async function main(): Promise<void> {
     });
     filePath = path.resolve(filePath);
 
-    const downloadMd5 = await md5File(filePath);
+    const downloadMd5 = await md5File(filePath).then(md5Value => md5Value.toLowerCase());
     core.info(`Downloaded file MD5: ${downloadMd5}`);
     if (fileMd5 && downloadMd5 !== fileMd5) {
       throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadMd5} != ${fileMd5}`);
@@ -42,7 +38,7 @@ async function main(): Promise<void> {
     const fileBuffer = fs.readFileSync(filePath);
     const hashSum = crypto.createHash('sha256');
     hashSum.update(fileBuffer);
-    const downloadSha256 = hashSum.digest('hex');
+    const downloadSha256 = hashSum.digest('hex').toLowerCase();
     core.info(`Downloaded file SHA256: ${downloadSha256}`);
     if (fileSha256 && downloadSha256 !== fileSha256) {
       throw new Error(`File SHA256 (left) doesn't match expected value (right): ${downloadSha256} != ${fileSha256}`);

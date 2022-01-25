@@ -6472,14 +6472,11 @@ const download = __webpack_require__(446);
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const fileURL = core.getInput('file-url');
+            const fileURL = core.getInput('file-url', { required: true });
             const fileName = core.getInput('file-name') || undefined;
             const fileLocation = core.getInput('location') || process.cwd();
-            const fileMd5 = core.getInput('md5');
-            const fileSha256 = core.getInput('sha256');
-            if (!fileURL) {
-                core.setFailed('The file-url input was not set.');
-            }
+            const fileMd5 = core.getInput('md5').toLowerCase();
+            const fileSha256 = core.getInput('sha256').toLowerCase();
             core.info('Downloading file:');
             core.info(`\turl: ${fileURL}`);
             core.info(`\tname: ${fileName || 'Not set'}`);
@@ -6490,7 +6487,7 @@ function main() {
                 filename: fileName,
             });
             filePath = path.resolve(filePath);
-            const downloadMd5 = yield md5_file_1.default(filePath);
+            const downloadMd5 = yield md5_file_1.default(filePath).then(md5Value => md5Value.toLowerCase());
             core.info(`Downloaded file MD5: ${downloadMd5}`);
             if (fileMd5 && downloadMd5 !== fileMd5) {
                 throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadMd5} != ${fileMd5}`);
@@ -6501,7 +6498,7 @@ function main() {
             const fileBuffer = fs.readFileSync(filePath);
             const hashSum = crypto.createHash('sha256');
             hashSum.update(fileBuffer);
-            const downloadSha256 = hashSum.digest('hex');
+            const downloadSha256 = hashSum.digest('hex').toLowerCase();
             core.info(`Downloaded file SHA256: ${downloadSha256}`);
             if (fileSha256 && downloadSha256 !== fileSha256) {
                 throw new Error(`File SHA256 (left) doesn't match expected value (right): ${downloadSha256} != ${fileSha256}`);
