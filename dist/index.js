@@ -6487,25 +6487,30 @@ function main() {
                 filename: fileName,
             });
             filePath = path.normalize(filePath);
-            core.info(`Downloaded: ${filePath}`);
-            const downloadMd5 = yield md5_file_1.default(filePath).then(md5Value => md5Value.toLowerCase());
-            core.info(`Downloaded file MD5: ${downloadMd5}`);
-            if (fileMd5 && downloadMd5 !== fileMd5) {
-                throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadMd5} != ${fileMd5}`);
+            if (fileMd5) {
+                core.info('Verifying MD5...');
+                const downloadMd5 = yield md5_file_1.default(filePath).then((md5Value) => md5Value.toLowerCase());
+                core.info(`Downloaded file MD5: ${downloadMd5}`);
+                if (downloadMd5 !== fileMd5) {
+                    throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadMd5} != ${fileMd5}`);
+                }
+                else {
+                    core.info('Provided MD5 hash matches.');
+                }
             }
-            else {
-                core.info('Provided MD5 hash matches.');
-            }
-            const fileBuffer = fs.readFileSync(filePath);
-            const hashSum = crypto.createHash('sha256');
-            hashSum.update(fileBuffer);
-            const downloadSha256 = hashSum.digest('hex').toLowerCase();
-            core.info(`Downloaded file SHA256: ${downloadSha256}`);
-            if (fileSha256 && downloadSha256 !== fileSha256) {
-                throw new Error(`File SHA256 (left) doesn't match expected value (right): ${downloadSha256} != ${fileSha256}`);
-            }
-            else {
-                core.info('Provided SHA256 hash matches.');
+            if (fileSha256) {
+                core.info('Verifying SHA256...');
+                const fileBuffer = fs.readFileSync(filePath);
+                const hashSum = crypto.createHash('sha256');
+                hashSum.update(fileBuffer);
+                const downloadSha256 = hashSum.digest('hex').toLowerCase();
+                core.info(`Downloaded file SHA256: ${downloadSha256}`);
+                if (downloadSha256 !== fileSha256) {
+                    throw new Error(`File SHA256 (left) doesn't match expected value (right): ${downloadSha256} != ${fileSha256}`);
+                }
+                else {
+                    core.info('Provided SHA256 hash matches.');
+                }
             }
             core.info('File successfully downloaded.');
             core.setOutput('file-path', filePath);
