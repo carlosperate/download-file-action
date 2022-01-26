@@ -25,7 +25,7 @@ async function main(): Promise<void> {
     let filePath = await download(fileURL, fileLocation, {
       filename: fileName,
     });
-    filePath = path.normalize(filePath);
+    filePath = path.resolve(filePath);
     core.info(`Downloaded: ${filePath}`);
 
     if (fileMd5) {

@@ -6486,7 +6486,7 @@ function main() {
             let filePath = yield download(fileURL, fileLocation, {
                 filename: fileName,
             });
-            filePath = path.normalize(filePath);
+            filePath = path.resolve(filePath);
             core.info(`Downloaded: ${filePath}`);
             if (fileMd5) {
                 core.info('Verifying MD5...');
