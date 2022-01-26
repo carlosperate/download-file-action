@@ -6609,10 +6609,7 @@ const getFilename = (res, data) => {
 };
 module.exports = (uri, output_, opts_) => {
     const output = output_ || process.cwd();
-    const opts = Object.assign({
-        encoding: null,
-        rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false',
-    }, opts_);
+    const opts = Object.assign({ encoding: null, rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false' }, opts_);
     const stream = got.stream(uri, opts);
     const promise = pEvent(stream, 'response').then((res) => {
         const encoding = opts.encoding === null ? 'buffer' : opts.encoding;
