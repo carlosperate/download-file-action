@@ -30,7 +30,8 @@ async function main(): Promise<void> {
 
     if (fileMd5) {
       core.info('Verifying MD5...');
-      const downloadMd5 = await md5File(filePath).then((md5Value) => md5Value.toLowerCase());
+      let downloadMd5 = await md5File(filePath);
+      downloadMd5 = downloadMd5.toLowerCase();
       core.info(`Downloaded file MD5: ${downloadMd5}`);
       if (downloadMd5 !== fileMd5) {
         throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadMd5} != ${fileMd5}`);
