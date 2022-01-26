@@ -6487,24 +6487,31 @@ function main() {
                 filename: fileName,
             });
             filePath = path.resolve(filePath);
-            const downloadMd5 = yield md5_file_1.default(filePath).then(md5Value => md5Value.toLowerCase());
-            core.info(`Downloaded file MD5: ${downloadMd5}`);
-            if (fileMd5 && downloadMd5 !== fileMd5) {
-                throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadMd5} != ${fileMd5}`);
+            core.info(`Downloaded: ${filePath}`);
+            if (fileMd5) {
+                core.info('Verifying MD5...');
+                const downloadMd5 = yield md5_file_1.default(filePath).then((md5Value) => md5Value.toLowerCase());
+                core.info(`Downloaded file MD5: ${downloadMd5}`);
+                if (downloadMd5 !== fileMd5) {
+                    throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadMd5} != ${fileMd5}`);
+                }
+                else {
+                    core.info('Provided MD5 hash matches.');
+                }
             }
-            else {
-                core.info('Provided MD5 hash matches.');
-            }
-            const fileBuffer = fs.readFileSync(filePath);
-            const hashSum = crypto.createHash('sha256');
-            hashSum.update(fileBuffer);
-            const downloadSha256 = hashSum.digest('hex').toLowerCase();
-            core.info(`Downloaded file SHA256: ${downloadSha256}`);
-            if (fileSha256 && downloadSha256 !== fileSha256) {
-                throw new Error(`File SHA256 (left) doesn't match expected value (right): ${downloadSha256} != ${fileSha256}`);
-            }
-            else {
-                core.info('Provided SHA256 hash matches.');
+            if (fileSha256) {
+                core.info('Verifying SHA256...');
+                const fileBuffer = fs.readFileSync(filePath);
+                const hashSum = crypto.createHash('sha256');
+                hashSum.update(fileBuffer);
+                const downloadSha256 = hashSum.digest('hex').toLowerCase();
+                core.info(`Downloaded file SHA256: ${downloadSha256}`);
+                if (downloadSha256 !== fileSha256) {
+                    throw new Error(`File SHA256 (left) doesn't match expected value (right): ${downloadSha256} != ${fileSha256}`);
+                }
+                else {
+                    core.info('Provided SHA256 hash matches.');
+                }
             }
             core.info('File successfully downloaded.');
             core.setOutput('file-path', filePath);
@@ -7064,7 +7071,7 @@ module.exports = function (obj) {
 /***/ 482:
 /***/ (function(module) {
 
-module.exports = {"name":"got","version":"8.3.2","description":"Simplified HTTP requests","license":"MIT","repository":"sindresorhus/got","maintainers":[{"name":"Sindre Sorhus","email":"sindresorhus@gmail.com","url":"sindresorhus.com"},{"name":"Vsevolod Strukchinsky","email":"floatdrop@gmail.com","url":"github.com/floatdrop"},{"name":"Alexander Tesfamichael","email":"alex.tesfamichael@gmail.com","url":"alextes.me"}],"engines":{"node":">=4"},"scripts":{"test":"xo && nyc ava","coveralls":"nyc report --reporter=text-lcov | coveralls"},"files":["index.js","errors.js"],"keywords":["http","https","get","got","url","uri","request","util","utility","simple","curl","wget","fetch","net","network","electron"],"dependencies":{"@sindresorhus/is":"^0.7.0","cacheable-request":"^2.1.1","decompress-response":"^3.3.0","duplexer3":"^0.1.4","get-stream":"^3.0.0","into-stream":"^3.1.0","is-retry-allowed":"^1.1.0","isurl":"^1.0.0-alpha5","lowercase-keys":"^1.0.0","mimic-response":"^1.0.0","p-cancelable":"^0.4.0","p-timeout":"^2.0.1","pify":"^3.0.0","safe-buffer":"^5.1.1","timed-out":"^4.0.1","url-parse-lax":"^3.0.0","url-to-options":"^1.0.1"},"devDependencies":{"ava":"^0.25.0","coveralls":"^3.0.0","form-data":"^2.1.1","get-port":"^3.0.0","nyc":"^11.0.2","p-event":"^1.3.0","pem":"^1.4.4","proxyquire":"^1.8.0","sinon":"^4.0.0","slow-stream":"0.0.4","tempfile":"^2.0.0","tempy":"^0.2.1","universal-url":"1.0.0-alpha","xo":"^0.20.0"},"ava":{"concurrency":4},"browser":{"decompress-response":false,"electron":false},"_resolved":"https://registry.npmjs.org/got/-/got-8.3.2.tgz","_integrity":"sha512-qjUJ5U/hawxosMryILofZCkm3C84PLJS/0grRIpjAwu+Lkxxj5cxeCU25BG0/3mDSpXKTyZr8oh8wIgLaH0QCw==","_from":"got@8.3.2"};
+module.exports = {"_from":"got@^8.3.1","_id":"got@8.3.2","_inBundle":false,"_integrity":"sha512-qjUJ5U/hawxosMryILofZCkm3C84PLJS/0grRIpjAwu+Lkxxj5cxeCU25BG0/3mDSpXKTyZr8oh8wIgLaH0QCw==","_location":"/got","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"got@^8.3.1","name":"got","escapedName":"got","rawSpec":"^8.3.1","saveSpec":null,"fetchSpec":"^8.3.1"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/got/-/got-8.3.2.tgz","_shasum":"1d23f64390e97f776cac52e5b936e5f514d2e937","_spec":"got@^8.3.1","_where":"/Users/microbit-carlos/workspace/mine/download-file-action","ava":{"concurrency":4},"browser":{"decompress-response":false,"electron":false},"bugs":{"url":"https://github.com/sindresorhus/got/issues"},"bundleDependencies":false,"dependencies":{"@sindresorhus/is":"^0.7.0","cacheable-request":"^2.1.1","decompress-response":"^3.3.0","duplexer3":"^0.1.4","get-stream":"^3.0.0","into-stream":"^3.1.0","is-retry-allowed":"^1.1.0","isurl":"^1.0.0-alpha5","lowercase-keys":"^1.0.0","mimic-response":"^1.0.0","p-cancelable":"^0.4.0","p-timeout":"^2.0.1","pify":"^3.0.0","safe-buffer":"^5.1.1","timed-out":"^4.0.1","url-parse-lax":"^3.0.0","url-to-options":"^1.0.1"},"deprecated":false,"description":"Simplified HTTP requests","devDependencies":{"ava":"^0.25.0","coveralls":"^3.0.0","form-data":"^2.1.1","get-port":"^3.0.0","nyc":"^11.0.2","p-event":"^1.3.0","pem":"^1.4.4","proxyquire":"^1.8.0","sinon":"^4.0.0","slow-stream":"0.0.4","tempfile":"^2.0.0","tempy":"^0.2.1","universal-url":"1.0.0-alpha","xo":"^0.20.0"},"engines":{"node":">=4"},"files":["index.js","errors.js"],"homepage":"https://github.com/sindresorhus/got#readme","keywords":["http","https","get","got","url","uri","request","util","utility","simple","curl","wget","fetch","net","network","electron"],"license":"MIT","maintainers":[{"name":"Sindre Sorhus","email":"sindresorhus@gmail.com","url":"sindresorhus.com"},{"name":"Vsevolod Strukchinsky","email":"floatdrop@gmail.com","url":"github.com/floatdrop"},{"name":"Alexander Tesfamichael","email":"alex.tesfamichael@gmail.com","url":"alextes.me"}],"name":"got","repository":{"type":"git","url":"git+https://github.com/sindresorhus/got.git"},"scripts":{"coveralls":"nyc report --reporter=text-lcov | coveralls","test":"xo && nyc ava"},"version":"8.3.2"};
 
 /***/ }),
 
