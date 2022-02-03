@@ -3,17 +3,17 @@ name: Workflow To Test Action
 on: [push, pull_request]
 
 jobs:
-  build-lint:
-    name: Build & lint
+  lint-build:
+    name: Lint & build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - run: npm install
-      - run: npm run package
       - run: npm run lint
+      - run: npm run package
   action-test:
     needs:
-      - build-lint
+      - lint-build
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
