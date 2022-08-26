@@ -30,7 +30,7 @@
   },
   "homepage": "https://github.com/carlosperate/download-file-action#readme",
   "dependencies": {
-    "@actions/core": "^1.6.0",
+    "@actions/core": "^1.9.1",
     "content-disposition": "^0.5.4",
     "ext-name": "^5.0.0",
     "file-type": "^16.5.4",
