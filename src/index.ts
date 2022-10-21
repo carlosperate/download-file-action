@@ -19,8 +19,8 @@ async function main(): Promise<void> {
     core.info(`\turl: ${fileURL}`);
     core.info(`\tname: ${fileName || 'Not set'}`);
     core.info(`\tlocation: ${fileLocation}`);
-    core.info(`\tMD5: ${fileMd5}`);
-    core.info(`\tSHA256: ${fileSha256}`);
+    core.info(`\tMD5: ${fileMd5 || 'Not set'}`);
+    core.info(`\tSHA256: ${fileSha256 || 'Not set'}`);
 
     let filePath = await download(fileURL, fileLocation, {
       filename: fileName,
