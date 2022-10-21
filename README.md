@@ -7,16 +7,16 @@ GitHub Action to download a file from the internet into the workspace.
 
 ## Inputs
 
-- `file-url`: (**Required**) The URL of the file to download.
-- `file-name`: (*Optional*) A new filename to rename the downloaded file.
-- `location`: (*Optional*) A path to download the file.
-- `md5`: (*Optional*) An MD5 hash to verify the download.
-- `sha256`: (*Optional*) An SHA256 hash to verify the download.
+- `file-url`: **(Required)** The URL of the file to download.
+- `file-name`: *(Optional)* A new filename to rename the downloaded file.
+- `location`: *(Optional)* A path to download the file.
+- `md5`: *(Optional)* An MD5 hash to verify the download.
+- `sha256`: *(Optional)* An SHA256 hash to verify the download.
 
 
 ## Outputs
 
-- `file-path`: The full path to the downloaded file.
+- `file-path`: The absolute path to the downloaded file.
 
 
 ## Example usage

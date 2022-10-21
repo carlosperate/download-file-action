@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "package": "npm run build && ncc build ./build/src -o ./dist",
-    "lint": "eslint ./src/*",
+    "lint": "eslint src/**/*.ts",
     "test": "npm run lint"
   },
   "repository": {
@@ -30,26 +30,27 @@
   },
   "homepage": "https://github.com/carlosperate/download-file-action#readme",
   "dependencies": {
-    "@actions/core": "^1.2.6",
-    "content-disposition": "^0.5.2",
+    "@actions/core": "^1.6.0",
+    "content-disposition": "^0.5.4",
     "ext-name": "^5.0.0",
-    "file-type": "^11.1.0",
-    "filenamify": "^3.0.0",
-    "get-stream": "^4.1.0",
-    "got": "^8.3.1",
-    "make-dir": "^2.1.0",
+    "file-type": "^16.5.4",
+    "filenamify": "^4.3.0",
+    "get-stream": "^6.0.1",
+    "got": "^11.8.5",
+    "make-dir": "^3.1.0",
     "md5-file": "^5.0.0",
-    "p-event": "^2.1.0",
-    "pify": "^4.0.1"
+    "p-event": "^4.2.0",
+    "pify": "^5.0.0"
   },
   "devDependencies": {
-    "@types/node": "^13.11.1",
-    "@typescript-eslint/eslint-plugin": "^2.27.0",
-    "@typescript-eslint/parser": "^2.27.0",
-    "@zeit/ncc": "^0.21.1",
-    "eslint": "^6.8.0",
-    "eslint-config-airbnb-base": "^14.1.0",
-    "eslint-plugin-import": "^2.20.2",
-    "typescript": "^3.8.3"
+    "@types/node": "^17.0.12",
+    "@typescript-eslint/eslint-plugin": "^5.10.1",
+    "@typescript-eslint/parser": "^5.10.1",
+    "@zeit/ncc": "^0.22.3",
+    "eslint": "^8.7.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-github": "^4.3.5",
+    "eslint-plugin-import": "^2.25.4",
+    "typescript": "^4.5.5"
   }
 }

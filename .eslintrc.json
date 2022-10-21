@@ -2,9 +2,11 @@
     "env": {
         "browser": true,
         "commonjs": true,
-        "es6": true
+        "es6": true,
+        "node": true
     },
     "extends": [
+        "plugin:github/recommended",
         "airbnb-base"
     ],
     "globals": {
@@ -13,11 +15,18 @@
     },
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "ecmaVersion": 2018
+        "ecmaVersion": 9,
+        "sourceType": "module",
+        "project": "./tsconfig.json"
     },
     "plugins": [
-        "@typescript-eslint"
+        "@typescript-eslint",
+        "github"
     ],
     "rules": {
+        "i18n-text/no-en": "off",
+        "no-unused-vars": "off",
+        "@typescript-eslint/no-unused-vars": "error",
+        "prettier/prettier": "off"
     }
 }
