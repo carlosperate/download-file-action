@@ -25,7 +25,7 @@ In its simplest form you can you indicate what file to download and use it:
 
 ```yaml
 - name: Download a file
-  uses: carlosperate/download-file-action@v1
+  uses: carlosperate/download-file-action@v2
   with:
     file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
 - name: Check the file is there
@@ -36,7 +36,7 @@ To use all the options:
 
 ```yml
 - name: Download a file
-  uses: carlosperate/download-file-action@v1
+  uses: carlosperate/download-file-action@v2
   id: download-file
   with:
     file-url: 'https://github.com/carlosperate/download-file-action/archive/refs/tags/v1.0.3.tar.gz'

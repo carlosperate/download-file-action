@@ -3,8 +3,16 @@
 ## Update v1 tag
 
 ```
+git switch v1-backports
 git tag -fa v1 -m "Update v1 tag"
 git push origin v1 --force
+```
+
+## Update v2 tag
+```
+git switch master
+git tag -fa v2 -m "Update v2 tag"
+git push origin v2 --force
 ```
 
 ## Updating packages
