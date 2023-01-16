@@ -33,80 +33,80 @@ jobs:
 
       - name: 010 - Simple test to download a file
         uses: ./
-        id: download-poetry-simple
+        id: download-file-simple
         with:
-          file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
-      - run: echo "The file was downloaded to ${{ steps.download-poetry-simple.outputs.file-path }}"
+          file-url: 'https://github.com/carlosperate/download-file-action/releases/download/v1.0.0/download-file-action-1.0.0.tar.gz'
+      - run: echo "The file was downloaded to ${{ steps.download-file-simple.outputs.file-path }}"
       - name: 010 - Test file exists
-        run: python -c "import os; exit(not os.path.isfile('get-poetry.py'))"
+        run: python -c "import os; exit(not os.path.isfile('download-file-action-1.0.0.tar.gz'))"
       - name: 010 - Test action output path is correct
-        run: python -c "import os; exit(not r'${{ steps.download-poetry-simple.outputs.file-path }}' == os.path.abspath('get-poetry.py'))"
-      - run: ls && rm ${{ steps.download-poetry-simple.outputs.file-path }} && ls
+        run: python -c "import os; exit(not r'${{ steps.download-file-simple.outputs.file-path }}' == os.path.abspath('download-file-action-1.0.0.tar.gz'))"
+      - run: ls && rm ${{ steps.download-file-simple.outputs.file-path }} && ls
 
       - name: 020 - Test to download a file with a different filename
         uses: ./
-        id: download-poetry-name
+        id: download-file-name
         with:
-          file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
-          file-name: 'new_name.py'
-      - run: echo "The file was downloaded to ${{ steps.download-poetry-name.outputs.file-path }}"
+          file-url: 'https://github.com/carlosperate/download-file-action/releases/download/v1.0.0/download-file-action-1.0.0.tar.gz'
+          file-name: 'new_name.tar.gz'
+      - run: echo "The file was downloaded to ${{ steps.download-file-name.outputs.file-path }}"
       - name: 020 - Test file exists
-        run: python -c "import os; exit(not os.path.isfile('new_name.py'))"
+        run: python -c "import os; exit(not os.path.isfile('new_name.tar.gz'))"
       - name: 020 - Test action output path is correct
-        run: python -c "import os; exit(not r'${{ steps.download-poetry-name.outputs.file-path }}' == os.path.abspath('new_name.py'))"
-      - run: ls && rm ${{ steps.download-poetry-name.outputs.file-path }} && ls
+        run: python -c "import os; exit(not r'${{ steps.download-file-name.outputs.file-path }}' == os.path.abspath('new_name.tar.gz'))"
+      - run: ls && rm ${{ steps.download-file-name.outputs.file-path }} && ls
 
       - name: 030 - Test to download a file to a different path
         uses: ./
-        id: download-poetry-location
+        id: download-file-location
         with:
-          file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
+          file-url: 'https://github.com/carlosperate/download-file-action/releases/download/v1.0.0/download-file-action-1.0.0.tar.gz'
           location: 'new_folder'
-      - run: echo "The file was downloaded to ${{ steps.download-poetry-location.outputs.file-path }}"
+      - run: echo "The file was downloaded to ${{ steps.download-file-location.outputs.file-path }}"
       - name: 030 - Test file exists
-        run: python -c "import os; exit(not os.path.isfile('new_folder/get-poetry.py'))"
+        run: python -c "import os; exit(not os.path.isfile('new_folder/download-file-action-1.0.0.tar.gz'))"
       - name: 030 - Test action output path is correct
-        run: python -c "import os; exit(not r'${{ steps.download-poetry-location.outputs.file-path }}' == os.path.abspath('new_folder/get-poetry.py'))"
+        run: python -c "import os; exit(not r'${{ steps.download-file-location.outputs.file-path }}' == os.path.abspath('new_folder/download-file-action-1.0.0.tar.gz'))"
       - run: ls && ls new_folder && rm -r new_folder && ls
 
       - name: 040 - Test to download a file to a relative path
         uses: ./
-        id: download-poetry-relative
+        id: download-file-relative
         with:
-          file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
+          file-url: 'https://github.com/carlosperate/download-file-action/releases/download/v1.0.0/download-file-action-1.0.0.tar.gz'
           location: '../'
-      - run: echo "The file was downloaded to ${{ steps.download-poetry-relative.outputs.file-path }}"
+      - run: echo "The file was downloaded to ${{ steps.download-file-relative.outputs.file-path }}"
       - name: 040 - Test file exists
-        run: python -c "import os; exit(not os.path.isfile('../get-poetry.py'))"
+        run: python -c "import os; exit(not os.path.isfile('../download-file-action-1.0.0.tar.gz'))"
       - name: 040 - Test action output path is correct
-        run: python -c "import os; exit(not r'${{ steps.download-poetry-relative.outputs.file-path }}' == os.path.abspath('../get-poetry.py'))"
-      - run: ls ../ && rm ${{ steps.download-poetry-relative.outputs.file-path }} && ls ../
+        run: python -c "import os; exit(not r'${{ steps.download-file-relative.outputs.file-path }}' == os.path.abspath('../download-file-action-1.0.0.tar.gz'))"
+      - run: ls ../ && rm ${{ steps.download-file-relative.outputs.file-path }} && ls ../
 
       - name: 050 - Test to download a file to an absolute path
         uses: ./
-        id: download-poetry-absolute
+        id: download-file-absolute
         with:
-          file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
+          file-url: 'https://github.com/carlosperate/download-file-action/releases/download/v1.0.0/download-file-action-1.0.0.tar.gz'
           location: '${{ github.workspace }}/a_folder'
-      - run: echo "The file was downloaded to ${{ steps.download-poetry-absolute.outputs.file-path }}"
+      - run: echo "The file was downloaded to ${{ steps.download-file-absolute.outputs.file-path }}"
       - name: 050 - Test file exists
-        run: python -c "import os; exit(not os.path.isfile(r'${{ github.workspace }}/a_folder/get-poetry.py'))"
+        run: python -c "import os; exit(not os.path.isfile(r'${{ github.workspace }}/a_folder/download-file-action-1.0.0.tar.gz'))"
       - name: 050 - Test action output path is correct
-        run: python -c "import os; exit(not r'${{ steps.download-poetry-absolute.outputs.file-path }}' == os.path.abspath(r'${{ github.workspace }}/a_folder/get-poetry.py'))"
+        run: python -c "import os; exit(not r'${{ steps.download-file-absolute.outputs.file-path }}' == os.path.abspath(r'${{ github.workspace }}/a_folder/download-file-action-1.0.0.tar.gz'))"
       - run: ls ${{ github.workspace }} && ls ${{ github.workspace }}/a_folder && rm -r ${{ github.workspace }}/a_folder && ls ${{ github.workspace }}
 
       - name: 060 - Test to download a file to a different filename and path
         uses: ./
-        id: download-poetry-both
+        id: download-file-both
         with:
-          file-url: 'https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py'
+          file-url: 'https://github.com/carlosperate/download-file-action/releases/download/v1.0.0/download-file-action-1.0.0.tar.gz'
           location: 'different_folder'
-          file-name: 'new_name.py'
-      - run: echo "The file was downloaded to ${{ steps.download-poetry-both.outputs.file-path }}"
+          file-name: 'new_name.tar.gz'
+      - run: echo "The file was downloaded to ${{ steps.download-file-both.outputs.file-path }}"
       - name: 060 - Test file exists
-        run: python -c "import os; exit(not os.path.isfile('different_folder/new_name.py'))"
+        run: python -c "import os; exit(not os.path.isfile('different_folder/new_name.tar.gz'))"
       - name: 060 - Test action output path is correct
-        run: python -c "import os; exit(not r'${{ steps.download-poetry-both.outputs.file-path }}' == os.path.abspath('different_folder/new_name.py'))"
+        run: python -c "import os; exit(not r'${{ steps.download-file-both.outputs.file-path }}' == os.path.abspath('different_folder/new_name.tar.gz'))"
       - run: ls different_folder && rm -r different_folder
 
       - name: 070 - Test to download a file and match MD5 in lowercase
