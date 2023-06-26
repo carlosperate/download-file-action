@@ -3,6 +3,9 @@
 ###########
 build/*
 
+# Asdf
+.tool-versions
+
 ###################
 # Node Specific #
 ###################
