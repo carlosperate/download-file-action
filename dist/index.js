@@ -2,7 +2,7 @@
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 566:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
 "use strict";
 
@@ -39,6 +39,17 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 const fs = __nccwpck_require__(7147);
 const path = __nccwpck_require__(1017);
 const { URL } = __nccwpck_require__(7310);
@@ -83,14 +94,15 @@ const getFilename = (res, data) => {
 };
 module.exports = (uri, output_, opts_) => {
     const output = output_ || process.cwd();
-    const opts = Object.assign({ encoding: null, rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false' }, opts_);
+    const _a = opts_ || {}, { filename: filenameOpt } = _a, opts_2 = __rest(_a, ["filename"]);
+    const opts = Object.assign({ responseType: 'buffer', https: { rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false' } }, opts_2);
     const stream = got.stream(uri, opts);
     const promise = pEvent(stream, 'response').then((res) => {
-        const encoding = opts.encoding === null ? 'buffer' : opts.encoding;
+        const encoding = opts.responseType === 'buffer' ? 'buffer' : opts.encoding;
         return Promise.all([getStream(stream, { encoding }), res]);
     }).then((result) => {
         const [data, res] = result;
-        const filename = opts.filename || filenamify(getFilename(res, data));
+        const filename = filenameOpt || filenamify(getFilename(res, data));
         const outputFilepath = path.join(output, filename);
         return makeDir(path.dirname(outputFilepath))
             .then(() => fsP.writeFile(outputFilepath, data))

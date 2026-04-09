@@ -90,20 +90,21 @@ const getFilename = (res, data) => {
 
 module.exports = (uri, output_, opts_) => {
   const output = output_ || process.cwd();
+  const { filename: filenameOpt, ...opts_2 } = opts_ || {};
   const opts = {
-    encoding: null,
-    rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false',
-    ...opts_,
+    responseType: 'buffer',
+    https: { rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false' },
+    ...opts_2,
   };
 
   const stream = got.stream(uri, opts);
 
   const promise = pEvent(stream, 'response').then((res) => {
-    const encoding = opts.encoding === null ? 'buffer' : opts.encoding;
+    const encoding = opts.responseType === 'buffer' ? 'buffer' : opts.encoding;
     return Promise.all([getStream(stream, { encoding }), res]);
   }).then((result) => {
     const [data, res] = result;
-    const filename = opts.filename || filenamify(getFilename(res, data));
+    const filename = filenameOpt || filenamify(getFilename(res, data));
     const outputFilepath = path.join(output, filename);
 
     return makeDir(path.dirname(outputFilepath))
