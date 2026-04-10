@@ -6,6 +6,10 @@
  * - Set the path as a required argument
  * - Removed decompressing functionality
  * - Return the file path instead of the file data
+ * - Updated `got` import to use named export (`{ got }`) for compatibility with got v12+
+ * - Replaced `encoding: null` option with `responseType: 'buffer'` for got v12+ compatibility
+ * - Replaced `rejectUnauthorized` option with `https: { rejectUnauthorized }` for got v12+ compatibility
+ * - Extracted `filename` from opts before passing to `got` to avoid unexpected option error
  *
  * Original license can be found below:
  *
