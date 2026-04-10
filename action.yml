@@ -25,5 +25,5 @@ outputs:
   file-path:
     description: 'The full path to the downloaded file'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
