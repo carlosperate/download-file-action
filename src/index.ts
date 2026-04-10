@@ -4,8 +4,7 @@ import * as path from 'path';
 
 import * as core from '@actions/core';
 import md5File from 'md5-file';
-
-const download = require('./download-mod');
+import download from './download-mod.js';
 
 async function main(): Promise<void> {
   try {

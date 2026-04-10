@@ -3,11 +3,13 @@
   "version": "2.0.2",
   "description": "GitHub Action to download a file from the internet into the workspace to use in your workflow.",
   "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "package": "npm run build && ncc build ./build/src -o ./dist",
     "lint": "eslint src/**/*.ts",
-    "test": "npm run lint"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "all": "npm run package && npm run lint && npm test"
   },
   "repository": {
     "type": "git",
@@ -39,18 +41,20 @@
     "got": "^13.0.0",
     "make-dir": "^3.1.0",
     "md5-file": "^5.0.0",
-    "p-event": "^4.2.0",
-    "pify": "^5.0.0"
+    "p-event": "^4.2.0"
   },
   "devDependencies": {
+    "@types/content-disposition": "^0.5.9",
     "@types/node": "^18.11.3",
     "@typescript-eslint/eslint-plugin": "^5.40.1",
     "@typescript-eslint/parser": "^5.40.1",
-    "@vercel/ncc": "^0.34.0",
+    "@vercel/ncc": "^0.38.4",
     "eslint": "^8.25.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-github": "^4.4.0",
     "eslint-plugin-import": "^2.26.0",
-    "typescript": "^4.6.4"
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.9",
+    "typescript": "^4.9.5"
   }
 }

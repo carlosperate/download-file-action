@@ -1,235 +1,9 @@
-/******/ (() => { // webpackBootstrap
-/******/ 	var __webpack_modules__ = ({
+import { createRequire as __WEBPACK_EXTERNAL_createRequire } from "module";
+/******/ var __webpack_modules__ = ({
 
-/***/ 566:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-"use strict";
-
-/*
- * This file was originally the main source code for the nodejs download lib:
- * https://github.com/kevva/download commit a16ba04b30dafbe7d9246db93f1534320d8e0dd3
- *
- * It has been modified:
- * - Set the path as a required argument
- * - Removed decompressing functionality
- * - Return the file path instead of the file data
- * - Updated `got` import to use named export (`{ got }`) for compatibility with got v12+
- * - Replaced `encoding: null` option with `responseType: 'buffer'` for got v12+ compatibility
- * - Replaced `rejectUnauthorized` option with `https: { rejectUnauthorized }` for got v12+ compatibility
- * - Extracted `filename` from opts before passing to `got` to avoid unexpected option error
- *
- * Original license can be found below:
- *
- * MIT License
- *
- * Copyright (c) Kevin Mårtensson <kevinmartensson@gmail.com> (github.com/kevva)
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
- * IN THE SOFTWARE.
- */
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
-const fs = __nccwpck_require__(7147);
-const path = __nccwpck_require__(1017);
-const { URL } = __nccwpck_require__(7310);
-const contentDisposition = __nccwpck_require__(3921);
-const filenamify = __nccwpck_require__(6094);
-const getStream = __nccwpck_require__(1766);
-const { got } = __nccwpck_require__(7369);
-const makeDir = __nccwpck_require__(9126);
-const pify = __nccwpck_require__(4810);
-const pEvent = __nccwpck_require__(4568);
-const fileType = __nccwpck_require__(1021);
-const extName = __nccwpck_require__(5181);
-const fsP = pify(fs);
-const filenameFromPath = (res) => path.basename(new URL(res.requestUrl).pathname);
-const getExtFromMime = (res) => {
-    const header = res.headers['content-type'];
-    if (!header) {
-        return null;
-    }
-    const exts = extName.mime(header);
-    if (exts.length !== 1) {
-        return null;
-    }
-    return exts[0].ext;
-};
-const getFilename = (res, data) => {
-    const header = res.headers['content-disposition'];
-    if (header) {
-        const parsed = contentDisposition.parse(header);
-        if (parsed.parameters && parsed.parameters.filename) {
-            return parsed.parameters.filename;
-        }
-    }
-    let filename = filenameFromPath(res);
-    if (!path.extname(filename)) {
-        const ext = (fileType(data) || {}).ext || getExtFromMime(res);
-        if (ext) {
-            filename = `${filename}.${ext}`;
-        }
-    }
-    return filename;
-};
-module.exports = (uri, output_, opts_) => {
-    const output = output_ || process.cwd();
-    const _a = opts_ || {}, { filename: filenameOpt } = _a, opts_2 = __rest(_a, ["filename"]);
-    const opts = Object.assign({ responseType: 'buffer', https: { rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false' } }, opts_2);
-    const stream = got.stream(uri, opts);
-    const promise = pEvent(stream, 'response').then((res) => {
-        const encoding = opts.responseType === 'buffer' ? 'buffer' : opts.encoding;
-        return Promise.all([getStream(stream, { encoding }), res]);
-    }).then((result) => {
-        const [data, res] = result;
-        const filename = filenameOpt || filenamify(getFilename(res, data));
-        const outputFilepath = path.join(output, filename);
-        return makeDir(path.dirname(outputFilepath))
-            .then(() => fsP.writeFile(outputFilepath, data))
-            .then(() => outputFilepath);
-    });
-    stream.then = promise.then.bind(promise);
-    stream.catch = promise.catch.bind(promise);
-    return stream;
-};
-
-
-/***/ }),
-
-/***/ 8242:
+/***/ 4914:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const crypto = __importStar(__nccwpck_require__(6113));
-const fs = __importStar(__nccwpck_require__(7147));
-const path = __importStar(__nccwpck_require__(1017));
-const core = __importStar(__nccwpck_require__(2186));
-const md5_file_1 = __importDefault(__nccwpck_require__(1446));
-const download = __nccwpck_require__(566);
-function main() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const fileURL = core.getInput('file-url', { required: true });
-            const fileName = core.getInput('file-name') || undefined;
-            const fileLocation = core.getInput('location') || process.cwd();
-            const fileMd5 = core.getInput('md5').toLowerCase();
-            const fileSha256 = core.getInput('sha256').toLowerCase();
-            core.info('Downloading file:');
-            core.info(`\turl: ${fileURL}`);
-            core.info(`\tname: ${fileName || 'Not set'}`);
-            core.info(`\tlocation: ${fileLocation}`);
-            core.info(`\tMD5: ${fileMd5 || 'Not set'}`);
-            core.info(`\tSHA256: ${fileSha256 || 'Not set'}`);
-            let filePath = yield download(fileURL, fileLocation, {
-                filename: fileName,
-            });
-            filePath = path.resolve(filePath);
-            core.info(`Downloaded: ${filePath}`);
-            if (fileMd5) {
-                core.info('Verifying MD5...');
-                let downloadMd5 = yield (0, md5_file_1.default)(filePath);
-                downloadMd5 = downloadMd5.toLowerCase();
-                core.info(`Downloaded file MD5: ${downloadMd5}`);
-                if (downloadMd5 !== fileMd5) {
-                    throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadMd5} != ${fileMd5}`);
-                }
-                else {
-                    core.info('Provided MD5 hash matches.');
-                }
-            }
-            if (fileSha256) {
-                core.info('Verifying SHA256...');
-                const fileBuffer = fs.readFileSync(filePath);
-                const hashSum = crypto.createHash('sha256');
-                hashSum.update(fileBuffer);
-                const downloadSha256 = hashSum.digest('hex').toLowerCase();
-                core.info(`Downloaded file SHA256: ${downloadSha256}`);
-                if (downloadSha256 !== fileSha256) {
-                    throw new Error(`File SHA256 (left) doesn't match expected value (right): ${downloadSha256} != ${fileSha256}`);
-                }
-                else {
-                    core.info('Provided SHA256 hash matches.');
-                }
-            }
-            core.info('File successfully downloaded.');
-            core.setOutput('file-path', filePath);
-        }
-        catch (error) {
-            if (error instanceof Error)
-                core.setFailed(error.message);
-        }
-    });
-}
-main();
-
-
-/***/ }),
-
-/***/ 7351:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -252,8 +26,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.issue = exports.issueCommand = void 0;
-const os = __importStar(__nccwpck_require__(2037));
-const utils_1 = __nccwpck_require__(5278);
+const os = __importStar(__nccwpck_require__(857));
+const utils_1 = __nccwpck_require__(302);
 /**
  * Commands
  *
@@ -325,10 +99,9 @@ function escapeProperty(s) {
 
 /***/ }),
 
-/***/ 2186:
+/***/ 7484:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -360,12 +133,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getIDToken = exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.notice = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
-const command_1 = __nccwpck_require__(7351);
-const file_command_1 = __nccwpck_require__(717);
-const utils_1 = __nccwpck_require__(5278);
-const os = __importStar(__nccwpck_require__(2037));
-const path = __importStar(__nccwpck_require__(1017));
-const oidc_utils_1 = __nccwpck_require__(8041);
+const command_1 = __nccwpck_require__(4914);
+const file_command_1 = __nccwpck_require__(4753);
+const utils_1 = __nccwpck_require__(302);
+const os = __importStar(__nccwpck_require__(857));
+const path = __importStar(__nccwpck_require__(6928));
+const oidc_utils_1 = __nccwpck_require__(5306);
 /**
  * The code to exit an action
  */
@@ -650,17 +423,17 @@ exports.getIDToken = getIDToken;
 /**
  * Summary exports
  */
-var summary_1 = __nccwpck_require__(1327);
+var summary_1 = __nccwpck_require__(1847);
 Object.defineProperty(exports, "summary", ({ enumerable: true, get: function () { return summary_1.summary; } }));
 /**
  * @deprecated use core.summary
  */
-var summary_2 = __nccwpck_require__(1327);
+var summary_2 = __nccwpck_require__(1847);
 Object.defineProperty(exports, "markdownSummary", ({ enumerable: true, get: function () { return summary_2.markdownSummary; } }));
 /**
  * Path exports
  */
-var path_utils_1 = __nccwpck_require__(2981);
+var path_utils_1 = __nccwpck_require__(1976);
 Object.defineProperty(exports, "toPosixPath", ({ enumerable: true, get: function () { return path_utils_1.toPosixPath; } }));
 Object.defineProperty(exports, "toWin32Path", ({ enumerable: true, get: function () { return path_utils_1.toWin32Path; } }));
 Object.defineProperty(exports, "toPlatformPath", ({ enumerable: true, get: function () { return path_utils_1.toPlatformPath; } }));
@@ -668,10 +441,9 @@ Object.defineProperty(exports, "toPlatformPath", ({ enumerable: true, get: funct
 
 /***/ }),
 
-/***/ 717:
+/***/ 4753:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 // For internal use, subject to change.
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -697,10 +469,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.prepareKeyValueMessage = exports.issueFileCommand = void 0;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const fs = __importStar(__nccwpck_require__(7147));
-const os = __importStar(__nccwpck_require__(2037));
-const uuid_1 = __nccwpck_require__(5840);
-const utils_1 = __nccwpck_require__(5278);
+const fs = __importStar(__nccwpck_require__(9896));
+const os = __importStar(__nccwpck_require__(857));
+const uuid_1 = __nccwpck_require__(2048);
+const utils_1 = __nccwpck_require__(302);
 function issueFileCommand(command, message) {
     const filePath = process.env[`GITHUB_${command}`];
     if (!filePath) {
@@ -733,10 +505,9 @@ exports.prepareKeyValueMessage = prepareKeyValueMessage;
 
 /***/ }),
 
-/***/ 8041:
+/***/ 5306:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -749,9 +520,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.OidcClient = void 0;
-const http_client_1 = __nccwpck_require__(6255);
-const auth_1 = __nccwpck_require__(5526);
-const core_1 = __nccwpck_require__(2186);
+const http_client_1 = __nccwpck_require__(4844);
+const auth_1 = __nccwpck_require__(4552);
+const core_1 = __nccwpck_require__(7484);
 class OidcClient {
     static createHttpClient(allowRetry = true, maxRetry = 10) {
         const requestOptions = {
@@ -817,10 +588,9 @@ exports.OidcClient = OidcClient;
 
 /***/ }),
 
-/***/ 2981:
+/***/ 1976:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -843,7 +613,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.toPlatformPath = exports.toWin32Path = exports.toPosixPath = void 0;
-const path = __importStar(__nccwpck_require__(1017));
+const path = __importStar(__nccwpck_require__(6928));
 /**
  * toPosixPath converts the given path to the posix form. On Windows, \\ will be
  * replaced with /.
@@ -882,10 +652,9 @@ exports.toPlatformPath = toPlatformPath;
 
 /***/ }),
 
-/***/ 1327:
+/***/ 1847:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -898,8 +667,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.summary = exports.markdownSummary = exports.SUMMARY_DOCS_URL = exports.SUMMARY_ENV_VAR = void 0;
-const os_1 = __nccwpck_require__(2037);
-const fs_1 = __nccwpck_require__(7147);
+const os_1 = __nccwpck_require__(857);
+const fs_1 = __nccwpck_require__(9896);
 const { access, appendFile, writeFile } = fs_1.promises;
 exports.SUMMARY_ENV_VAR = 'GITHUB_STEP_SUMMARY';
 exports.SUMMARY_DOCS_URL = 'https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary';
@@ -1172,10 +941,9 @@ exports.summary = _summary;
 
 /***/ }),
 
-/***/ 5278:
+/***/ 302:
 /***/ ((__unused_webpack_module, exports) => {
 
-"use strict";
 
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -1219,10 +987,9 @@ exports.toCommandProperties = toCommandProperties;
 
 /***/ }),
 
-/***/ 5526:
+/***/ 4552:
 /***/ (function(__unused_webpack_module, exports) {
 
-"use strict";
 
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -1307,10 +1074,9 @@ exports.PersonalAccessTokenCredentialHandler = PersonalAccessTokenCredentialHand
 
 /***/ }),
 
-/***/ 6255:
+/***/ 4844:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-"use strict";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -1343,10 +1109,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.HttpClient = exports.isHttps = exports.HttpClientResponse = exports.HttpClientError = exports.getProxyUrl = exports.MediaTypes = exports.Headers = exports.HttpCodes = void 0;
-const http = __importStar(__nccwpck_require__(3685));
-const https = __importStar(__nccwpck_require__(5687));
-const pm = __importStar(__nccwpck_require__(9835));
-const tunnel = __importStar(__nccwpck_require__(4294));
+const http = __importStar(__nccwpck_require__(8611));
+const https = __importStar(__nccwpck_require__(5692));
+const pm = __importStar(__nccwpck_require__(4988));
+const tunnel = __importStar(__nccwpck_require__(770));
 var HttpCodes;
 (function (HttpCodes) {
     HttpCodes[HttpCodes["OK"] = 200] = "OK";
@@ -1919,10 +1685,9 @@ const lowercaseKeys = (obj) => Object.keys(obj).reduce((c, k) => ((c[k.toLowerCa
 
 /***/ }),
 
-/***/ 9835:
+/***/ 4988:
 /***/ ((__unused_webpack_module, exports) => {
 
-"use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.checkBypass = exports.getProxyUrl = void 0;
@@ -1987,10 +1752,9 @@ exports.checkBypass = checkBypass;
 
 /***/ }),
 
-/***/ 3921:
+/***/ 8111:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 /*!
  * content-disposition
  * Copyright(c) 2014-2017 Douglas Christopher Wilson
@@ -2012,8 +1776,8 @@ module.exports.parse = parse
  * @private
  */
 
-var basename = (__nccwpck_require__(1017).basename)
-var Buffer = (__nccwpck_require__(8558).Buffer)
+var basename = (__nccwpck_require__(6928).basename)
+var Buffer = (__nccwpck_require__(3079).Buffer)
 
 /**
  * RegExp to match non attr-char, *after* encodeURIComponent (i.e. not including "%")
@@ -2453,12 +2217,12 @@ function ContentDisposition (type, parameters) {
 
 /***/ }),
 
-/***/ 8558:
+/***/ 3079:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 /*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
 /* eslint-disable node/no-deprecated-api */
-var buffer = __nccwpck_require__(4300)
+var buffer = __nccwpck_require__(181)
 var Buffer = buffer.Buffer
 
 // alternative to using Object.keys for old browsers
@@ -2525,14 +2289,13 @@ SafeBuffer.allocUnsafeSlow = function (size) {
 
 /***/ }),
 
-/***/ 2391:
+/***/ 1373:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const {Transform, PassThrough} = __nccwpck_require__(2781);
-const zlib = __nccwpck_require__(9796);
-const mimicResponse = __nccwpck_require__(3877);
+const {Transform, PassThrough} = __nccwpck_require__(2203);
+const zlib = __nccwpck_require__(3106);
+const mimicResponse = __nccwpck_require__(9382);
 
 module.exports = response => {
 	const contentEncoding = (response.headers['content-encoding'] || '').toLowerCase();
@@ -2591,10 +2354,9 @@ module.exports = response => {
 
 /***/ }),
 
-/***/ 3877:
+/***/ 9382:
 /***/ ((module) => {
 
-"use strict";
 
 
 // We define these manually to ensure they're always copied
@@ -2676,10 +2438,9 @@ module.exports = (fromStream, toStream) => {
 
 /***/ }),
 
-/***/ 6214:
+/***/ 2114:
 /***/ ((module, exports) => {
 
-"use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 function isTLSSocket(socket) {
@@ -2731,10 +2492,9 @@ module.exports["default"] = deferToConnect;
 
 /***/ }),
 
-/***/ 8691:
+/***/ 1199:
 /***/ ((module) => {
 
-"use strict";
 
 
 var matchOperatorsRe = /[|\\{}()[\]^$+*?.]/g;
@@ -2750,12 +2510,11 @@ module.exports = function (str) {
 
 /***/ }),
 
-/***/ 9028:
+/***/ 3462:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-var mimeDb = __nccwpck_require__(7426);
+var mimeDb = __nccwpck_require__(9829);
 
 module.exports = function () {
 	var ret = {};
@@ -2776,13 +2535,12 @@ module.exports = function () {
 
 /***/ }),
 
-/***/ 5181:
+/***/ 7125:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const extList = __nccwpck_require__(9028);
-const sortKeysLength = __nccwpck_require__(7437);
+const extList = __nccwpck_require__(3462);
+const sortKeysLength = __nccwpck_require__(6166);
 
 module.exports = str => {
 	const obj = sortKeysLength.desc(extList());
@@ -2815,10 +2573,9 @@ module.exports.mime = str => {
 
 /***/ }),
 
-/***/ 9921:
+/***/ 9818:
 /***/ ((module) => {
 
-"use strict";
 
 /* eslint-disable no-control-regex */
 // TODO: remove parens when Node.js 6 is targeted. Node.js 4 barfs at it.
@@ -2828,13 +2585,12 @@ module.exports.windowsNames = () => (/^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i);
 
 /***/ }),
 
-/***/ 8263:
+/***/ 6516:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const path = __nccwpck_require__(1017);
-const filenamify = __nccwpck_require__(3095);
+const path = __nccwpck_require__(6928);
+const filenamify = __nccwpck_require__(2038);
 
 const filenamifyPath = (filePath, options) => {
 	filePath = path.resolve(filePath);
@@ -2846,14 +2602,13 @@ module.exports = filenamifyPath;
 
 /***/ }),
 
-/***/ 3095:
+/***/ 2038:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const trimRepeated = __nccwpck_require__(6520);
-const filenameReservedRegex = __nccwpck_require__(9921);
-const stripOuter = __nccwpck_require__(449);
+const trimRepeated = __nccwpck_require__(5201);
+const filenameReservedRegex = __nccwpck_require__(9818);
+const stripOuter = __nccwpck_require__(8204);
 
 // Doesn't make sense to have longer filenames
 const MAX_FILENAME_LENGTH = 100;
@@ -2894,13 +2649,12 @@ module.exports = filenamify;
 
 /***/ }),
 
-/***/ 6094:
+/***/ 3264:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const filenamify = __nccwpck_require__(3095);
-const filenamifyPath = __nccwpck_require__(8263);
+const filenamify = __nccwpck_require__(2038);
+const filenamifyPath = __nccwpck_require__(6516);
 
 const filenamifyCombined = filenamify;
 filenamifyCombined.path = filenamifyPath;
@@ -2910,12 +2664,11 @@ module.exports = filenamify;
 
 /***/ }),
 
-/***/ 1585:
+/***/ 7070:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const {PassThrough: PassThroughStream} = __nccwpck_require__(2781);
+const {PassThrough: PassThroughStream} = __nccwpck_require__(2203);
 
 module.exports = options => {
 	options = {...options};
@@ -2970,15 +2723,14 @@ module.exports = options => {
 
 /***/ }),
 
-/***/ 1766:
+/***/ 6771:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const {constants: BufferConstants} = __nccwpck_require__(4300);
-const stream = __nccwpck_require__(2781);
-const {promisify} = __nccwpck_require__(3837);
-const bufferStream = __nccwpck_require__(1585);
+const {constants: BufferConstants} = __nccwpck_require__(181);
+const stream = __nccwpck_require__(2203);
+const {promisify} = __nccwpck_require__(9023);
+const bufferStream = __nccwpck_require__(7070);
 
 const streamPipelinePromisified = promisify(stream.pipeline);
 
@@ -3039,10 +2791,9 @@ module.exports.MaxBufferError = MaxBufferError;
 
 /***/ }),
 
-/***/ 1002:
+/***/ 4584:
 /***/ ((module) => {
 
-"use strict";
 
 // rfc7231 6.1
 const statusCodeCacheableByDefault = new Set([
@@ -3721,19 +3472,18 @@ module.exports = class CachePolicy {
 
 /***/ }),
 
-/***/ 9898:
+/***/ 685:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
 // See https://github.com/facebook/jest/issues/2549
 // eslint-disable-next-line node/prefer-global/url
-const {URL} = __nccwpck_require__(7310);
-const EventEmitter = __nccwpck_require__(2361);
-const tls = __nccwpck_require__(4404);
-const http2 = __nccwpck_require__(5158);
-const QuickLRU = __nccwpck_require__(9273);
-const delayAsyncDestroy = __nccwpck_require__(9237);
+const {URL} = __nccwpck_require__(7016);
+const EventEmitter = __nccwpck_require__(4434);
+const tls = __nccwpck_require__(4756);
+const http2 = __nccwpck_require__(5675);
+const QuickLRU = __nccwpck_require__(5475);
+const delayAsyncDestroy = __nccwpck_require__(811);
 
 const kCurrentStreamCount = Symbol('currentStreamCount');
 const kRequest = Symbol('request');
@@ -4525,22 +4275,21 @@ module.exports = {
 
 /***/ }),
 
-/***/ 7167:
+/***/ 9213:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
 // See https://github.com/facebook/jest/issues/2549
 // eslint-disable-next-line node/prefer-global/url
-const {URL, urlToHttpOptions} = __nccwpck_require__(7310);
-const http = __nccwpck_require__(3685);
-const https = __nccwpck_require__(5687);
-const resolveALPN = __nccwpck_require__(6624);
-const QuickLRU = __nccwpck_require__(9273);
-const {Agent, globalAgent} = __nccwpck_require__(9898);
-const Http2ClientRequest = __nccwpck_require__(9632);
-const calculateServerName = __nccwpck_require__(1982);
-const delayAsyncDestroy = __nccwpck_require__(9237);
+const {URL, urlToHttpOptions} = __nccwpck_require__(7016);
+const http = __nccwpck_require__(8611);
+const https = __nccwpck_require__(5692);
+const resolveALPN = __nccwpck_require__(8824);
+const QuickLRU = __nccwpck_require__(5475);
+const {Agent, globalAgent} = __nccwpck_require__(685);
+const Http2ClientRequest = __nccwpck_require__(7605);
+const calculateServerName = __nccwpck_require__(2850);
+const delayAsyncDestroy = __nccwpck_require__(811);
 
 const cache = new QuickLRU({maxSize: 100});
 const queue = new Map();
@@ -4739,27 +4488,26 @@ module.exports.createResolveProtocol = createResolveProtocol;
 
 /***/ }),
 
-/***/ 9632:
+/***/ 7605:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
 // See https://github.com/facebook/jest/issues/2549
 // eslint-disable-next-line node/prefer-global/url
-const {URL, urlToHttpOptions} = __nccwpck_require__(7310);
-const http2 = __nccwpck_require__(5158);
-const {Writable} = __nccwpck_require__(2781);
-const {Agent, globalAgent} = __nccwpck_require__(9898);
-const IncomingMessage = __nccwpck_require__(2575);
-const proxyEvents = __nccwpck_require__(1818);
+const {URL, urlToHttpOptions} = __nccwpck_require__(7016);
+const http2 = __nccwpck_require__(5675);
+const {Writable} = __nccwpck_require__(2203);
+const {Agent, globalAgent} = __nccwpck_require__(685);
+const IncomingMessage = __nccwpck_require__(2156);
+const proxyEvents = __nccwpck_require__(118);
 const {
 	ERR_INVALID_ARG_TYPE,
 	ERR_INVALID_PROTOCOL,
 	ERR_HTTP_HEADERS_SENT
-} = __nccwpck_require__(7087);
-const validateHeaderName = __nccwpck_require__(4592);
-const validateHeaderValue = __nccwpck_require__(3549);
-const proxySocketHandler = __nccwpck_require__(9404);
+} = __nccwpck_require__(9731);
+const validateHeaderName = __nccwpck_require__(1212);
+const validateHeaderValue = __nccwpck_require__(6462);
+const proxySocketHandler = __nccwpck_require__(7083);
 
 const {
 	HTTP2_HEADER_STATUS,
@@ -5310,12 +5058,11 @@ module.exports = ClientRequest;
 
 /***/ }),
 
-/***/ 2575:
+/***/ 2156:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const {Readable} = __nccwpck_require__(2781);
+const {Readable} = __nccwpck_require__(2203);
 
 class IncomingMessage extends Readable {
 	constructor(socket, highWaterMark) {
@@ -5391,30 +5138,29 @@ module.exports = IncomingMessage;
 
 /***/ }),
 
-/***/ 4645:
+/***/ 4956:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const http2 = __nccwpck_require__(5158);
+const http2 = __nccwpck_require__(5675);
 const {
 	Agent,
 	globalAgent
-} = __nccwpck_require__(9898);
-const ClientRequest = __nccwpck_require__(9632);
-const IncomingMessage = __nccwpck_require__(2575);
-const auto = __nccwpck_require__(7167);
+} = __nccwpck_require__(685);
+const ClientRequest = __nccwpck_require__(7605);
+const IncomingMessage = __nccwpck_require__(2156);
+const auto = __nccwpck_require__(9213);
 const {
 	HttpOverHttp2,
 	HttpsOverHttp2
-} = __nccwpck_require__(8795);
-const Http2OverHttp2 = __nccwpck_require__(8553);
+} = __nccwpck_require__(9126);
+const Http2OverHttp2 = __nccwpck_require__(3747);
 const {
 	Http2OverHttp,
 	Http2OverHttps
-} = __nccwpck_require__(9794);
-const validateHeaderName = __nccwpck_require__(4592);
-const validateHeaderValue = __nccwpck_require__(3549);
+} = __nccwpck_require__(278);
+const validateHeaderName = __nccwpck_require__(1212);
+const validateHeaderValue = __nccwpck_require__(6462);
 
 const request = (url, options, callback) => new ClientRequest(url, options, callback);
 
@@ -5449,10 +5195,9 @@ module.exports = {
 
 /***/ }),
 
-/***/ 7885:
+/***/ 2037:
 /***/ ((module) => {
 
-"use strict";
 
 
 module.exports = self => {
@@ -5474,19 +5219,18 @@ module.exports = self => {
 
 /***/ }),
 
-/***/ 8795:
+/***/ 9126:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const tls = __nccwpck_require__(4404);
-const http = __nccwpck_require__(3685);
-const https = __nccwpck_require__(5687);
-const JSStreamSocket = __nccwpck_require__(1564);
-const {globalAgent} = __nccwpck_require__(9898);
-const UnexpectedStatusCodeError = __nccwpck_require__(6203);
-const initialize = __nccwpck_require__(1089);
-const getAuthorizationHeaders = __nccwpck_require__(7885);
+const tls = __nccwpck_require__(4756);
+const http = __nccwpck_require__(8611);
+const https = __nccwpck_require__(5692);
+const JSStreamSocket = __nccwpck_require__(5056);
+const {globalAgent} = __nccwpck_require__(685);
+const UnexpectedStatusCodeError = __nccwpck_require__(5930);
+const initialize = __nccwpck_require__(4833);
+const getAuthorizationHeaders = __nccwpck_require__(2037);
 
 const createConnection = (self, options, callback) => {
 	(async () => {
@@ -5572,15 +5316,14 @@ module.exports = {
 
 /***/ }),
 
-/***/ 9794:
+/***/ 278:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const http = __nccwpck_require__(3685);
-const https = __nccwpck_require__(5687);
-const Http2OverHttpX = __nccwpck_require__(1857);
-const getAuthorizationHeaders = __nccwpck_require__(7885);
+const http = __nccwpck_require__(8611);
+const https = __nccwpck_require__(5692);
+const Http2OverHttpX = __nccwpck_require__(861);
+const getAuthorizationHeaders = __nccwpck_require__(2037);
 
 const getStream = request => new Promise((resolve, reject) => {
 	const onConnect = (response, socket, head) => {
@@ -5628,14 +5371,13 @@ module.exports = {
 
 /***/ }),
 
-/***/ 8553:
+/***/ 3747:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const {globalAgent} = __nccwpck_require__(9898);
-const Http2OverHttpX = __nccwpck_require__(1857);
-const getAuthorizationHeaders = __nccwpck_require__(7885);
+const {globalAgent} = __nccwpck_require__(685);
+const Http2OverHttpX = __nccwpck_require__(861);
+const getAuthorizationHeaders = __nccwpck_require__(2037);
 
 const getStatusCode = stream => new Promise((resolve, reject) => {
 	stream.once('error', reject);
@@ -5668,15 +5410,14 @@ module.exports = Http2OverHttp2;
 
 /***/ }),
 
-/***/ 1857:
+/***/ 861:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const {Agent} = __nccwpck_require__(9898);
-const JSStreamSocket = __nccwpck_require__(1564);
-const UnexpectedStatusCodeError = __nccwpck_require__(6203);
-const initialize = __nccwpck_require__(1089);
+const {Agent} = __nccwpck_require__(685);
+const JSStreamSocket = __nccwpck_require__(5056);
+const UnexpectedStatusCodeError = __nccwpck_require__(5930);
+const initialize = __nccwpck_require__(4833);
 
 class Http2OverHttpX extends Agent {
 	constructor(options) {
@@ -5716,15 +5457,14 @@ module.exports = Http2OverHttpX;
 
 /***/ }),
 
-/***/ 1089:
+/***/ 4833:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
 // See https://github.com/facebook/jest/issues/2549
 // eslint-disable-next-line node/prefer-global/url
-const {URL} = __nccwpck_require__(7310);
-const checkType = __nccwpck_require__(3453);
+const {URL} = __nccwpck_require__(7016);
+const checkType = __nccwpck_require__(891);
 
 module.exports = (self, proxyOptions) => {
 	checkType('proxyOptions', proxyOptions, ['object']);
@@ -5745,10 +5485,9 @@ module.exports = (self, proxyOptions) => {
 
 /***/ }),
 
-/***/ 6203:
+/***/ 5930:
 /***/ ((module) => {
 
-"use strict";
 
 
 class UnexpectedStatusCodeError extends Error {
@@ -5764,13 +5503,12 @@ module.exports = UnexpectedStatusCodeError;
 
 /***/ }),
 
-/***/ 1982:
+/***/ 2850:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const {isIP} = __nccwpck_require__(1808);
-const assert = __nccwpck_require__(9491);
+const {isIP} = __nccwpck_require__(9278);
+const assert = __nccwpck_require__(2613);
 
 const getHost = host => {
 	if (host[0] === '[') {
@@ -5801,10 +5539,9 @@ module.exports = host => {
 
 /***/ }),
 
-/***/ 3453:
+/***/ 891:
 /***/ ((module) => {
 
-"use strict";
 
 
 const checkType = (name, value, types) => {
@@ -5829,10 +5566,9 @@ module.exports = checkType;
 
 /***/ }),
 
-/***/ 9237:
+/***/ 811:
 /***/ ((module) => {
 
-"use strict";
 
 
 module.exports = stream => {
@@ -5870,10 +5606,9 @@ module.exports = stream => {
 
 /***/ }),
 
-/***/ 7087:
+/***/ 9731:
 /***/ ((module) => {
 
-"use strict";
 
 /* istanbul ignore file: https://github.com/nodejs/node/blob/master/lib/internal/errors.js */
 
@@ -5929,10 +5664,9 @@ makeError(
 
 /***/ }),
 
-/***/ 1199:
+/***/ 6365:
 /***/ ((module) => {
 
-"use strict";
 
 
 module.exports = header => {
@@ -5950,13 +5684,12 @@ module.exports = header => {
 
 /***/ }),
 
-/***/ 1564:
+/***/ 5056:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const stream = __nccwpck_require__(2781);
-const tls = __nccwpck_require__(4404);
+const stream = __nccwpck_require__(2203);
+const tls = __nccwpck_require__(4756);
 
 // Really awesome hack.
 const JSStreamSocket = (new tls.TLSSocket(new stream.PassThrough()))._handle._parentWrap.constructor;
@@ -5966,10 +5699,9 @@ module.exports = JSStreamSocket;
 
 /***/ }),
 
-/***/ 1818:
+/***/ 118:
 /***/ ((module) => {
 
-"use strict";
 
 
 module.exports = (from, to, events) => {
@@ -5981,12 +5713,11 @@ module.exports = (from, to, events) => {
 
 /***/ }),
 
-/***/ 9404:
+/***/ 7083:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const {ERR_HTTP2_NO_SOCKET_MANIPULATION} = __nccwpck_require__(7087);
+const {ERR_HTTP2_NO_SOCKET_MANIPULATION} = __nccwpck_require__(9731);
 
 /* istanbul ignore file */
 /* https://github.com/nodejs/node/blob/6eec858f34a40ffa489c1ec54bb24da72a28c781/lib/internal/http2/compat.js#L195-L272 */
@@ -6091,13 +5822,12 @@ module.exports = proxySocketHandler;
 
 /***/ }),
 
-/***/ 4592:
+/***/ 1212:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const {ERR_INVALID_HTTP_TOKEN} = __nccwpck_require__(7087);
-const isRequestPseudoHeader = __nccwpck_require__(1199);
+const {ERR_INVALID_HTTP_TOKEN} = __nccwpck_require__(9731);
+const isRequestPseudoHeader = __nccwpck_require__(6365);
 
 const isValidHttpToken = /^[\^`\-\w!#$%&*+.|~]+$/;
 
@@ -6110,15 +5840,14 @@ module.exports = name => {
 
 /***/ }),
 
-/***/ 3549:
+/***/ 6462:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
 const {
 	ERR_HTTP_INVALID_HEADER_VALUE,
 	ERR_INVALID_CHAR
-} = __nccwpck_require__(7087);
+} = __nccwpck_require__(9731);
 
 const isInvalidHeaderValue = /[^\t\u0020-\u007E\u0080-\u00FF]/;
 
@@ -6135,11 +5864,11 @@ module.exports = (name, value) => {
 
 /***/ }),
 
-/***/ 3092:
+/***/ 7952:
 /***/ ((__unused_webpack_module, exports) => {
 
 /*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
-exports.i = function (buffer, offset, isLE, mLen, nBytes) {
+exports.L = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
   var eMax = (1 << eLen) - 1
@@ -6172,7 +5901,7 @@ exports.i = function (buffer, offset, isLE, mLen, nBytes) {
   return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
 }
 
-exports.c = function (buffer, value, offset, isLE, mLen, nBytes) {
+exports.M = function (buffer, value, offset, isLE, mLen, nBytes) {
   var e, m, c
   var eLen = (nBytes * 8) - mLen - 1
   var eMax = (1 << eLen) - 1
@@ -6227,10 +5956,9 @@ exports.c = function (buffer, value, offset, isLE, mLen, nBytes) {
 
 /***/ }),
 
-/***/ 864:
+/***/ 453:
 /***/ ((module) => {
 
-"use strict";
 
 var toString = Object.prototype.toString;
 
@@ -6242,7 +5970,7 @@ module.exports = function (x) {
 
 /***/ }),
 
-/***/ 2820:
+/***/ 5563:
 /***/ ((__unused_webpack_module, exports) => {
 
 //TODO: handle reviver/dehydrate function like normal
@@ -6307,14 +6035,13 @@ exports.parse = function (s) {
 
 /***/ }),
 
-/***/ 1531:
+/***/ 6018:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
 
-const EventEmitter = __nccwpck_require__(2361);
-const JSONB = __nccwpck_require__(2820);
+const EventEmitter = __nccwpck_require__(4434);
+const JSONB = __nccwpck_require__(5563);
 
 const loadStore = options => {
 	const adapters = {
@@ -6332,7 +6059,7 @@ const loadStore = options => {
 	};
 	if (options.adapter || options.uri) {
 		const adapter = options.adapter || /^[^:+]*/.exec(options.uri)[0];
-		return new (require(adapters[adapter]))(options);
+		return new (__WEBPACK_EXTERNAL_createRequire(import.meta.url)(adapters[adapter]))(options);
 	}
 
 	return new Map();
@@ -6579,15 +6306,14 @@ module.exports = Keyv;
 
 /***/ }),
 
-/***/ 9126:
+/***/ 6512:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const fs = __nccwpck_require__(7147);
-const path = __nccwpck_require__(1017);
-const {promisify} = __nccwpck_require__(3837);
-const semver = __nccwpck_require__(5911);
+const fs = __nccwpck_require__(9896);
+const path = __nccwpck_require__(6928);
+const {promisify} = __nccwpck_require__(9023);
+const semver = __nccwpck_require__(9318);
 
 const useNativeRecursiveOption = semver.satisfies(process.version, '>=10.12.0');
 
@@ -6743,11 +6469,11 @@ module.exports.sync = (input, options) => {
 
 /***/ }),
 
-/***/ 1446:
+/***/ 6513:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const crypto = __nccwpck_require__(6113)
-const fs = __nccwpck_require__(7147)
+const crypto = __nccwpck_require__(6982)
+const fs = __nccwpck_require__(9896)
 
 const BUFFER_SIZE = 8192
 
@@ -6793,7 +6519,7 @@ module.exports.sync = md5FileSync
 
 /***/ }),
 
-/***/ 7426:
+/***/ 9829:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 /*!
@@ -6806,17 +6532,16 @@ module.exports.sync = md5FileSync
  * Module exports.
  */
 
-module.exports = __nccwpck_require__(3765)
+module.exports = __nccwpck_require__(1813)
 
 
 /***/ }),
 
-/***/ 4568:
+/***/ 5089:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const pTimeout = __nccwpck_require__(6424);
+const pTimeout = __nccwpck_require__(4802);
 
 const symbolAsyncIterator = Symbol.asyncIterator || '@@asyncIterator';
 
@@ -7110,10 +6835,9 @@ module.exports.TimeoutError = pTimeout.TimeoutError;
 
 /***/ }),
 
-/***/ 1330:
+/***/ 2766:
 /***/ ((module) => {
 
-"use strict";
 
 module.exports = (promise, onFinally) => {
 	onFinally = onFinally || (() => {});
@@ -7133,13 +6857,12 @@ module.exports = (promise, onFinally) => {
 
 /***/ }),
 
-/***/ 6424:
+/***/ 4802:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
 
-const pFinally = __nccwpck_require__(1330);
+const pFinally = __nccwpck_require__(2766);
 
 class TimeoutError extends Error {
 	constructor(message) {
@@ -7198,131 +6921,9 @@ module.exports.TimeoutError = TimeoutError;
 
 /***/ }),
 
-/***/ 4810:
+/***/ 5475:
 /***/ ((module) => {
 
-"use strict";
-
-
-const processFn = (fn, options, proxy, unwrapped) => function (...arguments_) {
-	const P = options.promiseModule;
-
-	return new P((resolve, reject) => {
-		if (options.multiArgs) {
-			arguments_.push((...result) => {
-				if (options.errorFirst) {
-					if (result[0]) {
-						reject(result);
-					} else {
-						result.shift();
-						resolve(result);
-					}
-				} else {
-					resolve(result);
-				}
-			});
-		} else if (options.errorFirst) {
-			arguments_.push((error, result) => {
-				if (error) {
-					reject(error);
-				} else {
-					resolve(result);
-				}
-			});
-		} else {
-			arguments_.push(resolve);
-		}
-
-		const self = this === proxy ? unwrapped : this;
-		Reflect.apply(fn, self, arguments_);
-	});
-};
-
-const filterCache = new WeakMap();
-
-module.exports = (input, options) => {
-	options = {
-		exclude: [/.+(?:Sync|Stream)$/],
-		errorFirst: true,
-		promiseModule: Promise,
-		...options
-	};
-
-	const objectType = typeof input;
-	if (!(input !== null && (objectType === 'object' || objectType === 'function'))) {
-		throw new TypeError(`Expected \`input\` to be a \`Function\` or \`Object\`, got \`${input === null ? 'null' : objectType}\``);
-	}
-
-	const filter = (target, key) => {
-		let cached = filterCache.get(target);
-
-		if (!cached) {
-			cached = {};
-			filterCache.set(target, cached);
-		}
-
-		if (key in cached) {
-			return cached[key];
-		}
-
-		const match = pattern => (typeof pattern === 'string' || typeof key === 'symbol') ? key === pattern : pattern.test(key);
-		const desc = Reflect.getOwnPropertyDescriptor(target, key);
-		const writableOrConfigurableOwn = (desc === undefined || desc.writable || desc.configurable);
-		const included = options.include ? options.include.some(match) : !options.exclude.some(match);
-		const shouldFilter = included && writableOrConfigurableOwn;
-		cached[key] = shouldFilter;
-		return shouldFilter;
-	};
-
-	const cache = new WeakMap();
-
-	const proxy = new Proxy(input, {
-		apply(target, thisArg, args) {
-			const cached = cache.get(target);
-
-			if (cached) {
-				return Reflect.apply(cached, thisArg, args);
-			}
-
-			const pified = options.excludeMain ? target : processFn(target, options, proxy, target);
-			cache.set(target, pified);
-			return Reflect.apply(pified, thisArg, args);
-		},
-
-		get(target, key) {
-			const property = target[key];
-
-			// eslint-disable-next-line no-use-extend-native/no-use-extend-native
-			if (!filter(target, key) || property === Function.prototype[key]) {
-				return property;
-			}
-
-			const cached = cache.get(property);
-
-			if (cached) {
-				return cached;
-			}
-
-			if (typeof property === 'function') {
-				const pified = processFn(property, options, proxy, target);
-				cache.set(property, pified);
-				return pified;
-			}
-
-			return property;
-		}
-	});
-
-	return proxy;
-};
-
-
-/***/ }),
-
-/***/ 9273:
-/***/ ((module) => {
-
-"use strict";
 
 
 class QuickLRU {
@@ -7450,12 +7051,11 @@ module.exports = QuickLRU;
 
 /***/ }),
 
-/***/ 6624:
+/***/ 8824:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-const tls = __nccwpck_require__(4404);
+const tls = __nccwpck_require__(4756);
 
 module.exports = (options = {}, connect = tls.connect) => new Promise((resolve, reject) => {
 	let timeout = false;
@@ -7501,7 +7101,7 @@ module.exports = (options = {}, connect = tls.connect) => new Promise((resolve, 
 
 /***/ }),
 
-/***/ 5911:
+/***/ 9318:
 /***/ ((module, exports) => {
 
 exports = module.exports = SemVer
@@ -9151,13 +8751,12 @@ function coerce (version, options) {
 
 /***/ }),
 
-/***/ 7437:
+/***/ 6166:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
 
-var sortKeys = __nccwpck_require__(5603);
+var sortKeys = __nccwpck_require__(8899);
 
 /**
  * Sort object keys by length
@@ -9181,12 +8780,11 @@ module.exports.asc = function (obj) {
 
 /***/ }),
 
-/***/ 5603:
+/***/ 8899:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-var isPlainObj = __nccwpck_require__(864);
+var isPlainObj = __nccwpck_require__(453);
 
 module.exports = function (obj, opts) {
 	if (!isPlainObj(obj)) {
@@ -9233,12 +8831,11 @@ module.exports = function (obj, opts) {
 
 /***/ }),
 
-/***/ 449:
+/***/ 8204:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-var escapeStringRegexp = __nccwpck_require__(8691);
+var escapeStringRegexp = __nccwpck_require__(1199);
 
 module.exports = function (str, sub) {
 	if (typeof str !== 'string' || typeof sub !== 'string') {
@@ -9252,12 +8849,11 @@ module.exports = function (str, sub) {
 
 /***/ }),
 
-/***/ 6520:
+/***/ 5201:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
 
-var escapeStringRegexp = __nccwpck_require__(8691);
+var escapeStringRegexp = __nccwpck_require__(1199);
 
 module.exports = function (str, target) {
 	if (typeof str !== 'string' || typeof target !== 'string') {
@@ -9270,27 +8866,26 @@ module.exports = function (str, target) {
 
 /***/ }),
 
-/***/ 4294:
+/***/ 770:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-module.exports = __nccwpck_require__(4219);
+module.exports = __nccwpck_require__(218);
 
 
 /***/ }),
 
-/***/ 4219:
+/***/ 218:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
-var net = __nccwpck_require__(1808);
-var tls = __nccwpck_require__(4404);
-var http = __nccwpck_require__(3685);
-var https = __nccwpck_require__(5687);
-var events = __nccwpck_require__(2361);
-var assert = __nccwpck_require__(9491);
-var util = __nccwpck_require__(3837);
+var net = __nccwpck_require__(9278);
+var tls = __nccwpck_require__(4756);
+var http = __nccwpck_require__(8611);
+var https = __nccwpck_require__(5692);
+var events = __nccwpck_require__(4434);
+var assert = __nccwpck_require__(2613);
+var util = __nccwpck_require__(9023);
 
 
 exports.httpOverHttp = httpOverHttp;
@@ -9550,10 +9145,9 @@ exports.debug = debug; // for test
 
 /***/ }),
 
-/***/ 5840:
+/***/ 2048:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -9614,32 +9208,31 @@ Object.defineProperty(exports, "parse", ({
   }
 }));
 
-var _v = _interopRequireDefault(__nccwpck_require__(8628));
+var _v = _interopRequireDefault(__nccwpck_require__(6415));
 
-var _v2 = _interopRequireDefault(__nccwpck_require__(6409));
+var _v2 = _interopRequireDefault(__nccwpck_require__(1697));
 
-var _v3 = _interopRequireDefault(__nccwpck_require__(5122));
+var _v3 = _interopRequireDefault(__nccwpck_require__(4676));
 
-var _v4 = _interopRequireDefault(__nccwpck_require__(9120));
+var _v4 = _interopRequireDefault(__nccwpck_require__(9771));
 
-var _nil = _interopRequireDefault(__nccwpck_require__(5332));
+var _nil = _interopRequireDefault(__nccwpck_require__(7723));
 
-var _version = _interopRequireDefault(__nccwpck_require__(1595));
+var _version = _interopRequireDefault(__nccwpck_require__(5868));
 
-var _validate = _interopRequireDefault(__nccwpck_require__(6900));
+var _validate = _interopRequireDefault(__nccwpck_require__(6200));
 
-var _stringify = _interopRequireDefault(__nccwpck_require__(8950));
+var _stringify = _interopRequireDefault(__nccwpck_require__(7597));
 
-var _parse = _interopRequireDefault(__nccwpck_require__(2746));
+var _parse = _interopRequireDefault(__nccwpck_require__(7267));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /***/ }),
 
-/***/ 4569:
+/***/ 216:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -9647,7 +9240,7 @@ Object.defineProperty(exports, "__esModule", ({
 }));
 exports["default"] = void 0;
 
-var _crypto = _interopRequireDefault(__nccwpck_require__(6113));
+var _crypto = _interopRequireDefault(__nccwpck_require__(6982));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -9666,10 +9259,9 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 5332:
+/***/ 7723:
 /***/ ((__unused_webpack_module, exports) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -9681,10 +9273,9 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 2746:
+/***/ 7267:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -9692,7 +9283,7 @@ Object.defineProperty(exports, "__esModule", ({
 }));
 exports["default"] = void 0;
 
-var _validate = _interopRequireDefault(__nccwpck_require__(6900));
+var _validate = _interopRequireDefault(__nccwpck_require__(6200));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -9733,10 +9324,9 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 814:
+/***/ 7879:
 /***/ ((__unused_webpack_module, exports) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -9748,10 +9338,9 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 807:
+/***/ 2973:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -9759,7 +9348,7 @@ Object.defineProperty(exports, "__esModule", ({
 }));
 exports["default"] = rng;
 
-var _crypto = _interopRequireDefault(__nccwpck_require__(6113));
+var _crypto = _interopRequireDefault(__nccwpck_require__(6982));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -9779,10 +9368,9 @@ function rng() {
 
 /***/ }),
 
-/***/ 5274:
+/***/ 507:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -9790,7 +9378,7 @@ Object.defineProperty(exports, "__esModule", ({
 }));
 exports["default"] = void 0;
 
-var _crypto = _interopRequireDefault(__nccwpck_require__(6113));
+var _crypto = _interopRequireDefault(__nccwpck_require__(6982));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -9809,10 +9397,9 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 8950:
+/***/ 7597:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -9820,7 +9407,7 @@ Object.defineProperty(exports, "__esModule", ({
 }));
 exports["default"] = void 0;
 
-var _validate = _interopRequireDefault(__nccwpck_require__(6900));
+var _validate = _interopRequireDefault(__nccwpck_require__(6200));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -9855,10 +9442,9 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 8628:
+/***/ 6415:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -9866,9 +9452,9 @@ Object.defineProperty(exports, "__esModule", ({
 }));
 exports["default"] = void 0;
 
-var _rng = _interopRequireDefault(__nccwpck_require__(807));
+var _rng = _interopRequireDefault(__nccwpck_require__(2973));
 
-var _stringify = _interopRequireDefault(__nccwpck_require__(8950));
+var _stringify = _interopRequireDefault(__nccwpck_require__(7597));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -9969,10 +9555,9 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 6409:
+/***/ 1697:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -9980,9 +9565,9 @@ Object.defineProperty(exports, "__esModule", ({
 }));
 exports["default"] = void 0;
 
-var _v = _interopRequireDefault(__nccwpck_require__(5998));
+var _v = _interopRequireDefault(__nccwpck_require__(2930));
 
-var _md = _interopRequireDefault(__nccwpck_require__(4569));
+var _md = _interopRequireDefault(__nccwpck_require__(216));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -9992,10 +9577,9 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 5998:
+/***/ 2930:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -10004,9 +9588,9 @@ Object.defineProperty(exports, "__esModule", ({
 exports["default"] = _default;
 exports.URL = exports.DNS = void 0;
 
-var _stringify = _interopRequireDefault(__nccwpck_require__(8950));
+var _stringify = _interopRequireDefault(__nccwpck_require__(7597));
 
-var _parse = _interopRequireDefault(__nccwpck_require__(2746));
+var _parse = _interopRequireDefault(__nccwpck_require__(7267));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -10077,10 +9661,9 @@ function _default(name, version, hashfunc) {
 
 /***/ }),
 
-/***/ 5122:
+/***/ 4676:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -10088,9 +9671,9 @@ Object.defineProperty(exports, "__esModule", ({
 }));
 exports["default"] = void 0;
 
-var _rng = _interopRequireDefault(__nccwpck_require__(807));
+var _rng = _interopRequireDefault(__nccwpck_require__(2973));
 
-var _stringify = _interopRequireDefault(__nccwpck_require__(8950));
+var _stringify = _interopRequireDefault(__nccwpck_require__(7597));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -10121,10 +9704,9 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 9120:
+/***/ 9771:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -10132,9 +9714,9 @@ Object.defineProperty(exports, "__esModule", ({
 }));
 exports["default"] = void 0;
 
-var _v = _interopRequireDefault(__nccwpck_require__(5998));
+var _v = _interopRequireDefault(__nccwpck_require__(2930));
 
-var _sha = _interopRequireDefault(__nccwpck_require__(5274));
+var _sha = _interopRequireDefault(__nccwpck_require__(507));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -10144,10 +9726,9 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 6900:
+/***/ 6200:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -10155,7 +9736,7 @@ Object.defineProperty(exports, "__esModule", ({
 }));
 exports["default"] = void 0;
 
-var _regex = _interopRequireDefault(__nccwpck_require__(814));
+var _regex = _interopRequireDefault(__nccwpck_require__(7879));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -10168,10 +9749,9 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 1595:
+/***/ 5868:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-"use strict";
 
 
 Object.defineProperty(exports, "__esModule", ({
@@ -10179,7 +9759,7 @@ Object.defineProperty(exports, "__esModule", ({
 }));
 exports["default"] = void 0;
 
-var _validate = _interopRequireDefault(__nccwpck_require__(6900));
+var _validate = _interopRequireDefault(__nccwpck_require__(6200));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -10196,3109 +9776,244 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 9491:
+/***/ 2613:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("assert");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("assert");
 
 /***/ }),
 
-/***/ 4300:
+/***/ 181:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("buffer");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("buffer");
 
 /***/ }),
 
-/***/ 6113:
+/***/ 6982:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("crypto");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("crypto");
 
 /***/ }),
 
-/***/ 2361:
+/***/ 4434:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("events");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("events");
 
 /***/ }),
 
-/***/ 7147:
+/***/ 9896:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("fs");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("fs");
 
 /***/ }),
 
-/***/ 3685:
+/***/ 8611:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("http");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("http");
 
 /***/ }),
 
-/***/ 5158:
+/***/ 5675:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("http2");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("http2");
 
 /***/ }),
 
-/***/ 5687:
+/***/ 5692:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("https");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("https");
 
 /***/ }),
 
-/***/ 1808:
+/***/ 9278:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("net");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("net");
 
 /***/ }),
 
-/***/ 2254:
+/***/ 7075:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("node:buffer");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:stream");
 
 /***/ }),
 
-/***/ 4492:
+/***/ 857:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("node:stream");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("os");
 
 /***/ }),
 
-/***/ 2037:
+/***/ 6928:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("os");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("path");
 
 /***/ }),
 
-/***/ 1017:
+/***/ 2203:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("path");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("stream");
 
 /***/ }),
 
-/***/ 2781:
+/***/ 4756:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("stream");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("tls");
 
 /***/ }),
 
-/***/ 4404:
+/***/ 7016:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("tls");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("url");
 
 /***/ }),
 
-/***/ 7310:
+/***/ 9023:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("url");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("util");
 
 /***/ }),
 
-/***/ 3837:
+/***/ 3106:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("util");
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("zlib");
 
 /***/ }),
 
-/***/ 9796:
+/***/ 1813:
 /***/ ((module) => {
 
-"use strict";
-module.exports = require("zlib");
-
-/***/ }),
-
-/***/ 1021:
-/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __nccwpck_require__) => {
-
-"use strict";
-// ESM COMPAT FLAG
-__nccwpck_require__.r(__webpack_exports__);
-
-// EXPORTS
-__nccwpck_require__.d(__webpack_exports__, {
-  "fileTypeFromBuffer": () => (/* reexport */ fileTypeFromBuffer),
-  "fileTypeFromFile": () => (/* binding */ fileTypeFromFile),
-  "fileTypeFromStream": () => (/* reexport */ fileTypeFromStream),
-  "fileTypeFromTokenizer": () => (/* reexport */ fileTypeFromTokenizer),
-  "fileTypeStream": () => (/* reexport */ fileTypeStream),
-  "supportedExtensions": () => (/* reexport */ supportedExtensions),
-  "supportedMimeTypes": () => (/* reexport */ supportedMimeTypes)
-});
-
-;// CONCATENATED MODULE: external "node:fs"
-const external_node_fs_namespaceObject = require("node:fs");
-;// CONCATENATED MODULE: ./node_modules/strtok3/lib/FsPromise.js
-/**
- * Module convert fs functions to promise based functions
- */
-
-const pathExists = external_node_fs_namespaceObject.existsSync;
-const createReadStream = external_node_fs_namespaceObject.createReadStream;
-async function FsPromise_stat(path) {
-    return new Promise((resolve, reject) => {
-        external_node_fs_namespaceObject.stat(path, (err, stats) => {
-            if (err)
-                reject(err);
-            else
-                resolve(stats);
-        });
-    });
-}
-async function FsPromise_close(fd) {
-    return new Promise((resolve, reject) => {
-        external_node_fs_namespaceObject.close(fd, err => {
-            if (err)
-                reject(err);
-            else
-                resolve();
-        });
-    });
-}
-async function FsPromise_open(path, mode) {
-    return new Promise((resolve, reject) => {
-        external_node_fs_namespaceObject.open(path, mode, (err, fd) => {
-            if (err)
-                reject(err);
-            else
-                resolve(fd);
-        });
-    });
-}
-async function read(fd, buffer, offset, length, position) {
-    return new Promise((resolve, reject) => {
-        external_node_fs_namespaceObject.read(fd, buffer, offset, length, position, (err, bytesRead, _buffer) => {
-            if (err)
-                reject(err);
-            else
-                resolve({ bytesRead, buffer: _buffer });
-        });
-    });
-}
-async function writeFile(path, data) {
-    return new Promise((resolve, reject) => {
-        fs.writeFile(path, data, err => {
-            if (err)
-                reject(err);
-            else
-                resolve();
-        });
-    });
-}
-function writeFileSync(path, data) {
-    fs.writeFileSync(path, data);
-}
-async function readFile(path) {
-    return new Promise((resolve, reject) => {
-        fs.readFile(path, (err, buffer) => {
-            if (err)
-                reject(err);
-            else
-                resolve(buffer);
-        });
-    });
-}
-
-;// CONCATENATED MODULE: ./node_modules/peek-readable/lib/EndOfFileStream.js
-const defaultMessages = 'End-Of-Stream';
-/**
- * Thrown on read operation of the end of file or stream has been reached
- */
-class EndOfStreamError extends Error {
-    constructor() {
-        super(defaultMessages);
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/peek-readable/lib/Deferred.js
-class Deferred {
-    constructor() {
-        this.resolve = () => null;
-        this.reject = () => null;
-        this.promise = new Promise((resolve, reject) => {
-            this.reject = reject;
-            this.resolve = resolve;
-        });
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/peek-readable/lib/StreamReader.js
-
-
-
-const maxStreamReadSize = 1 * 1024 * 1024; // Maximum request length on read-stream operation
-class StreamReader {
-    constructor(s) {
-        this.s = s;
-        /**
-         * Deferred used for postponed read request (as not data is yet available to read)
-         */
-        this.deferred = null;
-        this.endOfStream = false;
-        /**
-         * Store peeked data
-         * @type {Array}
-         */
-        this.peekQueue = [];
-        if (!s.read || !s.once) {
-            throw new Error('Expected an instance of stream.Readable');
-        }
-        this.s.once('end', () => this.reject(new EndOfStreamError()));
-        this.s.once('error', err => this.reject(err));
-        this.s.once('close', () => this.reject(new Error('Stream closed')));
-    }
-    /**
-     * Read ahead (peek) from stream. Subsequent read or peeks will return the same data
-     * @param uint8Array - Uint8Array (or Buffer) to store data read from stream in
-     * @param offset - Offset target
-     * @param length - Number of bytes to read
-     * @returns Number of bytes peeked
-     */
-    async peek(uint8Array, offset, length) {
-        const bytesRead = await this.read(uint8Array, offset, length);
-        this.peekQueue.push(uint8Array.subarray(offset, offset + bytesRead)); // Put read data back to peek buffer
-        return bytesRead;
-    }
-    /**
-     * Read chunk from stream
-     * @param buffer - Target Uint8Array (or Buffer) to store data read from stream in
-     * @param offset - Offset target
-     * @param length - Number of bytes to read
-     * @returns Number of bytes read
-     */
-    async read(buffer, offset, length) {
-        if (length === 0) {
-            return 0;
-        }
-        if (this.peekQueue.length === 0 && this.endOfStream) {
-            throw new EndOfStreamError();
-        }
-        let remaining = length;
-        let bytesRead = 0;
-        // consume peeked data first
-        while (this.peekQueue.length > 0 && remaining > 0) {
-            const peekData = this.peekQueue.pop(); // Front of queue
-            if (!peekData)
-                throw new Error('peekData should be defined');
-            const lenCopy = Math.min(peekData.length, remaining);
-            buffer.set(peekData.subarray(0, lenCopy), offset + bytesRead);
-            bytesRead += lenCopy;
-            remaining -= lenCopy;
-            if (lenCopy < peekData.length) {
-                // remainder back to queue
-                this.peekQueue.push(peekData.subarray(lenCopy));
-            }
-        }
-        // continue reading from stream if required
-        while (remaining > 0 && !this.endOfStream) {
-            const reqLen = Math.min(remaining, maxStreamReadSize);
-            const chunkLen = await this.readFromStream(buffer, offset + bytesRead, reqLen);
-            bytesRead += chunkLen;
-            if (chunkLen < reqLen)
-                break;
-            remaining -= chunkLen;
-        }
-        return bytesRead;
-    }
-    /**
-     * Read chunk from stream
-     * @param buffer Target Uint8Array (or Buffer) to store data read from stream in
-     * @param offset Offset target
-     * @param length Number of bytes to read
-     * @returns Number of bytes read
-     */
-    async readFromStream(buffer, offset, length) {
-        const readBuffer = this.s.read(length);
-        if (readBuffer) {
-            buffer.set(readBuffer, offset);
-            return readBuffer.length;
-        }
-        else {
-            const request = {
-                buffer,
-                offset,
-                length,
-                deferred: new Deferred()
-            };
-            this.deferred = request.deferred;
-            this.s.once('readable', () => {
-                this.readDeferred(request);
-            });
-            return request.deferred.promise;
-        }
-    }
-    /**
-     * Process deferred read request
-     * @param request Deferred read request
-     */
-    readDeferred(request) {
-        const readBuffer = this.s.read(request.length);
-        if (readBuffer) {
-            request.buffer.set(readBuffer, request.offset);
-            request.deferred.resolve(readBuffer.length);
-            this.deferred = null;
-        }
-        else {
-            this.s.once('readable', () => {
-                this.readDeferred(request);
-            });
-        }
-    }
-    reject(err) {
-        this.endOfStream = true;
-        if (this.deferred) {
-            this.deferred.reject(err);
-            this.deferred = null;
-        }
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/peek-readable/lib/index.js
-
-
-
-// EXTERNAL MODULE: external "node:buffer"
-var external_node_buffer_ = __nccwpck_require__(2254);
-;// CONCATENATED MODULE: ./node_modules/strtok3/lib/AbstractTokenizer.js
-
-
-/**
- * Core tokenizer
- */
-class AbstractTokenizer {
-    constructor(fileInfo) {
-        /**
-         * Tokenizer-stream position
-         */
-        this.position = 0;
-        this.numBuffer = new Uint8Array(8);
-        this.fileInfo = fileInfo ? fileInfo : {};
-    }
-    /**
-     * Read a token from the tokenizer-stream
-     * @param token - The token to read
-     * @param position - If provided, the desired position in the tokenizer-stream
-     * @returns Promise with token data
-     */
-    async readToken(token, position = this.position) {
-        const uint8Array = external_node_buffer_.Buffer.alloc(token.len);
-        const len = await this.readBuffer(uint8Array, { position });
-        if (len < token.len)
-            throw new EndOfStreamError();
-        return token.get(uint8Array, 0);
-    }
-    /**
-     * Peek a token from the tokenizer-stream.
-     * @param token - Token to peek from the tokenizer-stream.
-     * @param position - Offset where to begin reading within the file. If position is null, data will be read from the current file position.
-     * @returns Promise with token data
-     */
-    async peekToken(token, position = this.position) {
-        const uint8Array = external_node_buffer_.Buffer.alloc(token.len);
-        const len = await this.peekBuffer(uint8Array, { position });
-        if (len < token.len)
-            throw new EndOfStreamError();
-        return token.get(uint8Array, 0);
-    }
-    /**
-     * Read a numeric token from the stream
-     * @param token - Numeric token
-     * @returns Promise with number
-     */
-    async readNumber(token) {
-        const len = await this.readBuffer(this.numBuffer, { length: token.len });
-        if (len < token.len)
-            throw new EndOfStreamError();
-        return token.get(this.numBuffer, 0);
-    }
-    /**
-     * Read a numeric token from the stream
-     * @param token - Numeric token
-     * @returns Promise with number
-     */
-    async peekNumber(token) {
-        const len = await this.peekBuffer(this.numBuffer, { length: token.len });
-        if (len < token.len)
-            throw new EndOfStreamError();
-        return token.get(this.numBuffer, 0);
-    }
-    /**
-     * Ignore number of bytes, advances the pointer in under tokenizer-stream.
-     * @param length - Number of bytes to ignore
-     * @return resolves the number of bytes ignored, equals length if this available, otherwise the number of bytes available
-     */
-    async ignore(length) {
-        if (this.fileInfo.size !== undefined) {
-            const bytesLeft = this.fileInfo.size - this.position;
-            if (length > bytesLeft) {
-                this.position += bytesLeft;
-                return bytesLeft;
-            }
-        }
-        this.position += length;
-        return length;
-    }
-    async close() {
-        // empty
-    }
-    normalizeOptions(uint8Array, options) {
-        if (options && options.position !== undefined && options.position < this.position) {
-            throw new Error('`options.position` must be equal or greater than `tokenizer.position`');
-        }
-        if (options) {
-            return {
-                mayBeLess: options.mayBeLess === true,
-                offset: options.offset ? options.offset : 0,
-                length: options.length ? options.length : (uint8Array.length - (options.offset ? options.offset : 0)),
-                position: options.position ? options.position : this.position
-            };
-        }
-        return {
-            mayBeLess: false,
-            offset: 0,
-            length: uint8Array.length,
-            position: this.position
-        };
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/strtok3/lib/ReadStreamTokenizer.js
-
-
-const maxBufferSize = 256000;
-class ReadStreamTokenizer extends AbstractTokenizer {
-    constructor(stream, fileInfo) {
-        super(fileInfo);
-        this.streamReader = new StreamReader(stream);
-    }
-    /**
-     * Get file information, an HTTP-client may implement this doing a HEAD request
-     * @return Promise with file information
-     */
-    async getFileInfo() {
-        return this.fileInfo;
-    }
-    /**
-     * Read buffer from tokenizer
-     * @param uint8Array - Target Uint8Array to fill with data read from the tokenizer-stream
-     * @param options - Read behaviour options
-     * @returns Promise with number of bytes read
-     */
-    async readBuffer(uint8Array, options) {
-        const normOptions = this.normalizeOptions(uint8Array, options);
-        const skipBytes = normOptions.position - this.position;
-        if (skipBytes > 0) {
-            await this.ignore(skipBytes);
-            return this.readBuffer(uint8Array, options);
-        }
-        else if (skipBytes < 0) {
-            throw new Error('`options.position` must be equal or greater than `tokenizer.position`');
-        }
-        if (normOptions.length === 0) {
-            return 0;
-        }
-        const bytesRead = await this.streamReader.read(uint8Array, normOptions.offset, normOptions.length);
-        this.position += bytesRead;
-        if ((!options || !options.mayBeLess) && bytesRead < normOptions.length) {
-            throw new EndOfStreamError();
-        }
-        return bytesRead;
-    }
-    /**
-     * Peek (read ahead) buffer from tokenizer
-     * @param uint8Array - Uint8Array (or Buffer) to write data to
-     * @param options - Read behaviour options
-     * @returns Promise with number of bytes peeked
-     */
-    async peekBuffer(uint8Array, options) {
-        const normOptions = this.normalizeOptions(uint8Array, options);
-        let bytesRead = 0;
-        if (normOptions.position) {
-            const skipBytes = normOptions.position - this.position;
-            if (skipBytes > 0) {
-                const skipBuffer = new Uint8Array(normOptions.length + skipBytes);
-                bytesRead = await this.peekBuffer(skipBuffer, { mayBeLess: normOptions.mayBeLess });
-                uint8Array.set(skipBuffer.subarray(skipBytes), normOptions.offset);
-                return bytesRead - skipBytes;
-            }
-            else if (skipBytes < 0) {
-                throw new Error('Cannot peek from a negative offset in a stream');
-            }
-        }
-        if (normOptions.length > 0) {
-            try {
-                bytesRead = await this.streamReader.peek(uint8Array, normOptions.offset, normOptions.length);
-            }
-            catch (err) {
-                if (options && options.mayBeLess && err instanceof EndOfStreamError) {
-                    return 0;
-                }
-                throw err;
-            }
-            if ((!normOptions.mayBeLess) && bytesRead < normOptions.length) {
-                throw new EndOfStreamError();
-            }
-        }
-        return bytesRead;
-    }
-    async ignore(length) {
-        // debug(`ignore ${this.position}...${this.position + length - 1}`);
-        const bufSize = Math.min(maxBufferSize, length);
-        const buf = new Uint8Array(bufSize);
-        let totBytesRead = 0;
-        while (totBytesRead < length) {
-            const remaining = length - totBytesRead;
-            const bytesRead = await this.readBuffer(buf, { length: Math.min(bufSize, remaining) });
-            if (bytesRead < 0) {
-                return bytesRead;
-            }
-            totBytesRead += bytesRead;
-        }
-        return totBytesRead;
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/strtok3/lib/BufferTokenizer.js
-
-
-class BufferTokenizer extends AbstractTokenizer {
-    /**
-     * Construct BufferTokenizer
-     * @param uint8Array - Uint8Array to tokenize
-     * @param fileInfo - Pass additional file information to the tokenizer
-     */
-    constructor(uint8Array, fileInfo) {
-        super(fileInfo);
-        this.uint8Array = uint8Array;
-        this.fileInfo.size = this.fileInfo.size ? this.fileInfo.size : uint8Array.length;
-    }
-    /**
-     * Read buffer from tokenizer
-     * @param uint8Array - Uint8Array to tokenize
-     * @param options - Read behaviour options
-     * @returns {Promise<number>}
-     */
-    async readBuffer(uint8Array, options) {
-        if (options && options.position) {
-            if (options.position < this.position) {
-                throw new Error('`options.position` must be equal or greater than `tokenizer.position`');
-            }
-            this.position = options.position;
-        }
-        const bytesRead = await this.peekBuffer(uint8Array, options);
-        this.position += bytesRead;
-        return bytesRead;
-    }
-    /**
-     * Peek (read ahead) buffer from tokenizer
-     * @param uint8Array
-     * @param options - Read behaviour options
-     * @returns {Promise<number>}
-     */
-    async peekBuffer(uint8Array, options) {
-        const normOptions = this.normalizeOptions(uint8Array, options);
-        const bytes2read = Math.min(this.uint8Array.length - normOptions.position, normOptions.length);
-        if ((!normOptions.mayBeLess) && bytes2read < normOptions.length) {
-            throw new EndOfStreamError();
-        }
-        else {
-            uint8Array.set(this.uint8Array.subarray(normOptions.position, normOptions.position + bytes2read), normOptions.offset);
-            return bytes2read;
-        }
-    }
-    async close() {
-        // empty
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/strtok3/lib/core.js
-
-
-
-/**
- * Construct ReadStreamTokenizer from given Stream.
- * Will set fileSize, if provided given Stream has set the .path property/
- * @param stream - Read from Node.js Stream.Readable
- * @param fileInfo - Pass the file information, like size and MIME-type of the corresponding stream.
- * @returns ReadStreamTokenizer
- */
-function fromStream(stream, fileInfo) {
-    fileInfo = fileInfo ? fileInfo : {};
-    return new ReadStreamTokenizer(stream, fileInfo);
-}
-/**
- * Construct ReadStreamTokenizer from given Buffer.
- * @param uint8Array - Uint8Array to tokenize
- * @param fileInfo - Pass additional file information to the tokenizer
- * @returns BufferTokenizer
- */
-function fromBuffer(uint8Array, fileInfo) {
-    return new BufferTokenizer(uint8Array, fileInfo);
-}
-
-;// CONCATENATED MODULE: ./node_modules/strtok3/lib/FileTokenizer.js
-
-
-
-class FileTokenizer extends AbstractTokenizer {
-    constructor(fd, fileInfo) {
-        super(fileInfo);
-        this.fd = fd;
-    }
-    /**
-     * Read buffer from file
-     * @param uint8Array - Uint8Array to write result to
-     * @param options - Read behaviour options
-     * @returns Promise number of bytes read
-     */
-    async readBuffer(uint8Array, options) {
-        const normOptions = this.normalizeOptions(uint8Array, options);
-        this.position = normOptions.position;
-        const res = await read(this.fd, uint8Array, normOptions.offset, normOptions.length, normOptions.position);
-        this.position += res.bytesRead;
-        if (res.bytesRead < normOptions.length && (!options || !options.mayBeLess)) {
-            throw new EndOfStreamError();
-        }
-        return res.bytesRead;
-    }
-    /**
-     * Peek buffer from file
-     * @param uint8Array - Uint8Array (or Buffer) to write data to
-     * @param options - Read behaviour options
-     * @returns Promise number of bytes read
-     */
-    async peekBuffer(uint8Array, options) {
-        const normOptions = this.normalizeOptions(uint8Array, options);
-        const res = await read(this.fd, uint8Array, normOptions.offset, normOptions.length, normOptions.position);
-        if ((!normOptions.mayBeLess) && res.bytesRead < normOptions.length) {
-            throw new EndOfStreamError();
-        }
-        return res.bytesRead;
-    }
-    async close() {
-        return FsPromise_close(this.fd);
-    }
-}
-async function fromFile(sourceFilePath) {
-    const stat = await FsPromise_stat(sourceFilePath);
-    if (!stat.isFile) {
-        throw new Error(`File not a file: ${sourceFilePath}`);
-    }
-    const fd = await FsPromise_open(sourceFilePath, 'r');
-    return new FileTokenizer(fd, { path: sourceFilePath, size: stat.size });
-}
-
-;// CONCATENATED MODULE: ./node_modules/strtok3/lib/index.js
-
-
-
-
-/**
- * Construct ReadStreamTokenizer from given Stream.
- * Will set fileSize, if provided given Stream has set the .path property.
- * @param stream - Node.js Stream.Readable
- * @param fileInfo - Pass additional file information to the tokenizer
- * @returns Tokenizer
- */
-async function lib_fromStream(stream, fileInfo) {
-    fileInfo = fileInfo ? fileInfo : {};
-    if (stream.path) {
-        const stat = await fs.stat(stream.path);
-        fileInfo.path = stream.path;
-        fileInfo.size = stat.size;
-    }
-    return core.fromStream(stream, fileInfo);
-}
-
-// EXTERNAL MODULE: ./node_modules/ieee754/index.js
-var ieee754 = __nccwpck_require__(3092);
-;// CONCATENATED MODULE: ./node_modules/token-types/lib/index.js
-
-
-// Primitive types
-function dv(array) {
-    return new DataView(array.buffer, array.byteOffset);
-}
-/**
- * 8-bit unsigned integer
- */
-const UINT8 = {
-    len: 1,
-    get(array, offset) {
-        return dv(array).getUint8(offset);
-    },
-    put(array, offset, value) {
-        dv(array).setUint8(offset, value);
-        return offset + 1;
-    }
-};
-/**
- * 16-bit unsigned integer, Little Endian byte order
- */
-const UINT16_LE = {
-    len: 2,
-    get(array, offset) {
-        return dv(array).getUint16(offset, true);
-    },
-    put(array, offset, value) {
-        dv(array).setUint16(offset, value, true);
-        return offset + 2;
-    }
-};
-/**
- * 16-bit unsigned integer, Big Endian byte order
- */
-const UINT16_BE = {
-    len: 2,
-    get(array, offset) {
-        return dv(array).getUint16(offset);
-    },
-    put(array, offset, value) {
-        dv(array).setUint16(offset, value);
-        return offset + 2;
-    }
-};
-/**
- * 24-bit unsigned integer, Little Endian byte order
- */
-const UINT24_LE = {
-    len: 3,
-    get(array, offset) {
-        const dataView = dv(array);
-        return dataView.getUint8(offset) + (dataView.getUint16(offset + 1, true) << 8);
-    },
-    put(array, offset, value) {
-        const dataView = dv(array);
-        dataView.setUint8(offset, value & 0xff);
-        dataView.setUint16(offset + 1, value >> 8, true);
-        return offset + 3;
-    }
-};
-/**
- * 24-bit unsigned integer, Big Endian byte order
- */
-const UINT24_BE = {
-    len: 3,
-    get(array, offset) {
-        const dataView = dv(array);
-        return (dataView.getUint16(offset) << 8) + dataView.getUint8(offset + 2);
-    },
-    put(array, offset, value) {
-        const dataView = dv(array);
-        dataView.setUint16(offset, value >> 8);
-        dataView.setUint8(offset + 2, value & 0xff);
-        return offset + 3;
-    }
-};
-/**
- * 32-bit unsigned integer, Little Endian byte order
- */
-const UINT32_LE = {
-    len: 4,
-    get(array, offset) {
-        return dv(array).getUint32(offset, true);
-    },
-    put(array, offset, value) {
-        dv(array).setUint32(offset, value, true);
-        return offset + 4;
-    }
-};
-/**
- * 32-bit unsigned integer, Big Endian byte order
- */
-const UINT32_BE = {
-    len: 4,
-    get(array, offset) {
-        return dv(array).getUint32(offset);
-    },
-    put(array, offset, value) {
-        dv(array).setUint32(offset, value);
-        return offset + 4;
-    }
-};
-/**
- * 8-bit signed integer
- */
-const INT8 = {
-    len: 1,
-    get(array, offset) {
-        return dv(array).getInt8(offset);
-    },
-    put(array, offset, value) {
-        dv(array).setInt8(offset, value);
-        return offset + 1;
-    }
-};
-/**
- * 16-bit signed integer, Big Endian byte order
- */
-const INT16_BE = {
-    len: 2,
-    get(array, offset) {
-        return dv(array).getInt16(offset);
-    },
-    put(array, offset, value) {
-        dv(array).setInt16(offset, value);
-        return offset + 2;
-    }
-};
-/**
- * 16-bit signed integer, Little Endian byte order
- */
-const INT16_LE = {
-    len: 2,
-    get(array, offset) {
-        return dv(array).getInt16(offset, true);
-    },
-    put(array, offset, value) {
-        dv(array).setInt16(offset, value, true);
-        return offset + 2;
-    }
-};
-/**
- * 24-bit signed integer, Little Endian byte order
- */
-const INT24_LE = {
-    len: 3,
-    get(array, offset) {
-        const unsigned = UINT24_LE.get(array, offset);
-        return unsigned > 0x7fffff ? unsigned - 0x1000000 : unsigned;
-    },
-    put(array, offset, value) {
-        const dataView = dv(array);
-        dataView.setUint8(offset, value & 0xff);
-        dataView.setUint16(offset + 1, value >> 8, true);
-        return offset + 3;
-    }
-};
-/**
- * 24-bit signed integer, Big Endian byte order
- */
-const INT24_BE = {
-    len: 3,
-    get(array, offset) {
-        const unsigned = UINT24_BE.get(array, offset);
-        return unsigned > 0x7fffff ? unsigned - 0x1000000 : unsigned;
-    },
-    put(array, offset, value) {
-        const dataView = dv(array);
-        dataView.setUint16(offset, value >> 8);
-        dataView.setUint8(offset + 2, value & 0xff);
-        return offset + 3;
-    }
-};
-/**
- * 32-bit signed integer, Big Endian byte order
- */
-const INT32_BE = {
-    len: 4,
-    get(array, offset) {
-        return dv(array).getInt32(offset);
-    },
-    put(array, offset, value) {
-        dv(array).setInt32(offset, value);
-        return offset + 4;
-    }
-};
-/**
- * 32-bit signed integer, Big Endian byte order
- */
-const INT32_LE = {
-    len: 4,
-    get(array, offset) {
-        return dv(array).getInt32(offset, true);
-    },
-    put(array, offset, value) {
-        dv(array).setInt32(offset, value, true);
-        return offset + 4;
-    }
-};
-/**
- * 64-bit unsigned integer, Little Endian byte order
- */
-const UINT64_LE = {
-    len: 8,
-    get(array, offset) {
-        return dv(array).getBigUint64(offset, true);
-    },
-    put(array, offset, value) {
-        dv(array).setBigUint64(offset, value, true);
-        return offset + 8;
-    }
-};
-/**
- * 64-bit signed integer, Little Endian byte order
- */
-const INT64_LE = {
-    len: 8,
-    get(array, offset) {
-        return dv(array).getBigInt64(offset, true);
-    },
-    put(array, offset, value) {
-        dv(array).setBigInt64(offset, value, true);
-        return offset + 8;
-    }
-};
-/**
- * 64-bit unsigned integer, Big Endian byte order
- */
-const UINT64_BE = {
-    len: 8,
-    get(array, offset) {
-        return dv(array).getBigUint64(offset);
-    },
-    put(array, offset, value) {
-        dv(array).setBigUint64(offset, value);
-        return offset + 8;
-    }
-};
-/**
- * 64-bit signed integer, Big Endian byte order
- */
-const INT64_BE = {
-    len: 8,
-    get(array, offset) {
-        return dv(array).getBigInt64(offset);
-    },
-    put(array, offset, value) {
-        dv(array).setBigInt64(offset, value);
-        return offset + 8;
-    }
-};
-/**
- * IEEE 754 16-bit (half precision) float, big endian
- */
-const Float16_BE = {
-    len: 2,
-    get(dataView, offset) {
-        return ieee754/* read */.i(dataView, offset, false, 10, this.len);
-    },
-    put(dataView, offset, value) {
-        ieee754/* write */.c(dataView, value, offset, false, 10, this.len);
-        return offset + this.len;
-    }
-};
-/**
- * IEEE 754 16-bit (half precision) float, little endian
- */
-const Float16_LE = {
-    len: 2,
-    get(array, offset) {
-        return ieee754/* read */.i(array, offset, true, 10, this.len);
-    },
-    put(array, offset, value) {
-        ieee754/* write */.c(array, value, offset, true, 10, this.len);
-        return offset + this.len;
-    }
-};
-/**
- * IEEE 754 32-bit (single precision) float, big endian
- */
-const Float32_BE = {
-    len: 4,
-    get(array, offset) {
-        return dv(array).getFloat32(offset);
-    },
-    put(array, offset, value) {
-        dv(array).setFloat32(offset, value);
-        return offset + 4;
-    }
-};
-/**
- * IEEE 754 32-bit (single precision) float, little endian
- */
-const Float32_LE = {
-    len: 4,
-    get(array, offset) {
-        return dv(array).getFloat32(offset, true);
-    },
-    put(array, offset, value) {
-        dv(array).setFloat32(offset, value, true);
-        return offset + 4;
-    }
-};
-/**
- * IEEE 754 64-bit (double precision) float, big endian
- */
-const Float64_BE = {
-    len: 8,
-    get(array, offset) {
-        return dv(array).getFloat64(offset);
-    },
-    put(array, offset, value) {
-        dv(array).setFloat64(offset, value);
-        return offset + 8;
-    }
-};
-/**
- * IEEE 754 64-bit (double precision) float, little endian
- */
-const Float64_LE = {
-    len: 8,
-    get(array, offset) {
-        return dv(array).getFloat64(offset, true);
-    },
-    put(array, offset, value) {
-        dv(array).setFloat64(offset, value, true);
-        return offset + 8;
-    }
-};
-/**
- * IEEE 754 80-bit (extended precision) float, big endian
- */
-const Float80_BE = {
-    len: 10,
-    get(array, offset) {
-        return ieee754/* read */.i(array, offset, false, 63, this.len);
-    },
-    put(array, offset, value) {
-        ieee754/* write */.c(array, value, offset, false, 63, this.len);
-        return offset + this.len;
-    }
-};
-/**
- * IEEE 754 80-bit (extended precision) float, little endian
- */
-const Float80_LE = {
-    len: 10,
-    get(array, offset) {
-        return ieee754/* read */.i(array, offset, true, 63, this.len);
-    },
-    put(array, offset, value) {
-        ieee754/* write */.c(array, value, offset, true, 63, this.len);
-        return offset + this.len;
-    }
-};
-/**
- * Ignore a given number of bytes
- */
-class IgnoreType {
-    /**
-     * @param len number of bytes to ignore
-     */
-    constructor(len) {
-        this.len = len;
-    }
-    // ToDo: don't read, but skip data
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    get(array, off) {
-    }
-}
-class Uint8ArrayType {
-    constructor(len) {
-        this.len = len;
-    }
-    get(array, offset) {
-        return array.subarray(offset, offset + this.len);
-    }
-}
-class BufferType {
-    constructor(len) {
-        this.len = len;
-    }
-    get(uint8Array, off) {
-        return Buffer.from(uint8Array.subarray(off, off + this.len));
-    }
-}
-/**
- * Consume a fixed number of bytes from the stream and return a string with a specified encoding.
- */
-class StringType {
-    constructor(len, encoding) {
-        this.len = len;
-        this.encoding = encoding;
-    }
-    get(uint8Array, offset) {
-        return external_node_buffer_.Buffer.from(uint8Array).toString(this.encoding, offset, offset + this.len);
-    }
-}
-/**
- * ANSI Latin 1 String
- * Using windows-1252 / ISO 8859-1 decoding
- */
-class AnsiStringType {
-    constructor(len) {
-        this.len = len;
-    }
-    static decode(buffer, offset, until) {
-        let str = '';
-        for (let i = offset; i < until; ++i) {
-            str += AnsiStringType.codePointToString(AnsiStringType.singleByteDecoder(buffer[i]));
-        }
-        return str;
-    }
-    static inRange(a, min, max) {
-        return min <= a && a <= max;
-    }
-    static codePointToString(cp) {
-        if (cp <= 0xFFFF) {
-            return String.fromCharCode(cp);
-        }
-        else {
-            cp -= 0x10000;
-            return String.fromCharCode((cp >> 10) + 0xD800, (cp & 0x3FF) + 0xDC00);
-        }
-    }
-    static singleByteDecoder(bite) {
-        if (AnsiStringType.inRange(bite, 0x00, 0x7F)) {
-            return bite;
-        }
-        const codePoint = AnsiStringType.windows1252[bite - 0x80];
-        if (codePoint === null) {
-            throw Error('invaliding encoding');
-        }
-        return codePoint;
-    }
-    get(buffer, offset = 0) {
-        return AnsiStringType.decode(buffer, offset, offset + this.len);
-    }
-}
-AnsiStringType.windows1252 = [8364, 129, 8218, 402, 8222, 8230, 8224, 8225, 710, 8240, 352,
-    8249, 338, 141, 381, 143, 144, 8216, 8217, 8220, 8221, 8226, 8211, 8212, 732,
-    8482, 353, 8250, 339, 157, 382, 376, 160, 161, 162, 163, 164, 165, 166, 167, 168,
-    169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184,
-    185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200,
-    201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216,
-    217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232,
-    233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247,
-    248, 249, 250, 251, 252, 253, 254, 255];
-
-;// CONCATENATED MODULE: ./node_modules/file-type/util.js
-function stringToBytes(string) {
-	return [...string].map(character => character.charCodeAt(0)); // eslint-disable-line unicorn/prefer-code-point
-}
-
-/**
-Checks whether the TAR checksum is valid.
-
-@param {Buffer} buffer - The TAR header `[offset ... offset + 512]`.
-@param {number} offset - TAR header offset.
-@returns {boolean} `true` if the TAR checksum is valid, otherwise `false`.
-*/
-function tarHeaderChecksumMatches(buffer, offset = 0) {
-	const readSum = Number.parseInt(buffer.toString('utf8', 148, 154).replace(/\0.*$/, '').trim(), 8); // Read sum in header
-	if (Number.isNaN(readSum)) {
-		return false;
-	}
-
-	let sum = 8 * 0x20; // Initialize signed bit sum
-
-	for (let index = offset; index < offset + 148; index++) {
-		sum += buffer[index];
-	}
-
-	for (let index = offset + 156; index < offset + 512; index++) {
-		sum += buffer[index];
-	}
-
-	return readSum === sum;
-}
-
-/**
-ID3 UINT32 sync-safe tokenizer token.
-28 bits (representing up to 256MB) integer, the msb is 0 to avoid "false syncsignals".
-*/
-const uint32SyncSafeToken = {
-	get: (buffer, offset) => (buffer[offset + 3] & 0x7F) | ((buffer[offset + 2]) << 7) | ((buffer[offset + 1]) << 14) | ((buffer[offset]) << 21),
-	len: 4,
-};
-
-;// CONCATENATED MODULE: ./node_modules/file-type/supported.js
-const extensions = [
-	'jpg',
-	'png',
-	'apng',
-	'gif',
-	'webp',
-	'flif',
-	'xcf',
-	'cr2',
-	'cr3',
-	'orf',
-	'arw',
-	'dng',
-	'nef',
-	'rw2',
-	'raf',
-	'tif',
-	'bmp',
-	'icns',
-	'jxr',
-	'psd',
-	'indd',
-	'zip',
-	'tar',
-	'rar',
-	'gz',
-	'bz2',
-	'7z',
-	'dmg',
-	'mp4',
-	'mid',
-	'mkv',
-	'webm',
-	'mov',
-	'avi',
-	'mpg',
-	'mp2',
-	'mp3',
-	'm4a',
-	'oga',
-	'ogg',
-	'ogv',
-	'opus',
-	'flac',
-	'wav',
-	'spx',
-	'amr',
-	'pdf',
-	'epub',
-	'elf',
-	'exe',
-	'swf',
-	'rtf',
-	'wasm',
-	'woff',
-	'woff2',
-	'eot',
-	'ttf',
-	'otf',
-	'ico',
-	'flv',
-	'ps',
-	'xz',
-	'sqlite',
-	'nes',
-	'crx',
-	'xpi',
-	'cab',
-	'deb',
-	'ar',
-	'rpm',
-	'Z',
-	'lz',
-	'cfb',
-	'mxf',
-	'mts',
-	'blend',
-	'bpg',
-	'docx',
-	'pptx',
-	'xlsx',
-	'3gp',
-	'3g2',
-	'jp2',
-	'jpm',
-	'jpx',
-	'mj2',
-	'aif',
-	'qcp',
-	'odt',
-	'ods',
-	'odp',
-	'xml',
-	'mobi',
-	'heic',
-	'cur',
-	'ktx',
-	'ape',
-	'wv',
-	'dcm',
-	'ics',
-	'glb',
-	'pcap',
-	'dsf',
-	'lnk',
-	'alias',
-	'voc',
-	'ac3',
-	'm4v',
-	'm4p',
-	'm4b',
-	'f4v',
-	'f4p',
-	'f4b',
-	'f4a',
-	'mie',
-	'asf',
-	'ogm',
-	'ogx',
-	'mpc',
-	'arrow',
-	'shp',
-	'aac',
-	'mp1',
-	'it',
-	's3m',
-	'xm',
-	'ai',
-	'skp',
-	'avif',
-	'eps',
-	'lzh',
-	'pgp',
-	'asar',
-	'stl',
-	'chm',
-	'3mf',
-	'zst',
-	'jxl',
-	'vcf',
-];
-
-const supported_mimeTypes = [
-	'image/jpeg',
-	'image/png',
-	'image/gif',
-	'image/webp',
-	'image/flif',
-	'image/x-xcf',
-	'image/x-canon-cr2',
-	'image/x-canon-cr3',
-	'image/tiff',
-	'image/bmp',
-	'image/vnd.ms-photo',
-	'image/vnd.adobe.photoshop',
-	'application/x-indesign',
-	'application/epub+zip',
-	'application/x-xpinstall',
-	'application/vnd.oasis.opendocument.text',
-	'application/vnd.oasis.opendocument.spreadsheet',
-	'application/vnd.oasis.opendocument.presentation',
-	'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-	'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-	'application/zip',
-	'application/x-tar',
-	'application/x-rar-compressed',
-	'application/gzip',
-	'application/x-bzip2',
-	'application/x-7z-compressed',
-	'application/x-apple-diskimage',
-	'application/x-apache-arrow',
-	'video/mp4',
-	'audio/midi',
-	'video/x-matroska',
-	'video/webm',
-	'video/quicktime',
-	'video/vnd.avi',
-	'audio/vnd.wave',
-	'audio/qcelp',
-	'audio/x-ms-asf',
-	'video/x-ms-asf',
-	'application/vnd.ms-asf',
-	'video/mpeg',
-	'video/3gpp',
-	'audio/mpeg',
-	'audio/mp4', // RFC 4337
-	'audio/opus',
-	'video/ogg',
-	'audio/ogg',
-	'application/ogg',
-	'audio/x-flac',
-	'audio/ape',
-	'audio/wavpack',
-	'audio/amr',
-	'application/pdf',
-	'application/x-elf',
-	'application/x-msdownload',
-	'application/x-shockwave-flash',
-	'application/rtf',
-	'application/wasm',
-	'font/woff',
-	'font/woff2',
-	'application/vnd.ms-fontobject',
-	'font/ttf',
-	'font/otf',
-	'image/x-icon',
-	'video/x-flv',
-	'application/postscript',
-	'application/eps',
-	'application/x-xz',
-	'application/x-sqlite3',
-	'application/x-nintendo-nes-rom',
-	'application/x-google-chrome-extension',
-	'application/vnd.ms-cab-compressed',
-	'application/x-deb',
-	'application/x-unix-archive',
-	'application/x-rpm',
-	'application/x-compress',
-	'application/x-lzip',
-	'application/x-cfb',
-	'application/x-mie',
-	'application/mxf',
-	'video/mp2t',
-	'application/x-blender',
-	'image/bpg',
-	'image/jp2',
-	'image/jpx',
-	'image/jpm',
-	'image/mj2',
-	'audio/aiff',
-	'application/xml',
-	'application/x-mobipocket-ebook',
-	'image/heif',
-	'image/heif-sequence',
-	'image/heic',
-	'image/heic-sequence',
-	'image/icns',
-	'image/ktx',
-	'application/dicom',
-	'audio/x-musepack',
-	'text/calendar',
-	'text/vcard',
-	'model/gltf-binary',
-	'application/vnd.tcpdump.pcap',
-	'audio/x-dsf', // Non-standard
-	'application/x.ms.shortcut', // Invented by us
-	'application/x.apple.alias', // Invented by us
-	'audio/x-voc',
-	'audio/vnd.dolby.dd-raw',
-	'audio/x-m4a',
-	'image/apng',
-	'image/x-olympus-orf',
-	'image/x-sony-arw',
-	'image/x-adobe-dng',
-	'image/x-nikon-nef',
-	'image/x-panasonic-rw2',
-	'image/x-fujifilm-raf',
-	'video/x-m4v',
-	'video/3gpp2',
-	'application/x-esri-shape',
-	'audio/aac',
-	'audio/x-it',
-	'audio/x-s3m',
-	'audio/x-xm',
-	'video/MP1S',
-	'video/MP2P',
-	'application/vnd.sketchup.skp',
-	'image/avif',
-	'application/x-lzh-compressed',
-	'application/pgp-encrypted',
-	'application/x-asar',
-	'model/stl',
-	'application/vnd.ms-htmlhelp',
-	'model/3mf',
-	'image/jxl',
-	'application/zstd',
-];
-
-;// CONCATENATED MODULE: ./node_modules/file-type/core.js
-
-
- // eslint-disable-line n/file-extension-in-import
-
-
-
-const minimumBytes = 4100; // A fair amount of file-types are detectable within this range.
-
-async function fileTypeFromStream(stream) {
-	const tokenizer = await fromStream(stream);
-	try {
-		return await fileTypeFromTokenizer(tokenizer);
-	} finally {
-		await tokenizer.close();
-	}
-}
-
-async function fileTypeFromBuffer(input) {
-	if (!(input instanceof Uint8Array || input instanceof ArrayBuffer)) {
-		throw new TypeError(`Expected the \`input\` argument to be of type \`Uint8Array\` or \`Buffer\` or \`ArrayBuffer\`, got \`${typeof input}\``);
-	}
-
-	const buffer = input instanceof Uint8Array ? input : new Uint8Array(input);
-
-	if (!(buffer?.length > 1)) {
-		return;
-	}
-
-	return fileTypeFromTokenizer(fromBuffer(buffer));
-}
-
-function _check(buffer, headers, options) {
-	options = {
-		offset: 0,
-		...options,
-	};
-
-	for (const [index, header] of headers.entries()) {
-		// If a bitmask is set
-		if (options.mask) {
-			// If header doesn't equal `buf` with bits masked off
-			if (header !== (options.mask[index] & buffer[index + options.offset])) {
-				return false;
-			}
-		} else if (header !== buffer[index + options.offset]) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-async function fileTypeFromTokenizer(tokenizer) {
-	try {
-		return new FileTypeParser().parse(tokenizer);
-	} catch (error) {
-		if (!(error instanceof EndOfStreamError)) {
-			throw error;
-		}
-	}
-}
-
-class FileTypeParser {
-	check(header, options) {
-		return _check(this.buffer, header, options);
-	}
-
-	checkString(header, options) {
-		return this.check(stringToBytes(header), options);
-	}
-
-	async parse(tokenizer) {
-		this.buffer = external_node_buffer_.Buffer.alloc(minimumBytes);
-
-		// Keep reading until EOF if the file size is unknown.
-		if (tokenizer.fileInfo.size === undefined) {
-			tokenizer.fileInfo.size = Number.MAX_SAFE_INTEGER;
-		}
-
-		this.tokenizer = tokenizer;
-
-		await tokenizer.peekBuffer(this.buffer, {length: 12, mayBeLess: true});
-
-		// -- 2-byte signatures --
-
-		if (this.check([0x42, 0x4D])) {
-			return {
-				ext: 'bmp',
-				mime: 'image/bmp',
-			};
-		}
-
-		if (this.check([0x0B, 0x77])) {
-			return {
-				ext: 'ac3',
-				mime: 'audio/vnd.dolby.dd-raw',
-			};
-		}
-
-		if (this.check([0x78, 0x01])) {
-			return {
-				ext: 'dmg',
-				mime: 'application/x-apple-diskimage',
-			};
-		}
-
-		if (this.check([0x4D, 0x5A])) {
-			return {
-				ext: 'exe',
-				mime: 'application/x-msdownload',
-			};
-		}
-
-		if (this.check([0x25, 0x21])) {
-			await tokenizer.peekBuffer(this.buffer, {length: 24, mayBeLess: true});
-
-			if (
-				this.checkString('PS-Adobe-', {offset: 2})
-				&& this.checkString(' EPSF-', {offset: 14})
-			) {
-				return {
-					ext: 'eps',
-					mime: 'application/eps',
-				};
-			}
-
-			return {
-				ext: 'ps',
-				mime: 'application/postscript',
-			};
-		}
-
-		if (
-			this.check([0x1F, 0xA0])
-			|| this.check([0x1F, 0x9D])
-		) {
-			return {
-				ext: 'Z',
-				mime: 'application/x-compress',
-			};
-		}
-
-		// -- 3-byte signatures --
-
-		if (this.check([0xEF, 0xBB, 0xBF])) { // UTF-8-BOM
-			// Strip off UTF-8-BOM
-			this.tokenizer.ignore(3);
-			return this.parse(tokenizer);
-		}
-
-		if (this.check([0x47, 0x49, 0x46])) {
-			return {
-				ext: 'gif',
-				mime: 'image/gif',
-			};
-		}
-
-		if (this.check([0xFF, 0xD8, 0xFF])) {
-			return {
-				ext: 'jpg',
-				mime: 'image/jpeg',
-			};
-		}
-
-		if (this.check([0x49, 0x49, 0xBC])) {
-			return {
-				ext: 'jxr',
-				mime: 'image/vnd.ms-photo',
-			};
-		}
-
-		if (this.check([0x1F, 0x8B, 0x8])) {
-			return {
-				ext: 'gz',
-				mime: 'application/gzip',
-			};
-		}
-
-		if (this.check([0x42, 0x5A, 0x68])) {
-			return {
-				ext: 'bz2',
-				mime: 'application/x-bzip2',
-			};
-		}
-
-		if (this.checkString('ID3')) {
-			await tokenizer.ignore(6); // Skip ID3 header until the header size
-			const id3HeaderLength = await tokenizer.readToken(uint32SyncSafeToken);
-			if (tokenizer.position + id3HeaderLength > tokenizer.fileInfo.size) {
-				// Guess file type based on ID3 header for backward compatibility
-				return {
-					ext: 'mp3',
-					mime: 'audio/mpeg',
-				};
-			}
-
-			await tokenizer.ignore(id3HeaderLength);
-			return fileTypeFromTokenizer(tokenizer); // Skip ID3 header, recursion
-		}
-
-		// Musepack, SV7
-		if (this.checkString('MP+')) {
-			return {
-				ext: 'mpc',
-				mime: 'audio/x-musepack',
-			};
-		}
-
-		if (
-			(this.buffer[0] === 0x43 || this.buffer[0] === 0x46)
-			&& this.check([0x57, 0x53], {offset: 1})
-		) {
-			return {
-				ext: 'swf',
-				mime: 'application/x-shockwave-flash',
-			};
-		}
-
-		// -- 4-byte signatures --
-
-		if (this.checkString('FLIF')) {
-			return {
-				ext: 'flif',
-				mime: 'image/flif',
-			};
-		}
-
-		if (this.checkString('8BPS')) {
-			return {
-				ext: 'psd',
-				mime: 'image/vnd.adobe.photoshop',
-			};
-		}
-
-		if (this.checkString('WEBP', {offset: 8})) {
-			return {
-				ext: 'webp',
-				mime: 'image/webp',
-			};
-		}
-
-		// Musepack, SV8
-		if (this.checkString('MPCK')) {
-			return {
-				ext: 'mpc',
-				mime: 'audio/x-musepack',
-			};
-		}
-
-		if (this.checkString('FORM')) {
-			return {
-				ext: 'aif',
-				mime: 'audio/aiff',
-			};
-		}
-
-		if (this.checkString('icns', {offset: 0})) {
-			return {
-				ext: 'icns',
-				mime: 'image/icns',
-			};
-		}
-
-		// Zip-based file formats
-		// Need to be before the `zip` check
-		if (this.check([0x50, 0x4B, 0x3, 0x4])) { // Local file header signature
-			try {
-				while (tokenizer.position + 30 < tokenizer.fileInfo.size) {
-					await tokenizer.readBuffer(this.buffer, {length: 30});
-
-					// https://en.wikipedia.org/wiki/Zip_(file_format)#File_headers
-					const zipHeader = {
-						compressedSize: this.buffer.readUInt32LE(18),
-						uncompressedSize: this.buffer.readUInt32LE(22),
-						filenameLength: this.buffer.readUInt16LE(26),
-						extraFieldLength: this.buffer.readUInt16LE(28),
-					};
-
-					zipHeader.filename = await tokenizer.readToken(new StringType(zipHeader.filenameLength, 'utf-8'));
-					await tokenizer.ignore(zipHeader.extraFieldLength);
-
-					// Assumes signed `.xpi` from addons.mozilla.org
-					if (zipHeader.filename === 'META-INF/mozilla.rsa') {
-						return {
-							ext: 'xpi',
-							mime: 'application/x-xpinstall',
-						};
-					}
-
-					if (zipHeader.filename.endsWith('.rels') || zipHeader.filename.endsWith('.xml')) {
-						const type = zipHeader.filename.split('/')[0];
-						switch (type) {
-							case '_rels':
-								break;
-							case 'word':
-								return {
-									ext: 'docx',
-									mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-								};
-							case 'ppt':
-								return {
-									ext: 'pptx',
-									mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-								};
-							case 'xl':
-								return {
-									ext: 'xlsx',
-									mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-								};
-							default:
-								break;
-						}
-					}
-
-					if (zipHeader.filename.startsWith('xl/')) {
-						return {
-							ext: 'xlsx',
-							mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-						};
-					}
-
-					if (zipHeader.filename.startsWith('3D/') && zipHeader.filename.endsWith('.model')) {
-						return {
-							ext: '3mf',
-							mime: 'model/3mf',
-						};
-					}
-
-					// The docx, xlsx and pptx file types extend the Office Open XML file format:
-					// https://en.wikipedia.org/wiki/Office_Open_XML_file_formats
-					// We look for:
-					// - one entry named '[Content_Types].xml' or '_rels/.rels',
-					// - one entry indicating specific type of file.
-					// MS Office, OpenOffice and LibreOffice may put the parts in different order, so the check should not rely on it.
-					if (zipHeader.filename === 'mimetype' && zipHeader.compressedSize === zipHeader.uncompressedSize) {
-						let mimeType = await tokenizer.readToken(new StringType(zipHeader.compressedSize, 'utf-8'));
-						mimeType = mimeType.trim();
-
-						switch (mimeType) {
-							case 'application/epub+zip':
-								return {
-									ext: 'epub',
-									mime: 'application/epub+zip',
-								};
-							case 'application/vnd.oasis.opendocument.text':
-								return {
-									ext: 'odt',
-									mime: 'application/vnd.oasis.opendocument.text',
-								};
-							case 'application/vnd.oasis.opendocument.spreadsheet':
-								return {
-									ext: 'ods',
-									mime: 'application/vnd.oasis.opendocument.spreadsheet',
-								};
-							case 'application/vnd.oasis.opendocument.presentation':
-								return {
-									ext: 'odp',
-									mime: 'application/vnd.oasis.opendocument.presentation',
-								};
-							default:
-						}
-					}
-
-					// Try to find next header manually when current one is corrupted
-					if (zipHeader.compressedSize === 0) {
-						let nextHeaderIndex = -1;
-
-						while (nextHeaderIndex < 0 && (tokenizer.position < tokenizer.fileInfo.size)) {
-							await tokenizer.peekBuffer(this.buffer, {mayBeLess: true});
-
-							nextHeaderIndex = this.buffer.indexOf('504B0304', 0, 'hex');
-							// Move position to the next header if found, skip the whole buffer otherwise
-							await tokenizer.ignore(nextHeaderIndex >= 0 ? nextHeaderIndex : this.buffer.length);
-						}
-					} else {
-						await tokenizer.ignore(zipHeader.compressedSize);
-					}
-				}
-			} catch (error) {
-				if (!(error instanceof EndOfStreamError)) {
-					throw error;
-				}
-			}
-
-			return {
-				ext: 'zip',
-				mime: 'application/zip',
-			};
-		}
-
-		if (this.checkString('OggS')) {
-			// This is an OGG container
-			await tokenizer.ignore(28);
-			const type = external_node_buffer_.Buffer.alloc(8);
-			await tokenizer.readBuffer(type);
-
-			// Needs to be before `ogg` check
-			if (_check(type, [0x4F, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64])) {
-				return {
-					ext: 'opus',
-					mime: 'audio/opus',
-				};
-			}
-
-			// If ' theora' in header.
-			if (_check(type, [0x80, 0x74, 0x68, 0x65, 0x6F, 0x72, 0x61])) {
-				return {
-					ext: 'ogv',
-					mime: 'video/ogg',
-				};
-			}
-
-			// If '\x01video' in header.
-			if (_check(type, [0x01, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x00])) {
-				return {
-					ext: 'ogm',
-					mime: 'video/ogg',
-				};
-			}
-
-			// If ' FLAC' in header  https://xiph.org/flac/faq.html
-			if (_check(type, [0x7F, 0x46, 0x4C, 0x41, 0x43])) {
-				return {
-					ext: 'oga',
-					mime: 'audio/ogg',
-				};
-			}
-
-			// 'Speex  ' in header https://en.wikipedia.org/wiki/Speex
-			if (_check(type, [0x53, 0x70, 0x65, 0x65, 0x78, 0x20, 0x20])) {
-				return {
-					ext: 'spx',
-					mime: 'audio/ogg',
-				};
-			}
-
-			// If '\x01vorbis' in header
-			if (_check(type, [0x01, 0x76, 0x6F, 0x72, 0x62, 0x69, 0x73])) {
-				return {
-					ext: 'ogg',
-					mime: 'audio/ogg',
-				};
-			}
-
-			// Default OGG container https://www.iana.org/assignments/media-types/application/ogg
-			return {
-				ext: 'ogx',
-				mime: 'application/ogg',
-			};
-		}
-
-		if (
-			this.check([0x50, 0x4B])
-			&& (this.buffer[2] === 0x3 || this.buffer[2] === 0x5 || this.buffer[2] === 0x7)
-			&& (this.buffer[3] === 0x4 || this.buffer[3] === 0x6 || this.buffer[3] === 0x8)
-		) {
-			return {
-				ext: 'zip',
-				mime: 'application/zip',
-			};
-		}
-
-		//
-
-		// File Type Box (https://en.wikipedia.org/wiki/ISO_base_media_file_format)
-		// It's not required to be first, but it's recommended to be. Almost all ISO base media files start with `ftyp` box.
-		// `ftyp` box must contain a brand major identifier, which must consist of ISO 8859-1 printable characters.
-		// Here we check for 8859-1 printable characters (for simplicity, it's a mask which also catches one non-printable character).
-		if (
-			this.checkString('ftyp', {offset: 4})
-			&& (this.buffer[8] & 0x60) !== 0x00 // Brand major, first character ASCII?
-		) {
-			// They all can have MIME `video/mp4` except `application/mp4` special-case which is hard to detect.
-			// For some cases, we're specific, everything else falls to `video/mp4` with `mp4` extension.
-			const brandMajor = this.buffer.toString('binary', 8, 12).replace('\0', ' ').trim();
-			switch (brandMajor) {
-				case 'avif':
-				case 'avis':
-					return {ext: 'avif', mime: 'image/avif'};
-				case 'mif1':
-					return {ext: 'heic', mime: 'image/heif'};
-				case 'msf1':
-					return {ext: 'heic', mime: 'image/heif-sequence'};
-				case 'heic':
-				case 'heix':
-					return {ext: 'heic', mime: 'image/heic'};
-				case 'hevc':
-				case 'hevx':
-					return {ext: 'heic', mime: 'image/heic-sequence'};
-				case 'qt':
-					return {ext: 'mov', mime: 'video/quicktime'};
-				case 'M4V':
-				case 'M4VH':
-				case 'M4VP':
-					return {ext: 'm4v', mime: 'video/x-m4v'};
-				case 'M4P':
-					return {ext: 'm4p', mime: 'video/mp4'};
-				case 'M4B':
-					return {ext: 'm4b', mime: 'audio/mp4'};
-				case 'M4A':
-					return {ext: 'm4a', mime: 'audio/x-m4a'};
-				case 'F4V':
-					return {ext: 'f4v', mime: 'video/mp4'};
-				case 'F4P':
-					return {ext: 'f4p', mime: 'video/mp4'};
-				case 'F4A':
-					return {ext: 'f4a', mime: 'audio/mp4'};
-				case 'F4B':
-					return {ext: 'f4b', mime: 'audio/mp4'};
-				case 'crx':
-					return {ext: 'cr3', mime: 'image/x-canon-cr3'};
-				default:
-					if (brandMajor.startsWith('3g')) {
-						if (brandMajor.startsWith('3g2')) {
-							return {ext: '3g2', mime: 'video/3gpp2'};
-						}
-
-						return {ext: '3gp', mime: 'video/3gpp'};
-					}
-
-					return {ext: 'mp4', mime: 'video/mp4'};
-			}
-		}
-
-		if (this.checkString('MThd')) {
-			return {
-				ext: 'mid',
-				mime: 'audio/midi',
-			};
-		}
-
-		if (
-			this.checkString('wOFF')
-			&& (
-				this.check([0x00, 0x01, 0x00, 0x00], {offset: 4})
-				|| this.checkString('OTTO', {offset: 4})
-			)
-		) {
-			return {
-				ext: 'woff',
-				mime: 'font/woff',
-			};
-		}
-
-		if (
-			this.checkString('wOF2')
-			&& (
-				this.check([0x00, 0x01, 0x00, 0x00], {offset: 4})
-				|| this.checkString('OTTO', {offset: 4})
-			)
-		) {
-			return {
-				ext: 'woff2',
-				mime: 'font/woff2',
-			};
-		}
-
-		if (this.check([0xD4, 0xC3, 0xB2, 0xA1]) || this.check([0xA1, 0xB2, 0xC3, 0xD4])) {
-			return {
-				ext: 'pcap',
-				mime: 'application/vnd.tcpdump.pcap',
-			};
-		}
-
-		// Sony DSD Stream File (DSF)
-		if (this.checkString('DSD ')) {
-			return {
-				ext: 'dsf',
-				mime: 'audio/x-dsf', // Non-standard
-			};
-		}
-
-		if (this.checkString('LZIP')) {
-			return {
-				ext: 'lz',
-				mime: 'application/x-lzip',
-			};
-		}
-
-		if (this.checkString('fLaC')) {
-			return {
-				ext: 'flac',
-				mime: 'audio/x-flac',
-			};
-		}
-
-		if (this.check([0x42, 0x50, 0x47, 0xFB])) {
-			return {
-				ext: 'bpg',
-				mime: 'image/bpg',
-			};
-		}
-
-		if (this.checkString('wvpk')) {
-			return {
-				ext: 'wv',
-				mime: 'audio/wavpack',
-			};
-		}
-
-		if (this.checkString('%PDF')) {
-			await tokenizer.ignore(1350);
-			const maxBufferSize = 10 * 1024 * 1024;
-			const buffer = external_node_buffer_.Buffer.alloc(Math.min(maxBufferSize, tokenizer.fileInfo.size));
-			await tokenizer.readBuffer(buffer, {mayBeLess: true});
-
-			// Check if this is an Adobe Illustrator file
-			if (buffer.includes(external_node_buffer_.Buffer.from('AIPrivateData'))) {
-				return {
-					ext: 'ai',
-					mime: 'application/postscript',
-				};
-			}
-
-			// Assume this is just a normal PDF
-			return {
-				ext: 'pdf',
-				mime: 'application/pdf',
-			};
-		}
-
-		if (this.check([0x00, 0x61, 0x73, 0x6D])) {
-			return {
-				ext: 'wasm',
-				mime: 'application/wasm',
-			};
-		}
-
-		// TIFF, little-endian type
-		if (this.check([0x49, 0x49])) {
-			const fileType = await this.readTiffHeader(false);
-			if (fileType) {
-				return fileType;
-			}
-		}
-
-		// TIFF, big-endian type
-		if (this.check([0x4D, 0x4D])) {
-			const fileType = await this.readTiffHeader(true);
-			if (fileType) {
-				return fileType;
-			}
-		}
-
-		if (this.checkString('MAC ')) {
-			return {
-				ext: 'ape',
-				mime: 'audio/ape',
-			};
-		}
-
-		// https://github.com/threatstack/libmagic/blob/master/magic/Magdir/matroska
-		if (this.check([0x1A, 0x45, 0xDF, 0xA3])) { // Root element: EBML
-			async function readField() {
-				const msb = await tokenizer.peekNumber(UINT8);
-				let mask = 0x80;
-				let ic = 0; // 0 = A, 1 = B, 2 = C, 3
-				// = D
-
-				while ((msb & mask) === 0 && mask !== 0) {
-					++ic;
-					mask >>= 1;
-				}
-
-				const id = external_node_buffer_.Buffer.alloc(ic + 1);
-				await tokenizer.readBuffer(id);
-				return id;
-			}
-
-			async function readElement() {
-				const id = await readField();
-				const lengthField = await readField();
-				lengthField[0] ^= 0x80 >> (lengthField.length - 1);
-				const nrLength = Math.min(6, lengthField.length); // JavaScript can max read 6 bytes integer
-				return {
-					id: id.readUIntBE(0, id.length),
-					len: lengthField.readUIntBE(lengthField.length - nrLength, nrLength),
-				};
-			}
-
-			async function readChildren(children) {
-				while (children > 0) {
-					const element = await readElement();
-					if (element.id === 0x42_82) {
-						const rawValue = await tokenizer.readToken(new StringType(element.len, 'utf-8'));
-						return rawValue.replace(/\00.*$/g, ''); // Return DocType
-					}
-
-					await tokenizer.ignore(element.len); // ignore payload
-					--children;
-				}
-			}
-
-			const re = await readElement();
-			const docType = await readChildren(re.len);
-
-			switch (docType) {
-				case 'webm':
-					return {
-						ext: 'webm',
-						mime: 'video/webm',
-					};
-
-				case 'matroska':
-					return {
-						ext: 'mkv',
-						mime: 'video/x-matroska',
-					};
-
-				default:
-					return;
-			}
-		}
-
-		// RIFF file format which might be AVI, WAV, QCP, etc
-		if (this.check([0x52, 0x49, 0x46, 0x46])) {
-			if (this.check([0x41, 0x56, 0x49], {offset: 8})) {
-				return {
-					ext: 'avi',
-					mime: 'video/vnd.avi',
-				};
-			}
-
-			if (this.check([0x57, 0x41, 0x56, 0x45], {offset: 8})) {
-				return {
-					ext: 'wav',
-					mime: 'audio/vnd.wave',
-				};
-			}
-
-			// QLCM, QCP file
-			if (this.check([0x51, 0x4C, 0x43, 0x4D], {offset: 8})) {
-				return {
-					ext: 'qcp',
-					mime: 'audio/qcelp',
-				};
-			}
-		}
-
-		if (this.checkString('SQLi')) {
-			return {
-				ext: 'sqlite',
-				mime: 'application/x-sqlite3',
-			};
-		}
-
-		if (this.check([0x4E, 0x45, 0x53, 0x1A])) {
-			return {
-				ext: 'nes',
-				mime: 'application/x-nintendo-nes-rom',
-			};
-		}
-
-		if (this.checkString('Cr24')) {
-			return {
-				ext: 'crx',
-				mime: 'application/x-google-chrome-extension',
-			};
-		}
-
-		if (
-			this.checkString('MSCF')
-			|| this.checkString('ISc(')
-		) {
-			return {
-				ext: 'cab',
-				mime: 'application/vnd.ms-cab-compressed',
-			};
-		}
-
-		if (this.check([0xED, 0xAB, 0xEE, 0xDB])) {
-			return {
-				ext: 'rpm',
-				mime: 'application/x-rpm',
-			};
-		}
-
-		if (this.check([0xC5, 0xD0, 0xD3, 0xC6])) {
-			return {
-				ext: 'eps',
-				mime: 'application/eps',
-			};
-		}
-
-		if (this.check([0x28, 0xB5, 0x2F, 0xFD])) {
-			return {
-				ext: 'zst',
-				mime: 'application/zstd',
-			};
-		}
-
-		if (this.check([0x7F, 0x45, 0x4C, 0x46])) {
-			return {
-				ext: 'elf',
-				mime: 'application/x-elf',
-			};
-		}
-
-		// -- 5-byte signatures --
-
-		if (this.check([0x4F, 0x54, 0x54, 0x4F, 0x00])) {
-			return {
-				ext: 'otf',
-				mime: 'font/otf',
-			};
-		}
-
-		if (this.checkString('#!AMR')) {
-			return {
-				ext: 'amr',
-				mime: 'audio/amr',
-			};
-		}
-
-		if (this.checkString('{\\rtf')) {
-			return {
-				ext: 'rtf',
-				mime: 'application/rtf',
-			};
-		}
-
-		if (this.check([0x46, 0x4C, 0x56, 0x01])) {
-			return {
-				ext: 'flv',
-				mime: 'video/x-flv',
-			};
-		}
-
-		if (this.checkString('IMPM')) {
-			return {
-				ext: 'it',
-				mime: 'audio/x-it',
-			};
-		}
-
-		if (
-			this.checkString('-lh0-', {offset: 2})
-			|| this.checkString('-lh1-', {offset: 2})
-			|| this.checkString('-lh2-', {offset: 2})
-			|| this.checkString('-lh3-', {offset: 2})
-			|| this.checkString('-lh4-', {offset: 2})
-			|| this.checkString('-lh5-', {offset: 2})
-			|| this.checkString('-lh6-', {offset: 2})
-			|| this.checkString('-lh7-', {offset: 2})
-			|| this.checkString('-lzs-', {offset: 2})
-			|| this.checkString('-lz4-', {offset: 2})
-			|| this.checkString('-lz5-', {offset: 2})
-			|| this.checkString('-lhd-', {offset: 2})
-		) {
-			return {
-				ext: 'lzh',
-				mime: 'application/x-lzh-compressed',
-			};
-		}
-
-		// MPEG program stream (PS or MPEG-PS)
-		if (this.check([0x00, 0x00, 0x01, 0xBA])) {
-			//  MPEG-PS, MPEG-1 Part 1
-			if (this.check([0x21], {offset: 4, mask: [0xF1]})) {
-				return {
-					ext: 'mpg', // May also be .ps, .mpeg
-					mime: 'video/MP1S',
-				};
-			}
-
-			// MPEG-PS, MPEG-2 Part 1
-			if (this.check([0x44], {offset: 4, mask: [0xC4]})) {
-				return {
-					ext: 'mpg', // May also be .mpg, .m2p, .vob or .sub
-					mime: 'video/MP2P',
-				};
-			}
-		}
-
-		if (this.checkString('ITSF')) {
-			return {
-				ext: 'chm',
-				mime: 'application/vnd.ms-htmlhelp',
-			};
-		}
-
-		// -- 6-byte signatures --
-
-		if (this.check([0xFD, 0x37, 0x7A, 0x58, 0x5A, 0x00])) {
-			return {
-				ext: 'xz',
-				mime: 'application/x-xz',
-			};
-		}
-
-		if (this.checkString('<?xml ')) {
-			return {
-				ext: 'xml',
-				mime: 'application/xml',
-			};
-		}
-
-		if (this.check([0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C])) {
-			return {
-				ext: '7z',
-				mime: 'application/x-7z-compressed',
-			};
-		}
-
-		if (
-			this.check([0x52, 0x61, 0x72, 0x21, 0x1A, 0x7])
-			&& (this.buffer[6] === 0x0 || this.buffer[6] === 0x1)
-		) {
-			return {
-				ext: 'rar',
-				mime: 'application/x-rar-compressed',
-			};
-		}
-
-		if (this.checkString('solid ')) {
-			return {
-				ext: 'stl',
-				mime: 'model/stl',
-			};
-		}
-
-		// -- 7-byte signatures --
-
-		if (this.checkString('BLENDER')) {
-			return {
-				ext: 'blend',
-				mime: 'application/x-blender',
-			};
-		}
-
-		if (this.checkString('!<arch>')) {
-			await tokenizer.ignore(8);
-			const string = await tokenizer.readToken(new StringType(13, 'ascii'));
-			if (string === 'debian-binary') {
-				return {
-					ext: 'deb',
-					mime: 'application/x-deb',
-				};
-			}
-
-			return {
-				ext: 'ar',
-				mime: 'application/x-unix-archive',
-			};
-		}
-
-		// -- 8-byte signatures --
-
-		if (this.check([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])) {
-			// APNG format (https://wiki.mozilla.org/APNG_Specification)
-			// 1. Find the first IDAT (image data) chunk (49 44 41 54)
-			// 2. Check if there is an "acTL" chunk before the IDAT one (61 63 54 4C)
-
-			// Offset calculated as follows:
-			// - 8 bytes: PNG signature
-			// - 4 (length) + 4 (chunk type) + 13 (chunk data) + 4 (CRC): IHDR chunk
-
-			await tokenizer.ignore(8); // ignore PNG signature
-
-			async function readChunkHeader() {
-				return {
-					length: await tokenizer.readToken(INT32_BE),
-					type: await tokenizer.readToken(new StringType(4, 'binary')),
-				};
-			}
-
-			do {
-				const chunk = await readChunkHeader();
-				if (chunk.length < 0) {
-					return; // Invalid chunk length
-				}
-
-				switch (chunk.type) {
-					case 'IDAT':
-						return {
-							ext: 'png',
-							mime: 'image/png',
-						};
-					case 'acTL':
-						return {
-							ext: 'apng',
-							mime: 'image/apng',
-						};
-					default:
-						await tokenizer.ignore(chunk.length + 4); // Ignore chunk-data + CRC
-				}
-			} while (tokenizer.position + 8 < tokenizer.fileInfo.size);
-
-			return {
-				ext: 'png',
-				mime: 'image/png',
-			};
-		}
-
-		if (this.check([0x41, 0x52, 0x52, 0x4F, 0x57, 0x31, 0x00, 0x00])) {
-			return {
-				ext: 'arrow',
-				mime: 'application/x-apache-arrow',
-			};
-		}
-
-		if (this.check([0x67, 0x6C, 0x54, 0x46, 0x02, 0x00, 0x00, 0x00])) {
-			return {
-				ext: 'glb',
-				mime: 'model/gltf-binary',
-			};
-		}
-
-		// `mov` format variants
-		if (
-			this.check([0x66, 0x72, 0x65, 0x65], {offset: 4}) // `free`
-			|| this.check([0x6D, 0x64, 0x61, 0x74], {offset: 4}) // `mdat` MJPEG
-			|| this.check([0x6D, 0x6F, 0x6F, 0x76], {offset: 4}) // `moov`
-			|| this.check([0x77, 0x69, 0x64, 0x65], {offset: 4}) // `wide`
-		) {
-			return {
-				ext: 'mov',
-				mime: 'video/quicktime',
-			};
-		}
-
-		// -- 9-byte signatures --
-
-		if (this.check([0x49, 0x49, 0x52, 0x4F, 0x08, 0x00, 0x00, 0x00, 0x18])) {
-			return {
-				ext: 'orf',
-				mime: 'image/x-olympus-orf',
-			};
-		}
-
-		if (this.checkString('gimp xcf ')) {
-			return {
-				ext: 'xcf',
-				mime: 'image/x-xcf',
-			};
-		}
-
-		// -- 12-byte signatures --
-
-		if (this.check([0x49, 0x49, 0x55, 0x00, 0x18, 0x00, 0x00, 0x00, 0x88, 0xE7, 0x74, 0xD8])) {
-			return {
-				ext: 'rw2',
-				mime: 'image/x-panasonic-rw2',
-			};
-		}
-
-		// ASF_Header_Object first 80 bytes
-		if (this.check([0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9])) {
-			async function readHeader() {
-				const guid = external_node_buffer_.Buffer.alloc(16);
-				await tokenizer.readBuffer(guid);
-				return {
-					id: guid,
-					size: Number(await tokenizer.readToken(UINT64_LE)),
-				};
-			}
-
-			await tokenizer.ignore(30);
-			// Search for header should be in first 1KB of file.
-			while (tokenizer.position + 24 < tokenizer.fileInfo.size) {
-				const header = await readHeader();
-				let payload = header.size - 24;
-				if (_check(header.id, [0x91, 0x07, 0xDC, 0xB7, 0xB7, 0xA9, 0xCF, 0x11, 0x8E, 0xE6, 0x00, 0xC0, 0x0C, 0x20, 0x53, 0x65])) {
-					// Sync on Stream-Properties-Object (B7DC0791-A9B7-11CF-8EE6-00C00C205365)
-					const typeId = external_node_buffer_.Buffer.alloc(16);
-					payload -= await tokenizer.readBuffer(typeId);
-
-					if (_check(typeId, [0x40, 0x9E, 0x69, 0xF8, 0x4D, 0x5B, 0xCF, 0x11, 0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44, 0x2B])) {
-						// Found audio:
-						return {
-							ext: 'asf',
-							mime: 'audio/x-ms-asf',
-						};
-					}
-
-					if (_check(typeId, [0xC0, 0xEF, 0x19, 0xBC, 0x4D, 0x5B, 0xCF, 0x11, 0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44, 0x2B])) {
-						// Found video:
-						return {
-							ext: 'asf',
-							mime: 'video/x-ms-asf',
-						};
-					}
-
-					break;
-				}
-
-				await tokenizer.ignore(payload);
-			}
-
-			// Default to ASF generic extension
-			return {
-				ext: 'asf',
-				mime: 'application/vnd.ms-asf',
-			};
-		}
-
-		if (this.check([0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A])) {
-			return {
-				ext: 'ktx',
-				mime: 'image/ktx',
-			};
-		}
-
-		if ((this.check([0x7E, 0x10, 0x04]) || this.check([0x7E, 0x18, 0x04])) && this.check([0x30, 0x4D, 0x49, 0x45], {offset: 4})) {
-			return {
-				ext: 'mie',
-				mime: 'application/x-mie',
-			};
-		}
-
-		if (this.check([0x27, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], {offset: 2})) {
-			return {
-				ext: 'shp',
-				mime: 'application/x-esri-shape',
-			};
-		}
-
-		if (this.check([0x00, 0x00, 0x00, 0x0C, 0x6A, 0x50, 0x20, 0x20, 0x0D, 0x0A, 0x87, 0x0A])) {
-			// JPEG-2000 family
-
-			await tokenizer.ignore(20);
-			const type = await tokenizer.readToken(new StringType(4, 'ascii'));
-			switch (type) {
-				case 'jp2 ':
-					return {
-						ext: 'jp2',
-						mime: 'image/jp2',
-					};
-				case 'jpx ':
-					return {
-						ext: 'jpx',
-						mime: 'image/jpx',
-					};
-				case 'jpm ':
-					return {
-						ext: 'jpm',
-						mime: 'image/jpm',
-					};
-				case 'mjp2':
-					return {
-						ext: 'mj2',
-						mime: 'image/mj2',
-					};
-				default:
-					return;
-			}
-		}
-
-		if (
-			this.check([0xFF, 0x0A])
-			|| this.check([0x00, 0x00, 0x00, 0x0C, 0x4A, 0x58, 0x4C, 0x20, 0x0D, 0x0A, 0x87, 0x0A])
-		) {
-			return {
-				ext: 'jxl',
-				mime: 'image/jxl',
-			};
-		}
-
-		if (this.check([0xFE, 0xFF])) { // UTF-16-BOM-LE
-			if (this.check([0, 60, 0, 63, 0, 120, 0, 109, 0, 108], {offset: 2})) {
-				return {
-					ext: 'xml',
-					mime: 'application/xml',
-				};
-			}
-
-			return undefined; // Some unknown text based format
-		}
-
-		// -- Unsafe signatures --
-
-		if (
-			this.check([0x0, 0x0, 0x1, 0xBA])
-			|| this.check([0x0, 0x0, 0x1, 0xB3])
-		) {
-			return {
-				ext: 'mpg',
-				mime: 'video/mpeg',
-			};
-		}
-
-		if (this.check([0x00, 0x01, 0x00, 0x00, 0x00])) {
-			return {
-				ext: 'ttf',
-				mime: 'font/ttf',
-			};
-		}
-
-		if (this.check([0x00, 0x00, 0x01, 0x00])) {
-			return {
-				ext: 'ico',
-				mime: 'image/x-icon',
-			};
-		}
-
-		if (this.check([0x00, 0x00, 0x02, 0x00])) {
-			return {
-				ext: 'cur',
-				mime: 'image/x-icon',
-			};
-		}
-
-		if (this.check([0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1])) {
-			// Detected Microsoft Compound File Binary File (MS-CFB) Format.
-			return {
-				ext: 'cfb',
-				mime: 'application/x-cfb',
-			};
-		}
-
-		// Increase sample size from 12 to 256.
-		await tokenizer.peekBuffer(this.buffer, {length: Math.min(256, tokenizer.fileInfo.size), mayBeLess: true});
-
-		// -- 15-byte signatures --
-
-		if (this.checkString('BEGIN:')) {
-			if (this.checkString('VCARD', {offset: 6})) {
-				return {
-					ext: 'vcf',
-					mime: 'text/vcard',
-				};
-			}
-
-			if (this.checkString('VCALENDAR', {offset: 6})) {
-				return {
-					ext: 'ics',
-					mime: 'text/calendar',
-				};
-			}
-		}
-
-		// `raf` is here just to keep all the raw image detectors together.
-		if (this.checkString('FUJIFILMCCD-RAW')) {
-			return {
-				ext: 'raf',
-				mime: 'image/x-fujifilm-raf',
-			};
-		}
-
-		if (this.checkString('Extended Module:')) {
-			return {
-				ext: 'xm',
-				mime: 'audio/x-xm',
-			};
-		}
-
-		if (this.checkString('Creative Voice File')) {
-			return {
-				ext: 'voc',
-				mime: 'audio/x-voc',
-			};
-		}
-
-		if (this.check([0x04, 0x00, 0x00, 0x00]) && this.buffer.length >= 16) { // Rough & quick check Pickle/ASAR
-			const jsonSize = this.buffer.readUInt32LE(12);
-			if (jsonSize > 12 && this.buffer.length >= jsonSize + 16) {
-				try {
-					const header = this.buffer.slice(16, jsonSize + 16).toString();
-					const json = JSON.parse(header);
-					// Check if Pickle is ASAR
-					if (json.files) { // Final check, assuring Pickle/ASAR format
-						return {
-							ext: 'asar',
-							mime: 'application/x-asar',
-						};
-					}
-				} catch {}
-			}
-		}
-
-		if (this.check([0x06, 0x0E, 0x2B, 0x34, 0x02, 0x05, 0x01, 0x01, 0x0D, 0x01, 0x02, 0x01, 0x01, 0x02])) {
-			return {
-				ext: 'mxf',
-				mime: 'application/mxf',
-			};
-		}
-
-		if (this.checkString('SCRM', {offset: 44})) {
-			return {
-				ext: 's3m',
-				mime: 'audio/x-s3m',
-			};
-		}
-
-		// Raw MPEG-2 transport stream (188-byte packets)
-		if (this.check([0x47]) && this.check([0x47], {offset: 188})) {
-			return {
-				ext: 'mts',
-				mime: 'video/mp2t',
-			};
-		}
-
-		// Blu-ray Disc Audio-Video (BDAV) MPEG-2 transport stream has 4-byte TP_extra_header before each 188-byte packet
-		if (this.check([0x47], {offset: 4}) && this.check([0x47], {offset: 196})) {
-			return {
-				ext: 'mts',
-				mime: 'video/mp2t',
-			};
-		}
-
-		if (this.check([0x42, 0x4F, 0x4F, 0x4B, 0x4D, 0x4F, 0x42, 0x49], {offset: 60})) {
-			return {
-				ext: 'mobi',
-				mime: 'application/x-mobipocket-ebook',
-			};
-		}
-
-		if (this.check([0x44, 0x49, 0x43, 0x4D], {offset: 128})) {
-			return {
-				ext: 'dcm',
-				mime: 'application/dicom',
-			};
-		}
-
-		if (this.check([0x4C, 0x00, 0x00, 0x00, 0x01, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46])) {
-			return {
-				ext: 'lnk',
-				mime: 'application/x.ms.shortcut', // Invented by us
-			};
-		}
-
-		if (this.check([0x62, 0x6F, 0x6F, 0x6B, 0x00, 0x00, 0x00, 0x00, 0x6D, 0x61, 0x72, 0x6B, 0x00, 0x00, 0x00, 0x00])) {
-			return {
-				ext: 'alias',
-				mime: 'application/x.apple.alias', // Invented by us
-			};
-		}
-
-		if (
-			this.check([0x4C, 0x50], {offset: 34})
-			&& (
-				this.check([0x00, 0x00, 0x01], {offset: 8})
-				|| this.check([0x01, 0x00, 0x02], {offset: 8})
-				|| this.check([0x02, 0x00, 0x02], {offset: 8})
-			)
-		) {
-			return {
-				ext: 'eot',
-				mime: 'application/vnd.ms-fontobject',
-			};
-		}
-
-		if (this.check([0x06, 0x06, 0xED, 0xF5, 0xD8, 0x1D, 0x46, 0xE5, 0xBD, 0x31, 0xEF, 0xE7, 0xFE, 0x74, 0xB7, 0x1D])) {
-			return {
-				ext: 'indd',
-				mime: 'application/x-indesign',
-			};
-		}
-
-		// Increase sample size from 256 to 512
-		await tokenizer.peekBuffer(this.buffer, {length: Math.min(512, tokenizer.fileInfo.size), mayBeLess: true});
-
-		// Requires a buffer size of 512 bytes
-		if (tarHeaderChecksumMatches(this.buffer)) {
-			return {
-				ext: 'tar',
-				mime: 'application/x-tar',
-			};
-		}
-
-		if (this.check([0xFF, 0xFE])) { // UTF-16-BOM-BE
-			if (this.check([60, 0, 63, 0, 120, 0, 109, 0, 108, 0], {offset: 2})) {
-				return {
-					ext: 'xml',
-					mime: 'application/xml',
-				};
-			}
-
-			if (this.check([0xFF, 0x0E, 0x53, 0x00, 0x6B, 0x00, 0x65, 0x00, 0x74, 0x00, 0x63, 0x00, 0x68, 0x00, 0x55, 0x00, 0x70, 0x00, 0x20, 0x00, 0x4D, 0x00, 0x6F, 0x00, 0x64, 0x00, 0x65, 0x00, 0x6C, 0x00], {offset: 2})) {
-				return {
-					ext: 'skp',
-					mime: 'application/vnd.sketchup.skp',
-				};
-			}
-
-			return undefined; // Some text based format
-		}
-
-		if (this.checkString('-----BEGIN PGP MESSAGE-----')) {
-			return {
-				ext: 'pgp',
-				mime: 'application/pgp-encrypted',
-			};
-		}
-
-		// Check MPEG 1 or 2 Layer 3 header, or 'layer 0' for ADTS (MPEG sync-word 0xFFE)
-		if (this.buffer.length >= 2 && this.check([0xFF, 0xE0], {offset: 0, mask: [0xFF, 0xE0]})) {
-			if (this.check([0x10], {offset: 1, mask: [0x16]})) {
-				// Check for (ADTS) MPEG-2
-				if (this.check([0x08], {offset: 1, mask: [0x08]})) {
-					return {
-						ext: 'aac',
-						mime: 'audio/aac',
-					};
-				}
-
-				// Must be (ADTS) MPEG-4
-				return {
-					ext: 'aac',
-					mime: 'audio/aac',
-				};
-			}
-
-			// MPEG 1 or 2 Layer 3 header
-			// Check for MPEG layer 3
-			if (this.check([0x02], {offset: 1, mask: [0x06]})) {
-				return {
-					ext: 'mp3',
-					mime: 'audio/mpeg',
-				};
-			}
-
-			// Check for MPEG layer 2
-			if (this.check([0x04], {offset: 1, mask: [0x06]})) {
-				return {
-					ext: 'mp2',
-					mime: 'audio/mpeg',
-				};
-			}
-
-			// Check for MPEG layer 1
-			if (this.check([0x06], {offset: 1, mask: [0x06]})) {
-				return {
-					ext: 'mp1',
-					mime: 'audio/mpeg',
-				};
-			}
-		}
-	}
-
-	async readTiffTag(bigEndian) {
-		const tagId = await this.tokenizer.readToken(bigEndian ? UINT16_BE : UINT16_LE);
-		this.tokenizer.ignore(10);
-		switch (tagId) {
-			case 50_341:
-				return {
-					ext: 'arw',
-					mime: 'image/x-sony-arw',
-				};
-			case 50_706:
-				return {
-					ext: 'dng',
-					mime: 'image/x-adobe-dng',
-				};
-			default:
-		}
-	}
-
-	async readTiffIFD(bigEndian) {
-		const numberOfTags = await this.tokenizer.readToken(bigEndian ? UINT16_BE : UINT16_LE);
-		for (let n = 0; n < numberOfTags; ++n) {
-			const fileType = await this.readTiffTag(bigEndian);
-			if (fileType) {
-				return fileType;
-			}
-		}
-	}
-
-	async readTiffHeader(bigEndian) {
-		const version = (bigEndian ? UINT16_BE : UINT16_LE).get(this.buffer, 2);
-		const ifdOffset = (bigEndian ? UINT32_BE : UINT32_LE).get(this.buffer, 4);
-
-		if (version === 42) {
-			// TIFF file header
-			if (ifdOffset >= 6) {
-				if (this.checkString('CR', {offset: 8})) {
-					return {
-						ext: 'cr2',
-						mime: 'image/x-canon-cr2',
-					};
-				}
-
-				if (ifdOffset >= 8 && (this.check([0x1C, 0x00, 0xFE, 0x00], {offset: 8}) || this.check([0x1F, 0x00, 0x0B, 0x00], {offset: 8}))) {
-					return {
-						ext: 'nef',
-						mime: 'image/x-nikon-nef',
-					};
-				}
-			}
-
-			await this.tokenizer.ignore(ifdOffset);
-			const fileType = await this.readTiffIFD(false);
-			return fileType ? fileType : {
-				ext: 'tif',
-				mime: 'image/tiff',
-			};
-		}
-
-		if (version === 43) {	// Big TIFF file header
-			return {
-				ext: 'tif',
-				mime: 'image/tiff',
-			};
-		}
-	}
-}
-
-async function fileTypeStream(readableStream, {sampleSize = minimumBytes} = {}) {
-	const {default: stream} = await Promise.resolve(/* import() */).then(__nccwpck_require__.t.bind(__nccwpck_require__, 4492, 19));
-
-	return new Promise((resolve, reject) => {
-		readableStream.on('error', reject);
-
-		readableStream.once('readable', () => {
-			(async () => {
-				try {
-					// Set up output stream
-					const pass = new stream.PassThrough();
-					const outputStream = stream.pipeline ? stream.pipeline(readableStream, pass, () => {}) : readableStream.pipe(pass);
-
-					// Read the input stream and detect the filetype
-					const chunk = readableStream.read(sampleSize) ?? readableStream.read() ?? external_node_buffer_.Buffer.alloc(0);
-					try {
-						const fileType = await fileTypeFromBuffer(chunk);
-						pass.fileType = fileType;
-					} catch (error) {
-						if (error instanceof EndOfStreamError) {
-							pass.fileType = undefined;
-						} else {
-							reject(error);
-						}
-					}
-
-					resolve(outputStream);
-				} catch (error) {
-					reject(error);
-				}
-			})();
-		});
-	});
-}
-
-const supportedExtensions = new Set(extensions);
-const supportedMimeTypes = new Set(supported_mimeTypes);
-
-;// CONCATENATED MODULE: ./node_modules/file-type/index.js
-
-
-
-async function fileTypeFromFile(path) {
-	const tokenizer = await fromFile(path);
-	try {
-		return await fileTypeFromTokenizer(tokenizer);
-	} finally {
-		await tokenizer.close();
-	}
-}
-
-
-
-
-/***/ }),
-
-/***/ 7369:
-/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __nccwpck_require__) => {
-
-"use strict";
-// ESM COMPAT FLAG
-__nccwpck_require__.r(__webpack_exports__);
-
-// EXPORTS
-__nccwpck_require__.d(__webpack_exports__, {
-  "AbortError": () => (/* reexport */ AbortError),
-  "CacheError": () => (/* reexport */ CacheError),
-  "CancelError": () => (/* reexport */ types_CancelError),
-  "HTTPError": () => (/* reexport */ HTTPError),
-  "MaxRedirectsError": () => (/* reexport */ MaxRedirectsError),
-  "Options": () => (/* reexport */ Options),
-  "ParseError": () => (/* reexport */ ParseError),
-  "ReadError": () => (/* reexport */ ReadError),
-  "RequestError": () => (/* reexport */ RequestError),
-  "RetryError": () => (/* reexport */ RetryError),
-  "TimeoutError": () => (/* reexport */ TimeoutError),
-  "UploadError": () => (/* reexport */ UploadError),
-  "calculateRetryDelay": () => (/* reexport */ calculate_retry_delay),
-  "create": () => (/* reexport */ source_create),
-  "default": () => (/* binding */ got_dist_source),
-  "got": () => (/* binding */ got),
-  "isResponseOk": () => (/* reexport */ isResponseOk),
-  "parseBody": () => (/* reexport */ parseBody),
-  "parseLinkHeader": () => (/* reexport */ parseLinkHeader)
-});
-
+module.exports = /*#__PURE__*/JSON.parse('{"application/1d-interleaved-parityfec":{"source":"iana"},"application/3gpdash-qoe-report+xml":{"source":"iana","compressible":true},"application/3gpp-ims+xml":{"source":"iana","compressible":true},"application/a2l":{"source":"iana"},"application/activemessage":{"source":"iana"},"application/activity+json":{"source":"iana","compressible":true},"application/alto-costmap+json":{"source":"iana","compressible":true},"application/alto-costmapfilter+json":{"source":"iana","compressible":true},"application/alto-directory+json":{"source":"iana","compressible":true},"application/alto-endpointcost+json":{"source":"iana","compressible":true},"application/alto-endpointcostparams+json":{"source":"iana","compressible":true},"application/alto-endpointprop+json":{"source":"iana","compressible":true},"application/alto-endpointpropparams+json":{"source":"iana","compressible":true},"application/alto-error+json":{"source":"iana","compressible":true},"application/alto-networkmap+json":{"source":"iana","compressible":true},"application/alto-networkmapfilter+json":{"source":"iana","compressible":true},"application/aml":{"source":"iana"},"application/andrew-inset":{"source":"iana","extensions":["ez"]},"application/applefile":{"source":"iana"},"application/applixware":{"source":"apache","extensions":["aw"]},"application/atf":{"source":"iana"},"application/atfx":{"source":"iana"},"application/atom+xml":{"source":"iana","compressible":true,"extensions":["atom"]},"application/atomcat+xml":{"source":"iana","compressible":true,"extensions":["atomcat"]},"application/atomdeleted+xml":{"source":"iana","compressible":true,"extensions":["atomdeleted"]},"application/atomicmail":{"source":"iana"},"application/atomsvc+xml":{"source":"iana","compressible":true,"extensions":["atomsvc"]},"application/atsc-dwd+xml":{"source":"iana","compressible":true,"extensions":["dwd"]},"application/atsc-held+xml":{"source":"iana","compressible":true,"extensions":["held"]},"application/atsc-rdt+json":{"source":"iana","compressible":true},"application/atsc-rsat+xml":{"source":"iana","compressible":true,"extensions":["rsat"]},"application/atxml":{"source":"iana"},"application/auth-policy+xml":{"source":"iana","compressible":true},"application/bacnet-xdd+zip":{"source":"iana","compressible":false},"application/batch-smtp":{"source":"iana"},"application/bdoc":{"compressible":false,"extensions":["bdoc"]},"application/beep+xml":{"source":"iana","compressible":true},"application/calendar+json":{"source":"iana","compressible":true},"application/calendar+xml":{"source":"iana","compressible":true,"extensions":["xcs"]},"application/call-completion":{"source":"iana"},"application/cals-1840":{"source":"iana"},"application/cbor":{"source":"iana"},"application/cbor-seq":{"source":"iana"},"application/cccex":{"source":"iana"},"application/ccmp+xml":{"source":"iana","compressible":true},"application/ccxml+xml":{"source":"iana","compressible":true,"extensions":["ccxml"]},"application/cdfx+xml":{"source":"iana","compressible":true,"extensions":["cdfx"]},"application/cdmi-capability":{"source":"iana","extensions":["cdmia"]},"application/cdmi-container":{"source":"iana","extensions":["cdmic"]},"application/cdmi-domain":{"source":"iana","extensions":["cdmid"]},"application/cdmi-object":{"source":"iana","extensions":["cdmio"]},"application/cdmi-queue":{"source":"iana","extensions":["cdmiq"]},"application/cdni":{"source":"iana"},"application/cea":{"source":"iana"},"application/cea-2018+xml":{"source":"iana","compressible":true},"application/cellml+xml":{"source":"iana","compressible":true},"application/cfw":{"source":"iana"},"application/clue+xml":{"source":"iana","compressible":true},"application/clue_info+xml":{"source":"iana","compressible":true},"application/cms":{"source":"iana"},"application/cnrp+xml":{"source":"iana","compressible":true},"application/coap-group+json":{"source":"iana","compressible":true},"application/coap-payload":{"source":"iana"},"application/commonground":{"source":"iana"},"application/conference-info+xml":{"source":"iana","compressible":true},"application/cose":{"source":"iana"},"application/cose-key":{"source":"iana"},"application/cose-key-set":{"source":"iana"},"application/cpl+xml":{"source":"iana","compressible":true},"application/csrattrs":{"source":"iana"},"application/csta+xml":{"source":"iana","compressible":true},"application/cstadata+xml":{"source":"iana","compressible":true},"application/csvm+json":{"source":"iana","compressible":true},"application/cu-seeme":{"source":"apache","extensions":["cu"]},"application/cwt":{"source":"iana"},"application/cybercash":{"source":"iana"},"application/dart":{"compressible":true},"application/dash+xml":{"source":"iana","compressible":true,"extensions":["mpd"]},"application/dashdelta":{"source":"iana"},"application/davmount+xml":{"source":"iana","compressible":true,"extensions":["davmount"]},"application/dca-rft":{"source":"iana"},"application/dcd":{"source":"iana"},"application/dec-dx":{"source":"iana"},"application/dialog-info+xml":{"source":"iana","compressible":true},"application/dicom":{"source":"iana"},"application/dicom+json":{"source":"iana","compressible":true},"application/dicom+xml":{"source":"iana","compressible":true},"application/dii":{"source":"iana"},"application/dit":{"source":"iana"},"application/dns":{"source":"iana"},"application/dns+json":{"source":"iana","compressible":true},"application/dns-message":{"source":"iana"},"application/docbook+xml":{"source":"apache","compressible":true,"extensions":["dbk"]},"application/dskpp+xml":{"source":"iana","compressible":true},"application/dssc+der":{"source":"iana","extensions":["dssc"]},"application/dssc+xml":{"source":"iana","compressible":true,"extensions":["xdssc"]},"application/dvcs":{"source":"iana"},"application/ecmascript":{"source":"iana","compressible":true,"extensions":["ecma","es"]},"application/edi-consent":{"source":"iana"},"application/edi-x12":{"source":"iana","compressible":false},"application/edifact":{"source":"iana","compressible":false},"application/efi":{"source":"iana"},"application/emergencycalldata.comment+xml":{"source":"iana","compressible":true},"application/emergencycalldata.control+xml":{"source":"iana","compressible":true},"application/emergencycalldata.deviceinfo+xml":{"source":"iana","compressible":true},"application/emergencycalldata.ecall.msd":{"source":"iana"},"application/emergencycalldata.providerinfo+xml":{"source":"iana","compressible":true},"application/emergencycalldata.serviceinfo+xml":{"source":"iana","compressible":true},"application/emergencycalldata.subscriberinfo+xml":{"source":"iana","compressible":true},"application/emergencycalldata.veds+xml":{"source":"iana","compressible":true},"application/emma+xml":{"source":"iana","compressible":true,"extensions":["emma"]},"application/emotionml+xml":{"source":"iana","compressible":true,"extensions":["emotionml"]},"application/encaprtp":{"source":"iana"},"application/epp+xml":{"source":"iana","compressible":true},"application/epub+zip":{"source":"iana","compressible":false,"extensions":["epub"]},"application/eshop":{"source":"iana"},"application/exi":{"source":"iana","extensions":["exi"]},"application/expect-ct-report+json":{"source":"iana","compressible":true},"application/fastinfoset":{"source":"iana"},"application/fastsoap":{"source":"iana"},"application/fdt+xml":{"source":"iana","compressible":true,"extensions":["fdt"]},"application/fhir+json":{"source":"iana","compressible":true},"application/fhir+xml":{"source":"iana","compressible":true},"application/fido.trusted-apps+json":{"compressible":true},"application/fits":{"source":"iana"},"application/flexfec":{"source":"iana"},"application/font-sfnt":{"source":"iana"},"application/font-tdpfr":{"source":"iana","extensions":["pfr"]},"application/font-woff":{"source":"iana","compressible":false},"application/framework-attributes+xml":{"source":"iana","compressible":true},"application/geo+json":{"source":"iana","compressible":true,"extensions":["geojson"]},"application/geo+json-seq":{"source":"iana"},"application/geopackage+sqlite3":{"source":"iana"},"application/geoxacml+xml":{"source":"iana","compressible":true},"application/gltf-buffer":{"source":"iana"},"application/gml+xml":{"source":"iana","compressible":true,"extensions":["gml"]},"application/gpx+xml":{"source":"apache","compressible":true,"extensions":["gpx"]},"application/gxf":{"source":"apache","extensions":["gxf"]},"application/gzip":{"source":"iana","compressible":false,"extensions":["gz"]},"application/h224":{"source":"iana"},"application/held+xml":{"source":"iana","compressible":true},"application/hjson":{"extensions":["hjson"]},"application/http":{"source":"iana"},"application/hyperstudio":{"source":"iana","extensions":["stk"]},"application/ibe-key-request+xml":{"source":"iana","compressible":true},"application/ibe-pkg-reply+xml":{"source":"iana","compressible":true},"application/ibe-pp-data":{"source":"iana"},"application/iges":{"source":"iana"},"application/im-iscomposing+xml":{"source":"iana","compressible":true},"application/index":{"source":"iana"},"application/index.cmd":{"source":"iana"},"application/index.obj":{"source":"iana"},"application/index.response":{"source":"iana"},"application/index.vnd":{"source":"iana"},"application/inkml+xml":{"source":"iana","compressible":true,"extensions":["ink","inkml"]},"application/iotp":{"source":"iana"},"application/ipfix":{"source":"iana","extensions":["ipfix"]},"application/ipp":{"source":"iana"},"application/isup":{"source":"iana"},"application/its+xml":{"source":"iana","compressible":true,"extensions":["its"]},"application/java-archive":{"source":"apache","compressible":false,"extensions":["jar","war","ear"]},"application/java-serialized-object":{"source":"apache","compressible":false,"extensions":["ser"]},"application/java-vm":{"source":"apache","compressible":false,"extensions":["class"]},"application/javascript":{"source":"iana","charset":"UTF-8","compressible":true,"extensions":["js","mjs"]},"application/jf2feed+json":{"source":"iana","compressible":true},"application/jose":{"source":"iana"},"application/jose+json":{"source":"iana","compressible":true},"application/jrd+json":{"source":"iana","compressible":true},"application/json":{"source":"iana","charset":"UTF-8","compressible":true,"extensions":["json","map"]},"application/json-patch+json":{"source":"iana","compressible":true},"application/json-seq":{"source":"iana"},"application/json5":{"extensions":["json5"]},"application/jsonml+json":{"source":"apache","compressible":true,"extensions":["jsonml"]},"application/jwk+json":{"source":"iana","compressible":true},"application/jwk-set+json":{"source":"iana","compressible":true},"application/jwt":{"source":"iana"},"application/kpml-request+xml":{"source":"iana","compressible":true},"application/kpml-response+xml":{"source":"iana","compressible":true},"application/ld+json":{"source":"iana","compressible":true,"extensions":["jsonld"]},"application/lgr+xml":{"source":"iana","compressible":true,"extensions":["lgr"]},"application/link-format":{"source":"iana"},"application/load-control+xml":{"source":"iana","compressible":true},"application/lost+xml":{"source":"iana","compressible":true,"extensions":["lostxml"]},"application/lostsync+xml":{"source":"iana","compressible":true},"application/lxf":{"source":"iana"},"application/mac-binhex40":{"source":"iana","extensions":["hqx"]},"application/mac-compactpro":{"source":"apache","extensions":["cpt"]},"application/macwriteii":{"source":"iana"},"application/mads+xml":{"source":"iana","compressible":true,"extensions":["mads"]},"application/manifest+json":{"charset":"UTF-8","compressible":true,"extensions":["webmanifest"]},"application/marc":{"source":"iana","extensions":["mrc"]},"application/marcxml+xml":{"source":"iana","compressible":true,"extensions":["mrcx"]},"application/mathematica":{"source":"iana","extensions":["ma","nb","mb"]},"application/mathml+xml":{"source":"iana","compressible":true,"extensions":["mathml"]},"application/mathml-content+xml":{"source":"iana","compressible":true},"application/mathml-presentation+xml":{"source":"iana","compressible":true},"application/mbms-associated-procedure-description+xml":{"source":"iana","compressible":true},"application/mbms-deregister+xml":{"source":"iana","compressible":true},"application/mbms-envelope+xml":{"source":"iana","compressible":true},"application/mbms-msk+xml":{"source":"iana","compressible":true},"application/mbms-msk-response+xml":{"source":"iana","compressible":true},"application/mbms-protection-description+xml":{"source":"iana","compressible":true},"application/mbms-reception-report+xml":{"source":"iana","compressible":true},"application/mbms-register+xml":{"source":"iana","compressible":true},"application/mbms-register-response+xml":{"source":"iana","compressible":true},"application/mbms-schedule+xml":{"source":"iana","compressible":true},"application/mbms-user-service-description+xml":{"source":"iana","compressible":true},"application/mbox":{"source":"iana","extensions":["mbox"]},"application/media-policy-dataset+xml":{"source":"iana","compressible":true},"application/media_control+xml":{"source":"iana","compressible":true},"application/mediaservercontrol+xml":{"source":"iana","compressible":true,"extensions":["mscml"]},"application/merge-patch+json":{"source":"iana","compressible":true},"application/metalink+xml":{"source":"apache","compressible":true,"extensions":["metalink"]},"application/metalink4+xml":{"source":"iana","compressible":true,"extensions":["meta4"]},"application/mets+xml":{"source":"iana","compressible":true,"extensions":["mets"]},"application/mf4":{"source":"iana"},"application/mikey":{"source":"iana"},"application/mipc":{"source":"iana"},"application/mmt-aei+xml":{"source":"iana","compressible":true,"extensions":["maei"]},"application/mmt-usd+xml":{"source":"iana","compressible":true,"extensions":["musd"]},"application/mods+xml":{"source":"iana","compressible":true,"extensions":["mods"]},"application/moss-keys":{"source":"iana"},"application/moss-signature":{"source":"iana"},"application/mosskey-data":{"source":"iana"},"application/mosskey-request":{"source":"iana"},"application/mp21":{"source":"iana","extensions":["m21","mp21"]},"application/mp4":{"source":"iana","extensions":["mp4s","m4p"]},"application/mpeg4-generic":{"source":"iana"},"application/mpeg4-iod":{"source":"iana"},"application/mpeg4-iod-xmt":{"source":"iana"},"application/mrb-consumer+xml":{"source":"iana","compressible":true,"extensions":["xdf"]},"application/mrb-publish+xml":{"source":"iana","compressible":true,"extensions":["xdf"]},"application/msc-ivr+xml":{"source":"iana","compressible":true},"application/msc-mixer+xml":{"source":"iana","compressible":true},"application/msword":{"source":"iana","compressible":false,"extensions":["doc","dot"]},"application/mud+json":{"source":"iana","compressible":true},"application/multipart-core":{"source":"iana"},"application/mxf":{"source":"iana","extensions":["mxf"]},"application/n-quads":{"source":"iana","extensions":["nq"]},"application/n-triples":{"source":"iana","extensions":["nt"]},"application/nasdata":{"source":"iana"},"application/news-checkgroups":{"source":"iana"},"application/news-groupinfo":{"source":"iana"},"application/news-transmission":{"source":"iana"},"application/nlsml+xml":{"source":"iana","compressible":true},"application/node":{"source":"iana"},"application/nss":{"source":"iana"},"application/ocsp-request":{"source":"iana"},"application/ocsp-response":{"source":"iana"},"application/octet-stream":{"source":"iana","compressible":false,"extensions":["bin","dms","lrf","mar","so","dist","distz","pkg","bpk","dump","elc","deploy","exe","dll","deb","dmg","iso","img","msi","msp","msm","buffer"]},"application/oda":{"source":"iana","extensions":["oda"]},"application/odm+xml":{"source":"iana","compressible":true},"application/odx":{"source":"iana"},"application/oebps-package+xml":{"source":"iana","compressible":true,"extensions":["opf"]},"application/ogg":{"source":"iana","compressible":false,"extensions":["ogx"]},"application/omdoc+xml":{"source":"apache","compressible":true,"extensions":["omdoc"]},"application/onenote":{"source":"apache","extensions":["onetoc","onetoc2","onetmp","onepkg"]},"application/oscore":{"source":"iana"},"application/oxps":{"source":"iana","extensions":["oxps"]},"application/p2p-overlay+xml":{"source":"iana","compressible":true,"extensions":["relo"]},"application/parityfec":{"source":"iana"},"application/passport":{"source":"iana"},"application/patch-ops-error+xml":{"source":"iana","compressible":true,"extensions":["xer"]},"application/pdf":{"source":"iana","compressible":false,"extensions":["pdf"]},"application/pdx":{"source":"iana"},"application/pem-certificate-chain":{"source":"iana"},"application/pgp-encrypted":{"source":"iana","compressible":false,"extensions":["pgp"]},"application/pgp-keys":{"source":"iana"},"application/pgp-signature":{"source":"iana","extensions":["asc","sig"]},"application/pics-rules":{"source":"apache","extensions":["prf"]},"application/pidf+xml":{"source":"iana","compressible":true},"application/pidf-diff+xml":{"source":"iana","compressible":true},"application/pkcs10":{"source":"iana","extensions":["p10"]},"application/pkcs12":{"source":"iana"},"application/pkcs7-mime":{"source":"iana","extensions":["p7m","p7c"]},"application/pkcs7-signature":{"source":"iana","extensions":["p7s"]},"application/pkcs8":{"source":"iana","extensions":["p8"]},"application/pkcs8-encrypted":{"source":"iana"},"application/pkix-attr-cert":{"source":"iana","extensions":["ac"]},"application/pkix-cert":{"source":"iana","extensions":["cer"]},"application/pkix-crl":{"source":"iana","extensions":["crl"]},"application/pkix-pkipath":{"source":"iana","extensions":["pkipath"]},"application/pkixcmp":{"source":"iana","extensions":["pki"]},"application/pls+xml":{"source":"iana","compressible":true,"extensions":["pls"]},"application/poc-settings+xml":{"source":"iana","compressible":true},"application/postscript":{"source":"iana","compressible":true,"extensions":["ai","eps","ps"]},"application/ppsp-tracker+json":{"source":"iana","compressible":true},"application/problem+json":{"source":"iana","compressible":true},"application/problem+xml":{"source":"iana","compressible":true},"application/provenance+xml":{"source":"iana","compressible":true,"extensions":["provx"]},"application/prs.alvestrand.titrax-sheet":{"source":"iana"},"application/prs.cww":{"source":"iana","extensions":["cww"]},"application/prs.hpub+zip":{"source":"iana","compressible":false},"application/prs.nprend":{"source":"iana"},"application/prs.plucker":{"source":"iana"},"application/prs.rdf-xml-crypt":{"source":"iana"},"application/prs.xsf+xml":{"source":"iana","compressible":true},"application/pskc+xml":{"source":"iana","compressible":true,"extensions":["pskcxml"]},"application/qsig":{"source":"iana"},"application/raml+yaml":{"compressible":true,"extensions":["raml"]},"application/raptorfec":{"source":"iana"},"application/rdap+json":{"source":"iana","compressible":true},"application/rdf+xml":{"source":"iana","compressible":true,"extensions":["rdf","owl"]},"application/reginfo+xml":{"source":"iana","compressible":true,"extensions":["rif"]},"application/relax-ng-compact-syntax":{"source":"iana","extensions":["rnc"]},"application/remote-printing":{"source":"iana"},"application/reputon+json":{"source":"iana","compressible":true},"application/resource-lists+xml":{"source":"iana","compressible":true,"extensions":["rl"]},"application/resource-lists-diff+xml":{"source":"iana","compressible":true,"extensions":["rld"]},"application/rfc+xml":{"source":"iana","compressible":true},"application/riscos":{"source":"iana"},"application/rlmi+xml":{"source":"iana","compressible":true},"application/rls-services+xml":{"source":"iana","compressible":true,"extensions":["rs"]},"application/route-apd+xml":{"source":"iana","compressible":true,"extensions":["rapd"]},"application/route-s-tsid+xml":{"source":"iana","compressible":true,"extensions":["sls"]},"application/route-usd+xml":{"source":"iana","compressible":true,"extensions":["rusd"]},"application/rpki-ghostbusters":{"source":"iana","extensions":["gbr"]},"application/rpki-manifest":{"source":"iana","extensions":["mft"]},"application/rpki-publication":{"source":"iana"},"application/rpki-roa":{"source":"iana","extensions":["roa"]},"application/rpki-updown":{"source":"iana"},"application/rsd+xml":{"source":"apache","compressible":true,"extensions":["rsd"]},"application/rss+xml":{"source":"apache","compressible":true,"extensions":["rss"]},"application/rtf":{"source":"iana","compressible":true,"extensions":["rtf"]},"application/rtploopback":{"source":"iana"},"application/rtx":{"source":"iana"},"application/samlassertion+xml":{"source":"iana","compressible":true},"application/samlmetadata+xml":{"source":"iana","compressible":true},"application/sbml+xml":{"source":"iana","compressible":true,"extensions":["sbml"]},"application/scaip+xml":{"source":"iana","compressible":true},"application/scim+json":{"source":"iana","compressible":true},"application/scvp-cv-request":{"source":"iana","extensions":["scq"]},"application/scvp-cv-response":{"source":"iana","extensions":["scs"]},"application/scvp-vp-request":{"source":"iana","extensions":["spq"]},"application/scvp-vp-response":{"source":"iana","extensions":["spp"]},"application/sdp":{"source":"iana","extensions":["sdp"]},"application/secevent+jwt":{"source":"iana"},"application/senml+cbor":{"source":"iana"},"application/senml+json":{"source":"iana","compressible":true},"application/senml+xml":{"source":"iana","compressible":true,"extensions":["senmlx"]},"application/senml-exi":{"source":"iana"},"application/sensml+cbor":{"source":"iana"},"application/sensml+json":{"source":"iana","compressible":true},"application/sensml+xml":{"source":"iana","compressible":true,"extensions":["sensmlx"]},"application/sensml-exi":{"source":"iana"},"application/sep+xml":{"source":"iana","compressible":true},"application/sep-exi":{"source":"iana"},"application/session-info":{"source":"iana"},"application/set-payment":{"source":"iana"},"application/set-payment-initiation":{"source":"iana","extensions":["setpay"]},"application/set-registration":{"source":"iana"},"application/set-registration-initiation":{"source":"iana","extensions":["setreg"]},"application/sgml":{"source":"iana"},"application/sgml-open-catalog":{"source":"iana"},"application/shf+xml":{"source":"iana","compressible":true,"extensions":["shf"]},"application/sieve":{"source":"iana","extensions":["siv","sieve"]},"application/simple-filter+xml":{"source":"iana","compressible":true},"application/simple-message-summary":{"source":"iana"},"application/simplesymbolcontainer":{"source":"iana"},"application/sipc":{"source":"iana"},"application/slate":{"source":"iana"},"application/smil":{"source":"iana"},"application/smil+xml":{"source":"iana","compressible":true,"extensions":["smi","smil"]},"application/smpte336m":{"source":"iana"},"application/soap+fastinfoset":{"source":"iana"},"application/soap+xml":{"source":"iana","compressible":true},"application/sparql-query":{"source":"iana","extensions":["rq"]},"application/sparql-results+xml":{"source":"iana","compressible":true,"extensions":["srx"]},"application/spirits-event+xml":{"source":"iana","compressible":true},"application/sql":{"source":"iana"},"application/srgs":{"source":"iana","extensions":["gram"]},"application/srgs+xml":{"source":"iana","compressible":true,"extensions":["grxml"]},"application/sru+xml":{"source":"iana","compressible":true,"extensions":["sru"]},"application/ssdl+xml":{"source":"apache","compressible":true,"extensions":["ssdl"]},"application/ssml+xml":{"source":"iana","compressible":true,"extensions":["ssml"]},"application/stix+json":{"source":"iana","compressible":true},"application/swid+xml":{"source":"iana","compressible":true,"extensions":["swidtag"]},"application/tamp-apex-update":{"source":"iana"},"application/tamp-apex-update-confirm":{"source":"iana"},"application/tamp-community-update":{"source":"iana"},"application/tamp-community-update-confirm":{"source":"iana"},"application/tamp-error":{"source":"iana"},"application/tamp-sequence-adjust":{"source":"iana"},"application/tamp-sequence-adjust-confirm":{"source":"iana"},"application/tamp-status-query":{"source":"iana"},"application/tamp-status-response":{"source":"iana"},"application/tamp-update":{"source":"iana"},"application/tamp-update-confirm":{"source":"iana"},"application/tar":{"compressible":true},"application/taxii+json":{"source":"iana","compressible":true},"application/tei+xml":{"source":"iana","compressible":true,"extensions":["tei","teicorpus"]},"application/tetra_isi":{"source":"iana"},"application/thraud+xml":{"source":"iana","compressible":true,"extensions":["tfi"]},"application/timestamp-query":{"source":"iana"},"application/timestamp-reply":{"source":"iana"},"application/timestamped-data":{"source":"iana","extensions":["tsd"]},"application/tlsrpt+gzip":{"source":"iana"},"application/tlsrpt+json":{"source":"iana","compressible":true},"application/tnauthlist":{"source":"iana"},"application/toml":{"compressible":true,"extensions":["toml"]},"application/trickle-ice-sdpfrag":{"source":"iana"},"application/trig":{"source":"iana"},"application/ttml+xml":{"source":"iana","compressible":true,"extensions":["ttml"]},"application/tve-trigger":{"source":"iana"},"application/tzif":{"source":"iana"},"application/tzif-leap":{"source":"iana"},"application/ulpfec":{"source":"iana"},"application/urc-grpsheet+xml":{"source":"iana","compressible":true},"application/urc-ressheet+xml":{"source":"iana","compressible":true,"extensions":["rsheet"]},"application/urc-targetdesc+xml":{"source":"iana","compressible":true},"application/urc-uisocketdesc+xml":{"source":"iana","compressible":true},"application/vcard+json":{"source":"iana","compressible":true},"application/vcard+xml":{"source":"iana","compressible":true},"application/vemmi":{"source":"iana"},"application/vividence.scriptfile":{"source":"apache"},"application/vnd.1000minds.decision-model+xml":{"source":"iana","compressible":true,"extensions":["1km"]},"application/vnd.3gpp-prose+xml":{"source":"iana","compressible":true},"application/vnd.3gpp-prose-pc3ch+xml":{"source":"iana","compressible":true},"application/vnd.3gpp-v2x-local-service-information":{"source":"iana"},"application/vnd.3gpp.access-transfer-events+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.bsf+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.gmop+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mc-signalling-ear":{"source":"iana"},"application/vnd.3gpp.mcdata-affiliation-command+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcdata-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcdata-payload":{"source":"iana"},"application/vnd.3gpp.mcdata-service-config+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcdata-signalling":{"source":"iana"},"application/vnd.3gpp.mcdata-ue-config+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcdata-user-profile+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-affiliation-command+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-floor-request+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-location-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-mbms-usage-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-service-config+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-signed+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-ue-config+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-ue-init-config+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-user-profile+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-affiliation-command+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-affiliation-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-location-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-mbms-usage-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-service-config+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-transmission-request+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-ue-config+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-user-profile+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mid-call+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.pic-bw-large":{"source":"iana","extensions":["plb"]},"application/vnd.3gpp.pic-bw-small":{"source":"iana","extensions":["psb"]},"application/vnd.3gpp.pic-bw-var":{"source":"iana","extensions":["pvb"]},"application/vnd.3gpp.sms":{"source":"iana"},"application/vnd.3gpp.sms+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.srvcc-ext+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.srvcc-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.state-and-event-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.ussd+xml":{"source":"iana","compressible":true},"application/vnd.3gpp2.bcmcsinfo+xml":{"source":"iana","compressible":true},"application/vnd.3gpp2.sms":{"source":"iana"},"application/vnd.3gpp2.tcap":{"source":"iana","extensions":["tcap"]},"application/vnd.3lightssoftware.imagescal":{"source":"iana"},"application/vnd.3m.post-it-notes":{"source":"iana","extensions":["pwn"]},"application/vnd.accpac.simply.aso":{"source":"iana","extensions":["aso"]},"application/vnd.accpac.simply.imp":{"source":"iana","extensions":["imp"]},"application/vnd.acucobol":{"source":"iana","extensions":["acu"]},"application/vnd.acucorp":{"source":"iana","extensions":["atc","acutc"]},"application/vnd.adobe.air-application-installer-package+zip":{"source":"apache","compressible":false,"extensions":["air"]},"application/vnd.adobe.flash.movie":{"source":"iana"},"application/vnd.adobe.formscentral.fcdt":{"source":"iana","extensions":["fcdt"]},"application/vnd.adobe.fxp":{"source":"iana","extensions":["fxp","fxpl"]},"application/vnd.adobe.partial-upload":{"source":"iana"},"application/vnd.adobe.xdp+xml":{"source":"iana","compressible":true,"extensions":["xdp"]},"application/vnd.adobe.xfdf":{"source":"iana","extensions":["xfdf"]},"application/vnd.aether.imp":{"source":"iana"},"application/vnd.afpc.afplinedata":{"source":"iana"},"application/vnd.afpc.afplinedata-pagedef":{"source":"iana"},"application/vnd.afpc.foca-charset":{"source":"iana"},"application/vnd.afpc.foca-codedfont":{"source":"iana"},"application/vnd.afpc.foca-codepage":{"source":"iana"},"application/vnd.afpc.modca":{"source":"iana"},"application/vnd.afpc.modca-formdef":{"source":"iana"},"application/vnd.afpc.modca-mediummap":{"source":"iana"},"application/vnd.afpc.modca-objectcontainer":{"source":"iana"},"application/vnd.afpc.modca-overlay":{"source":"iana"},"application/vnd.afpc.modca-pagesegment":{"source":"iana"},"application/vnd.ah-barcode":{"source":"iana"},"application/vnd.ahead.space":{"source":"iana","extensions":["ahead"]},"application/vnd.airzip.filesecure.azf":{"source":"iana","extensions":["azf"]},"application/vnd.airzip.filesecure.azs":{"source":"iana","extensions":["azs"]},"application/vnd.amadeus+json":{"source":"iana","compressible":true},"application/vnd.amazon.ebook":{"source":"apache","extensions":["azw"]},"application/vnd.amazon.mobi8-ebook":{"source":"iana"},"application/vnd.americandynamics.acc":{"source":"iana","extensions":["acc"]},"application/vnd.amiga.ami":{"source":"iana","extensions":["ami"]},"application/vnd.amundsen.maze+xml":{"source":"iana","compressible":true},"application/vnd.android.ota":{"source":"iana"},"application/vnd.android.package-archive":{"source":"apache","compressible":false,"extensions":["apk"]},"application/vnd.anki":{"source":"iana"},"application/vnd.anser-web-certificate-issue-initiation":{"source":"iana","extensions":["cii"]},"application/vnd.anser-web-funds-transfer-initiation":{"source":"apache","extensions":["fti"]},"application/vnd.antix.game-component":{"source":"iana","extensions":["atx"]},"application/vnd.apache.thrift.binary":{"source":"iana"},"application/vnd.apache.thrift.compact":{"source":"iana"},"application/vnd.apache.thrift.json":{"source":"iana"},"application/vnd.api+json":{"source":"iana","compressible":true},"application/vnd.aplextor.warrp+json":{"source":"iana","compressible":true},"application/vnd.apothekende.reservation+json":{"source":"iana","compressible":true},"application/vnd.apple.installer+xml":{"source":"iana","compressible":true,"extensions":["mpkg"]},"application/vnd.apple.keynote":{"source":"iana","extensions":["keynote"]},"application/vnd.apple.mpegurl":{"source":"iana","extensions":["m3u8"]},"application/vnd.apple.numbers":{"source":"iana","extensions":["numbers"]},"application/vnd.apple.pages":{"source":"iana","extensions":["pages"]},"application/vnd.apple.pkpass":{"compressible":false,"extensions":["pkpass"]},"application/vnd.arastra.swi":{"source":"iana"},"application/vnd.aristanetworks.swi":{"source":"iana","extensions":["swi"]},"application/vnd.artisan+json":{"source":"iana","compressible":true},"application/vnd.artsquare":{"source":"iana"},"application/vnd.astraea-software.iota":{"source":"iana","extensions":["iota"]},"application/vnd.audiograph":{"source":"iana","extensions":["aep"]},"application/vnd.autopackage":{"source":"iana"},"application/vnd.avalon+json":{"source":"iana","compressible":true},"application/vnd.avistar+xml":{"source":"iana","compressible":true},"application/vnd.balsamiq.bmml+xml":{"source":"iana","compressible":true,"extensions":["bmml"]},"application/vnd.balsamiq.bmpr":{"source":"iana"},"application/vnd.banana-accounting":{"source":"iana"},"application/vnd.bbf.usp.error":{"source":"iana"},"application/vnd.bbf.usp.msg":{"source":"iana"},"application/vnd.bbf.usp.msg+json":{"source":"iana","compressible":true},"application/vnd.bekitzur-stech+json":{"source":"iana","compressible":true},"application/vnd.bint.med-content":{"source":"iana"},"application/vnd.biopax.rdf+xml":{"source":"iana","compressible":true},"application/vnd.blink-idb-value-wrapper":{"source":"iana"},"application/vnd.blueice.multipass":{"source":"iana","extensions":["mpm"]},"application/vnd.bluetooth.ep.oob":{"source":"iana"},"application/vnd.bluetooth.le.oob":{"source":"iana"},"application/vnd.bmi":{"source":"iana","extensions":["bmi"]},"application/vnd.bpf":{"source":"iana"},"application/vnd.bpf3":{"source":"iana"},"application/vnd.businessobjects":{"source":"iana","extensions":["rep"]},"application/vnd.byu.uapi+json":{"source":"iana","compressible":true},"application/vnd.cab-jscript":{"source":"iana"},"application/vnd.canon-cpdl":{"source":"iana"},"application/vnd.canon-lips":{"source":"iana"},"application/vnd.capasystems-pg+json":{"source":"iana","compressible":true},"application/vnd.cendio.thinlinc.clientconf":{"source":"iana"},"application/vnd.century-systems.tcp_stream":{"source":"iana"},"application/vnd.chemdraw+xml":{"source":"iana","compressible":true,"extensions":["cdxml"]},"application/vnd.chess-pgn":{"source":"iana"},"application/vnd.chipnuts.karaoke-mmd":{"source":"iana","extensions":["mmd"]},"application/vnd.ciedi":{"source":"iana"},"application/vnd.cinderella":{"source":"iana","extensions":["cdy"]},"application/vnd.cirpack.isdn-ext":{"source":"iana"},"application/vnd.citationstyles.style+xml":{"source":"iana","compressible":true,"extensions":["csl"]},"application/vnd.claymore":{"source":"iana","extensions":["cla"]},"application/vnd.cloanto.rp9":{"source":"iana","extensions":["rp9"]},"application/vnd.clonk.c4group":{"source":"iana","extensions":["c4g","c4d","c4f","c4p","c4u"]},"application/vnd.cluetrust.cartomobile-config":{"source":"iana","extensions":["c11amc"]},"application/vnd.cluetrust.cartomobile-config-pkg":{"source":"iana","extensions":["c11amz"]},"application/vnd.coffeescript":{"source":"iana"},"application/vnd.collabio.xodocuments.document":{"source":"iana"},"application/vnd.collabio.xodocuments.document-template":{"source":"iana"},"application/vnd.collabio.xodocuments.presentation":{"source":"iana"},"application/vnd.collabio.xodocuments.presentation-template":{"source":"iana"},"application/vnd.collabio.xodocuments.spreadsheet":{"source":"iana"},"application/vnd.collabio.xodocuments.spreadsheet-template":{"source":"iana"},"application/vnd.collection+json":{"source":"iana","compressible":true},"application/vnd.collection.doc+json":{"source":"iana","compressible":true},"application/vnd.collection.next+json":{"source":"iana","compressible":true},"application/vnd.comicbook+zip":{"source":"iana","compressible":false},"application/vnd.comicbook-rar":{"source":"iana"},"application/vnd.commerce-battelle":{"source":"iana"},"application/vnd.commonspace":{"source":"iana","extensions":["csp"]},"application/vnd.contact.cmsg":{"source":"iana","extensions":["cdbcmsg"]},"application/vnd.coreos.ignition+json":{"source":"iana","compressible":true},"application/vnd.cosmocaller":{"source":"iana","extensions":["cmc"]},"application/vnd.crick.clicker":{"source":"iana","extensions":["clkx"]},"application/vnd.crick.clicker.keyboard":{"source":"iana","extensions":["clkk"]},"application/vnd.crick.clicker.palette":{"source":"iana","extensions":["clkp"]},"application/vnd.crick.clicker.template":{"source":"iana","extensions":["clkt"]},"application/vnd.crick.clicker.wordbank":{"source":"iana","extensions":["clkw"]},"application/vnd.criticaltools.wbs+xml":{"source":"iana","compressible":true,"extensions":["wbs"]},"application/vnd.cryptii.pipe+json":{"source":"iana","compressible":true},"application/vnd.crypto-shade-file":{"source":"iana"},"application/vnd.ctc-posml":{"source":"iana","extensions":["pml"]},"application/vnd.ctct.ws+xml":{"source":"iana","compressible":true},"application/vnd.cups-pdf":{"source":"iana"},"application/vnd.cups-postscript":{"source":"iana"},"application/vnd.cups-ppd":{"source":"iana","extensions":["ppd"]},"application/vnd.cups-raster":{"source":"iana"},"application/vnd.cups-raw":{"source":"iana"},"application/vnd.curl":{"source":"iana"},"application/vnd.curl.car":{"source":"apache","extensions":["car"]},"application/vnd.curl.pcurl":{"source":"apache","extensions":["pcurl"]},"application/vnd.cyan.dean.root+xml":{"source":"iana","compressible":true},"application/vnd.cybank":{"source":"iana"},"application/vnd.d2l.coursepackage1p0+zip":{"source":"iana","compressible":false},"application/vnd.dart":{"source":"iana","compressible":true,"extensions":["dart"]},"application/vnd.data-vision.rdz":{"source":"iana","extensions":["rdz"]},"application/vnd.datapackage+json":{"source":"iana","compressible":true},"application/vnd.dataresource+json":{"source":"iana","compressible":true},"application/vnd.debian.binary-package":{"source":"iana"},"application/vnd.dece.data":{"source":"iana","extensions":["uvf","uvvf","uvd","uvvd"]},"application/vnd.dece.ttml+xml":{"source":"iana","compressible":true,"extensions":["uvt","uvvt"]},"application/vnd.dece.unspecified":{"source":"iana","extensions":["uvx","uvvx"]},"application/vnd.dece.zip":{"source":"iana","extensions":["uvz","uvvz"]},"application/vnd.denovo.fcselayout-link":{"source":"iana","extensions":["fe_launch"]},"application/vnd.desmume.movie":{"source":"iana"},"application/vnd.dir-bi.plate-dl-nosuffix":{"source":"iana"},"application/vnd.dm.delegation+xml":{"source":"iana","compressible":true},"application/vnd.dna":{"source":"iana","extensions":["dna"]},"application/vnd.document+json":{"source":"iana","compressible":true},"application/vnd.dolby.mlp":{"source":"apache","extensions":["mlp"]},"application/vnd.dolby.mobile.1":{"source":"iana"},"application/vnd.dolby.mobile.2":{"source":"iana"},"application/vnd.doremir.scorecloud-binary-document":{"source":"iana"},"application/vnd.dpgraph":{"source":"iana","extensions":["dpg"]},"application/vnd.dreamfactory":{"source":"iana","extensions":["dfac"]},"application/vnd.drive+json":{"source":"iana","compressible":true},"application/vnd.ds-keypoint":{"source":"apache","extensions":["kpxx"]},"application/vnd.dtg.local":{"source":"iana"},"application/vnd.dtg.local.flash":{"source":"iana"},"application/vnd.dtg.local.html":{"source":"iana"},"application/vnd.dvb.ait":{"source":"iana","extensions":["ait"]},"application/vnd.dvb.dvbj":{"source":"iana"},"application/vnd.dvb.esgcontainer":{"source":"iana"},"application/vnd.dvb.ipdcdftnotifaccess":{"source":"iana"},"application/vnd.dvb.ipdcesgaccess":{"source":"iana"},"application/vnd.dvb.ipdcesgaccess2":{"source":"iana"},"application/vnd.dvb.ipdcesgpdd":{"source":"iana"},"application/vnd.dvb.ipdcroaming":{"source":"iana"},"application/vnd.dvb.iptv.alfec-base":{"source":"iana"},"application/vnd.dvb.iptv.alfec-enhancement":{"source":"iana"},"application/vnd.dvb.notif-aggregate-root+xml":{"source":"iana","compressible":true},"application/vnd.dvb.notif-container+xml":{"source":"iana","compressible":true},"application/vnd.dvb.notif-generic+xml":{"source":"iana","compressible":true},"application/vnd.dvb.notif-ia-msglist+xml":{"source":"iana","compressible":true},"application/vnd.dvb.notif-ia-registration-request+xml":{"source":"iana","compressible":true},"application/vnd.dvb.notif-ia-registration-response+xml":{"source":"iana","compressible":true},"application/vnd.dvb.notif-init+xml":{"source":"iana","compressible":true},"application/vnd.dvb.pfr":{"source":"iana"},"application/vnd.dvb.service":{"source":"iana","extensions":["svc"]},"application/vnd.dxr":{"source":"iana"},"application/vnd.dynageo":{"source":"iana","extensions":["geo"]},"application/vnd.dzr":{"source":"iana"},"application/vnd.easykaraoke.cdgdownload":{"source":"iana"},"application/vnd.ecdis-update":{"source":"iana"},"application/vnd.ecip.rlp":{"source":"iana"},"application/vnd.ecowin.chart":{"source":"iana","extensions":["mag"]},"application/vnd.ecowin.filerequest":{"source":"iana"},"application/vnd.ecowin.fileupdate":{"source":"iana"},"application/vnd.ecowin.series":{"source":"iana"},"application/vnd.ecowin.seriesrequest":{"source":"iana"},"application/vnd.ecowin.seriesupdate":{"source":"iana"},"application/vnd.efi.img":{"source":"iana"},"application/vnd.efi.iso":{"source":"iana"},"application/vnd.emclient.accessrequest+xml":{"source":"iana","compressible":true},"application/vnd.enliven":{"source":"iana","extensions":["nml"]},"application/vnd.enphase.envoy":{"source":"iana"},"application/vnd.eprints.data+xml":{"source":"iana","compressible":true},"application/vnd.epson.esf":{"source":"iana","extensions":["esf"]},"application/vnd.epson.msf":{"source":"iana","extensions":["msf"]},"application/vnd.epson.quickanime":{"source":"iana","extensions":["qam"]},"application/vnd.epson.salt":{"source":"iana","extensions":["slt"]},"application/vnd.epson.ssf":{"source":"iana","extensions":["ssf"]},"application/vnd.ericsson.quickcall":{"source":"iana"},"application/vnd.espass-espass+zip":{"source":"iana","compressible":false},"application/vnd.eszigno3+xml":{"source":"iana","compressible":true,"extensions":["es3","et3"]},"application/vnd.etsi.aoc+xml":{"source":"iana","compressible":true},"application/vnd.etsi.asic-e+zip":{"source":"iana","compressible":false},"application/vnd.etsi.asic-s+zip":{"source":"iana","compressible":false},"application/vnd.etsi.cug+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvcommand+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvdiscovery+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvprofile+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvsad-bc+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvsad-cod+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvsad-npvr+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvservice+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvsync+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvueprofile+xml":{"source":"iana","compressible":true},"application/vnd.etsi.mcid+xml":{"source":"iana","compressible":true},"application/vnd.etsi.mheg5":{"source":"iana"},"application/vnd.etsi.overload-control-policy-dataset+xml":{"source":"iana","compressible":true},"application/vnd.etsi.pstn+xml":{"source":"iana","compressible":true},"application/vnd.etsi.sci+xml":{"source":"iana","compressible":true},"application/vnd.etsi.simservs+xml":{"source":"iana","compressible":true},"application/vnd.etsi.timestamp-token":{"source":"iana"},"application/vnd.etsi.tsl+xml":{"source":"iana","compressible":true},"application/vnd.etsi.tsl.der":{"source":"iana"},"application/vnd.eudora.data":{"source":"iana"},"application/vnd.evolv.ecig.profile":{"source":"iana"},"application/vnd.evolv.ecig.settings":{"source":"iana"},"application/vnd.evolv.ecig.theme":{"source":"iana"},"application/vnd.exstream-empower+zip":{"source":"iana","compressible":false},"application/vnd.exstream-package":{"source":"iana"},"application/vnd.ezpix-album":{"source":"iana","extensions":["ez2"]},"application/vnd.ezpix-package":{"source":"iana","extensions":["ez3"]},"application/vnd.f-secure.mobile":{"source":"iana"},"application/vnd.fastcopy-disk-image":{"source":"iana"},"application/vnd.fdf":{"source":"iana","extensions":["fdf"]},"application/vnd.fdsn.mseed":{"source":"iana","extensions":["mseed"]},"application/vnd.fdsn.seed":{"source":"iana","extensions":["seed","dataless"]},"application/vnd.ffsns":{"source":"iana"},"application/vnd.ficlab.flb+zip":{"source":"iana","compressible":false},"application/vnd.filmit.zfc":{"source":"iana"},"application/vnd.fints":{"source":"iana"},"application/vnd.firemonkeys.cloudcell":{"source":"iana"},"application/vnd.flographit":{"source":"iana","extensions":["gph"]},"application/vnd.fluxtime.clip":{"source":"iana","extensions":["ftc"]},"application/vnd.font-fontforge-sfd":{"source":"iana"},"application/vnd.framemaker":{"source":"iana","extensions":["fm","frame","maker","book"]},"application/vnd.frogans.fnc":{"source":"iana","extensions":["fnc"]},"application/vnd.frogans.ltf":{"source":"iana","extensions":["ltf"]},"application/vnd.fsc.weblaunch":{"source":"iana","extensions":["fsc"]},"application/vnd.fujitsu.oasys":{"source":"iana","extensions":["oas"]},"application/vnd.fujitsu.oasys2":{"source":"iana","extensions":["oa2"]},"application/vnd.fujitsu.oasys3":{"source":"iana","extensions":["oa3"]},"application/vnd.fujitsu.oasysgp":{"source":"iana","extensions":["fg5"]},"application/vnd.fujitsu.oasysprs":{"source":"iana","extensions":["bh2"]},"application/vnd.fujixerox.art-ex":{"source":"iana"},"application/vnd.fujixerox.art4":{"source":"iana"},"application/vnd.fujixerox.ddd":{"source":"iana","extensions":["ddd"]},"application/vnd.fujixerox.docuworks":{"source":"iana","extensions":["xdw"]},"application/vnd.fujixerox.docuworks.binder":{"source":"iana","extensions":["xbd"]},"application/vnd.fujixerox.docuworks.container":{"source":"iana"},"application/vnd.fujixerox.hbpl":{"source":"iana"},"application/vnd.fut-misnet":{"source":"iana"},"application/vnd.futoin+cbor":{"source":"iana"},"application/vnd.futoin+json":{"source":"iana","compressible":true},"application/vnd.fuzzysheet":{"source":"iana","extensions":["fzs"]},"application/vnd.genomatix.tuxedo":{"source":"iana","extensions":["txd"]},"application/vnd.gentics.grd+json":{"source":"iana","compressible":true},"application/vnd.geo+json":{"source":"iana","compressible":true},"application/vnd.geocube+xml":{"source":"iana","compressible":true},"application/vnd.geogebra.file":{"source":"iana","extensions":["ggb"]},"application/vnd.geogebra.tool":{"source":"iana","extensions":["ggt"]},"application/vnd.geometry-explorer":{"source":"iana","extensions":["gex","gre"]},"application/vnd.geonext":{"source":"iana","extensions":["gxt"]},"application/vnd.geoplan":{"source":"iana","extensions":["g2w"]},"application/vnd.geospace":{"source":"iana","extensions":["g3w"]},"application/vnd.gerber":{"source":"iana"},"application/vnd.globalplatform.card-content-mgt":{"source":"iana"},"application/vnd.globalplatform.card-content-mgt-response":{"source":"iana"},"application/vnd.gmx":{"source":"iana","extensions":["gmx"]},"application/vnd.google-apps.document":{"compressible":false,"extensions":["gdoc"]},"application/vnd.google-apps.presentation":{"compressible":false,"extensions":["gslides"]},"application/vnd.google-apps.spreadsheet":{"compressible":false,"extensions":["gsheet"]},"application/vnd.google-earth.kml+xml":{"source":"iana","compressible":true,"extensions":["kml"]},"application/vnd.google-earth.kmz":{"source":"iana","compressible":false,"extensions":["kmz"]},"application/vnd.gov.sk.e-form+xml":{"source":"iana","compressible":true},"application/vnd.gov.sk.e-form+zip":{"source":"iana","compressible":false},"application/vnd.gov.sk.xmldatacontainer+xml":{"source":"iana","compressible":true},"application/vnd.grafeq":{"source":"iana","extensions":["gqf","gqs"]},"application/vnd.gridmp":{"source":"iana"},"application/vnd.groove-account":{"source":"iana","extensions":["gac"]},"application/vnd.groove-help":{"source":"iana","extensions":["ghf"]},"application/vnd.groove-identity-message":{"source":"iana","extensions":["gim"]},"application/vnd.groove-injector":{"source":"iana","extensions":["grv"]},"application/vnd.groove-tool-message":{"source":"iana","extensions":["gtm"]},"application/vnd.groove-tool-template":{"source":"iana","extensions":["tpl"]},"application/vnd.groove-vcard":{"source":"iana","extensions":["vcg"]},"application/vnd.hal+json":{"source":"iana","compressible":true},"application/vnd.hal+xml":{"source":"iana","compressible":true,"extensions":["hal"]},"application/vnd.handheld-entertainment+xml":{"source":"iana","compressible":true,"extensions":["zmm"]},"application/vnd.hbci":{"source":"iana","extensions":["hbci"]},"application/vnd.hc+json":{"source":"iana","compressible":true},"application/vnd.hcl-bireports":{"source":"iana"},"application/vnd.hdt":{"source":"iana"},"application/vnd.heroku+json":{"source":"iana","compressible":true},"application/vnd.hhe.lesson-player":{"source":"iana","extensions":["les"]},"application/vnd.hp-hpgl":{"source":"iana","extensions":["hpgl"]},"application/vnd.hp-hpid":{"source":"iana","extensions":["hpid"]},"application/vnd.hp-hps":{"source":"iana","extensions":["hps"]},"application/vnd.hp-jlyt":{"source":"iana","extensions":["jlt"]},"application/vnd.hp-pcl":{"source":"iana","extensions":["pcl"]},"application/vnd.hp-pclxl":{"source":"iana","extensions":["pclxl"]},"application/vnd.httphone":{"source":"iana"},"application/vnd.hydrostatix.sof-data":{"source":"iana","extensions":["sfd-hdstx"]},"application/vnd.hyper+json":{"source":"iana","compressible":true},"application/vnd.hyper-item+json":{"source":"iana","compressible":true},"application/vnd.hyperdrive+json":{"source":"iana","compressible":true},"application/vnd.hzn-3d-crossword":{"source":"iana"},"application/vnd.ibm.afplinedata":{"source":"iana"},"application/vnd.ibm.electronic-media":{"source":"iana"},"application/vnd.ibm.minipay":{"source":"iana","extensions":["mpy"]},"application/vnd.ibm.modcap":{"source":"iana","extensions":["afp","listafp","list3820"]},"application/vnd.ibm.rights-management":{"source":"iana","extensions":["irm"]},"application/vnd.ibm.secure-container":{"source":"iana","extensions":["sc"]},"application/vnd.iccprofile":{"source":"iana","extensions":["icc","icm"]},"application/vnd.ieee.1905":{"source":"iana"},"application/vnd.igloader":{"source":"iana","extensions":["igl"]},"application/vnd.imagemeter.folder+zip":{"source":"iana","compressible":false},"application/vnd.imagemeter.image+zip":{"source":"iana","compressible":false},"application/vnd.immervision-ivp":{"source":"iana","extensions":["ivp"]},"application/vnd.immervision-ivu":{"source":"iana","extensions":["ivu"]},"application/vnd.ims.imsccv1p1":{"source":"iana"},"application/vnd.ims.imsccv1p2":{"source":"iana"},"application/vnd.ims.imsccv1p3":{"source":"iana"},"application/vnd.ims.lis.v2.result+json":{"source":"iana","compressible":true},"application/vnd.ims.lti.v2.toolconsumerprofile+json":{"source":"iana","compressible":true},"application/vnd.ims.lti.v2.toolproxy+json":{"source":"iana","compressible":true},"application/vnd.ims.lti.v2.toolproxy.id+json":{"source":"iana","compressible":true},"application/vnd.ims.lti.v2.toolsettings+json":{"source":"iana","compressible":true},"application/vnd.ims.lti.v2.toolsettings.simple+json":{"source":"iana","compressible":true},"application/vnd.informedcontrol.rms+xml":{"source":"iana","compressible":true},"application/vnd.informix-visionary":{"source":"iana"},"application/vnd.infotech.project":{"source":"iana"},"application/vnd.infotech.project+xml":{"source":"iana","compressible":true},"application/vnd.innopath.wamp.notification":{"source":"iana"},"application/vnd.insors.igm":{"source":"iana","extensions":["igm"]},"application/vnd.intercon.formnet":{"source":"iana","extensions":["xpw","xpx"]},"application/vnd.intergeo":{"source":"iana","extensions":["i2g"]},"application/vnd.intertrust.digibox":{"source":"iana"},"application/vnd.intertrust.nncp":{"source":"iana"},"application/vnd.intu.qbo":{"source":"iana","extensions":["qbo"]},"application/vnd.intu.qfx":{"source":"iana","extensions":["qfx"]},"application/vnd.iptc.g2.catalogitem+xml":{"source":"iana","compressible":true},"application/vnd.iptc.g2.conceptitem+xml":{"source":"iana","compressible":true},"application/vnd.iptc.g2.knowledgeitem+xml":{"source":"iana","compressible":true},"application/vnd.iptc.g2.newsitem+xml":{"source":"iana","compressible":true},"application/vnd.iptc.g2.newsmessage+xml":{"source":"iana","compressible":true},"application/vnd.iptc.g2.packageitem+xml":{"source":"iana","compressible":true},"application/vnd.iptc.g2.planningitem+xml":{"source":"iana","compressible":true},"application/vnd.ipunplugged.rcprofile":{"source":"iana","extensions":["rcprofile"]},"application/vnd.irepository.package+xml":{"source":"iana","compressible":true,"extensions":["irp"]},"application/vnd.is-xpr":{"source":"iana","extensions":["xpr"]},"application/vnd.isac.fcs":{"source":"iana","extensions":["fcs"]},"application/vnd.iso11783-10+zip":{"source":"iana","compressible":false},"application/vnd.jam":{"source":"iana","extensions":["jam"]},"application/vnd.japannet-directory-service":{"source":"iana"},"application/vnd.japannet-jpnstore-wakeup":{"source":"iana"},"application/vnd.japannet-payment-wakeup":{"source":"iana"},"application/vnd.japannet-registration":{"source":"iana"},"application/vnd.japannet-registration-wakeup":{"source":"iana"},"application/vnd.japannet-setstore-wakeup":{"source":"iana"},"application/vnd.japannet-verification":{"source":"iana"},"application/vnd.japannet-verification-wakeup":{"source":"iana"},"application/vnd.jcp.javame.midlet-rms":{"source":"iana","extensions":["rms"]},"application/vnd.jisp":{"source":"iana","extensions":["jisp"]},"application/vnd.joost.joda-archive":{"source":"iana","extensions":["joda"]},"application/vnd.jsk.isdn-ngn":{"source":"iana"},"application/vnd.kahootz":{"source":"iana","extensions":["ktz","ktr"]},"application/vnd.kde.karbon":{"source":"iana","extensions":["karbon"]},"application/vnd.kde.kchart":{"source":"iana","extensions":["chrt"]},"application/vnd.kde.kformula":{"source":"iana","extensions":["kfo"]},"application/vnd.kde.kivio":{"source":"iana","extensions":["flw"]},"application/vnd.kde.kontour":{"source":"iana","extensions":["kon"]},"application/vnd.kde.kpresenter":{"source":"iana","extensions":["kpr","kpt"]},"application/vnd.kde.kspread":{"source":"iana","extensions":["ksp"]},"application/vnd.kde.kword":{"source":"iana","extensions":["kwd","kwt"]},"application/vnd.kenameaapp":{"source":"iana","extensions":["htke"]},"application/vnd.kidspiration":{"source":"iana","extensions":["kia"]},"application/vnd.kinar":{"source":"iana","extensions":["kne","knp"]},"application/vnd.koan":{"source":"iana","extensions":["skp","skd","skt","skm"]},"application/vnd.kodak-descriptor":{"source":"iana","extensions":["sse"]},"application/vnd.las":{"source":"iana"},"application/vnd.las.las+json":{"source":"iana","compressible":true},"application/vnd.las.las+xml":{"source":"iana","compressible":true,"extensions":["lasxml"]},"application/vnd.laszip":{"source":"iana"},"application/vnd.leap+json":{"source":"iana","compressible":true},"application/vnd.liberty-request+xml":{"source":"iana","compressible":true},"application/vnd.llamagraphics.life-balance.desktop":{"source":"iana","extensions":["lbd"]},"application/vnd.llamagraphics.life-balance.exchange+xml":{"source":"iana","compressible":true,"extensions":["lbe"]},"application/vnd.logipipe.circuit+zip":{"source":"iana","compressible":false},"application/vnd.loom":{"source":"iana"},"application/vnd.lotus-1-2-3":{"source":"iana","extensions":["123"]},"application/vnd.lotus-approach":{"source":"iana","extensions":["apr"]},"application/vnd.lotus-freelance":{"source":"iana","extensions":["pre"]},"application/vnd.lotus-notes":{"source":"iana","extensions":["nsf"]},"application/vnd.lotus-organizer":{"source":"iana","extensions":["org"]},"application/vnd.lotus-screencam":{"source":"iana","extensions":["scm"]},"application/vnd.lotus-wordpro":{"source":"iana","extensions":["lwp"]},"application/vnd.macports.portpkg":{"source":"iana","extensions":["portpkg"]},"application/vnd.mapbox-vector-tile":{"source":"iana"},"application/vnd.marlin.drm.actiontoken+xml":{"source":"iana","compressible":true},"application/vnd.marlin.drm.conftoken+xml":{"source":"iana","compressible":true},"application/vnd.marlin.drm.license+xml":{"source":"iana","compressible":true},"application/vnd.marlin.drm.mdcf":{"source":"iana"},"application/vnd.mason+json":{"source":"iana","compressible":true},"application/vnd.maxmind.maxmind-db":{"source":"iana"},"application/vnd.mcd":{"source":"iana","extensions":["mcd"]},"application/vnd.medcalcdata":{"source":"iana","extensions":["mc1"]},"application/vnd.mediastation.cdkey":{"source":"iana","extensions":["cdkey"]},"application/vnd.meridian-slingshot":{"source":"iana"},"application/vnd.mfer":{"source":"iana","extensions":["mwf"]},"application/vnd.mfmp":{"source":"iana","extensions":["mfm"]},"application/vnd.micro+json":{"source":"iana","compressible":true},"application/vnd.micrografx.flo":{"source":"iana","extensions":["flo"]},"application/vnd.micrografx.igx":{"source":"iana","extensions":["igx"]},"application/vnd.microsoft.portable-executable":{"source":"iana"},"application/vnd.microsoft.windows.thumbnail-cache":{"source":"iana"},"application/vnd.miele+json":{"source":"iana","compressible":true},"application/vnd.mif":{"source":"iana","extensions":["mif"]},"application/vnd.minisoft-hp3000-save":{"source":"iana"},"application/vnd.mitsubishi.misty-guard.trustweb":{"source":"iana"},"application/vnd.mobius.daf":{"source":"iana","extensions":["daf"]},"application/vnd.mobius.dis":{"source":"iana","extensions":["dis"]},"application/vnd.mobius.mbk":{"source":"iana","extensions":["mbk"]},"application/vnd.mobius.mqy":{"source":"iana","extensions":["mqy"]},"application/vnd.mobius.msl":{"source":"iana","extensions":["msl"]},"application/vnd.mobius.plc":{"source":"iana","extensions":["plc"]},"application/vnd.mobius.txf":{"source":"iana","extensions":["txf"]},"application/vnd.mophun.application":{"source":"iana","extensions":["mpn"]},"application/vnd.mophun.certificate":{"source":"iana","extensions":["mpc"]},"application/vnd.motorola.flexsuite":{"source":"iana"},"application/vnd.motorola.flexsuite.adsi":{"source":"iana"},"application/vnd.motorola.flexsuite.fis":{"source":"iana"},"application/vnd.motorola.flexsuite.gotap":{"source":"iana"},"application/vnd.motorola.flexsuite.kmr":{"source":"iana"},"application/vnd.motorola.flexsuite.ttc":{"source":"iana"},"application/vnd.motorola.flexsuite.wem":{"source":"iana"},"application/vnd.motorola.iprm":{"source":"iana"},"application/vnd.mozilla.xul+xml":{"source":"iana","compressible":true,"extensions":["xul"]},"application/vnd.ms-3mfdocument":{"source":"iana"},"application/vnd.ms-artgalry":{"source":"iana","extensions":["cil"]},"application/vnd.ms-asf":{"source":"iana"},"application/vnd.ms-cab-compressed":{"source":"iana","extensions":["cab"]},"application/vnd.ms-color.iccprofile":{"source":"apache"},"application/vnd.ms-excel":{"source":"iana","compressible":false,"extensions":["xls","xlm","xla","xlc","xlt","xlw"]},"application/vnd.ms-excel.addin.macroenabled.12":{"source":"iana","extensions":["xlam"]},"application/vnd.ms-excel.sheet.binary.macroenabled.12":{"source":"iana","extensions":["xlsb"]},"application/vnd.ms-excel.sheet.macroenabled.12":{"source":"iana","extensions":["xlsm"]},"application/vnd.ms-excel.template.macroenabled.12":{"source":"iana","extensions":["xltm"]},"application/vnd.ms-fontobject":{"source":"iana","compressible":true,"extensions":["eot"]},"application/vnd.ms-htmlhelp":{"source":"iana","extensions":["chm"]},"application/vnd.ms-ims":{"source":"iana","extensions":["ims"]},"application/vnd.ms-lrm":{"source":"iana","extensions":["lrm"]},"application/vnd.ms-office.activex+xml":{"source":"iana","compressible":true},"application/vnd.ms-officetheme":{"source":"iana","extensions":["thmx"]},"application/vnd.ms-opentype":{"source":"apache","compressible":true},"application/vnd.ms-outlook":{"compressible":false,"extensions":["msg"]},"application/vnd.ms-package.obfuscated-opentype":{"source":"apache"},"application/vnd.ms-pki.seccat":{"source":"apache","extensions":["cat"]},"application/vnd.ms-pki.stl":{"source":"apache","extensions":["stl"]},"application/vnd.ms-playready.initiator+xml":{"source":"iana","compressible":true},"application/vnd.ms-powerpoint":{"source":"iana","compressible":false,"extensions":["ppt","pps","pot"]},"application/vnd.ms-powerpoint.addin.macroenabled.12":{"source":"iana","extensions":["ppam"]},"application/vnd.ms-powerpoint.presentation.macroenabled.12":{"source":"iana","extensions":["pptm"]},"application/vnd.ms-powerpoint.slide.macroenabled.12":{"source":"iana","extensions":["sldm"]},"application/vnd.ms-powerpoint.slideshow.macroenabled.12":{"source":"iana","extensions":["ppsm"]},"application/vnd.ms-powerpoint.template.macroenabled.12":{"source":"iana","extensions":["potm"]},"application/vnd.ms-printdevicecapabilities+xml":{"source":"iana","compressible":true},"application/vnd.ms-printing.printticket+xml":{"source":"apache","compressible":true},"application/vnd.ms-printschematicket+xml":{"source":"iana","compressible":true},"application/vnd.ms-project":{"source":"iana","extensions":["mpp","mpt"]},"application/vnd.ms-tnef":{"source":"iana"},"application/vnd.ms-windows.devicepairing":{"source":"iana"},"application/vnd.ms-windows.nwprinting.oob":{"source":"iana"},"application/vnd.ms-windows.printerpairing":{"source":"iana"},"application/vnd.ms-windows.wsd.oob":{"source":"iana"},"application/vnd.ms-wmdrm.lic-chlg-req":{"source":"iana"},"application/vnd.ms-wmdrm.lic-resp":{"source":"iana"},"application/vnd.ms-wmdrm.meter-chlg-req":{"source":"iana"},"application/vnd.ms-wmdrm.meter-resp":{"source":"iana"},"application/vnd.ms-word.document.macroenabled.12":{"source":"iana","extensions":["docm"]},"application/vnd.ms-word.template.macroenabled.12":{"source":"iana","extensions":["dotm"]},"application/vnd.ms-works":{"source":"iana","extensions":["wps","wks","wcm","wdb"]},"application/vnd.ms-wpl":{"source":"iana","extensions":["wpl"]},"application/vnd.ms-xpsdocument":{"source":"iana","compressible":false,"extensions":["xps"]},"application/vnd.msa-disk-image":{"source":"iana"},"application/vnd.mseq":{"source":"iana","extensions":["mseq"]},"application/vnd.msign":{"source":"iana"},"application/vnd.multiad.creator":{"source":"iana"},"application/vnd.multiad.creator.cif":{"source":"iana"},"application/vnd.music-niff":{"source":"iana"},"application/vnd.musician":{"source":"iana","extensions":["mus"]},"application/vnd.muvee.style":{"source":"iana","extensions":["msty"]},"application/vnd.mynfc":{"source":"iana","extensions":["taglet"]},"application/vnd.ncd.control":{"source":"iana"},"application/vnd.ncd.reference":{"source":"iana"},"application/vnd.nearst.inv+json":{"source":"iana","compressible":true},"application/vnd.nervana":{"source":"iana"},"application/vnd.netfpx":{"source":"iana"},"application/vnd.neurolanguage.nlu":{"source":"iana","extensions":["nlu"]},"application/vnd.nimn":{"source":"iana"},"application/vnd.nintendo.nitro.rom":{"source":"iana"},"application/vnd.nintendo.snes.rom":{"source":"iana"},"application/vnd.nitf":{"source":"iana","extensions":["ntf","nitf"]},"application/vnd.noblenet-directory":{"source":"iana","extensions":["nnd"]},"application/vnd.noblenet-sealer":{"source":"iana","extensions":["nns"]},"application/vnd.noblenet-web":{"source":"iana","extensions":["nnw"]},"application/vnd.nokia.catalogs":{"source":"iana"},"application/vnd.nokia.conml+wbxml":{"source":"iana"},"application/vnd.nokia.conml+xml":{"source":"iana","compressible":true},"application/vnd.nokia.iptv.config+xml":{"source":"iana","compressible":true},"application/vnd.nokia.isds-radio-presets":{"source":"iana"},"application/vnd.nokia.landmark+wbxml":{"source":"iana"},"application/vnd.nokia.landmark+xml":{"source":"iana","compressible":true},"application/vnd.nokia.landmarkcollection+xml":{"source":"iana","compressible":true},"application/vnd.nokia.n-gage.ac+xml":{"source":"iana","compressible":true,"extensions":["ac"]},"application/vnd.nokia.n-gage.data":{"source":"iana","extensions":["ngdat"]},"application/vnd.nokia.n-gage.symbian.install":{"source":"iana","extensions":["n-gage"]},"application/vnd.nokia.ncd":{"source":"iana"},"application/vnd.nokia.pcd+wbxml":{"source":"iana"},"application/vnd.nokia.pcd+xml":{"source":"iana","compressible":true},"application/vnd.nokia.radio-preset":{"source":"iana","extensions":["rpst"]},"application/vnd.nokia.radio-presets":{"source":"iana","extensions":["rpss"]},"application/vnd.novadigm.edm":{"source":"iana","extensions":["edm"]},"application/vnd.novadigm.edx":{"source":"iana","extensions":["edx"]},"application/vnd.novadigm.ext":{"source":"iana","extensions":["ext"]},"application/vnd.ntt-local.content-share":{"source":"iana"},"application/vnd.ntt-local.file-transfer":{"source":"iana"},"application/vnd.ntt-local.ogw_remote-access":{"source":"iana"},"application/vnd.ntt-local.sip-ta_remote":{"source":"iana"},"application/vnd.ntt-local.sip-ta_tcp_stream":{"source":"iana"},"application/vnd.oasis.opendocument.chart":{"source":"iana","extensions":["odc"]},"application/vnd.oasis.opendocument.chart-template":{"source":"iana","extensions":["otc"]},"application/vnd.oasis.opendocument.database":{"source":"iana","extensions":["odb"]},"application/vnd.oasis.opendocument.formula":{"source":"iana","extensions":["odf"]},"application/vnd.oasis.opendocument.formula-template":{"source":"iana","extensions":["odft"]},"application/vnd.oasis.opendocument.graphics":{"source":"iana","compressible":false,"extensions":["odg"]},"application/vnd.oasis.opendocument.graphics-template":{"source":"iana","extensions":["otg"]},"application/vnd.oasis.opendocument.image":{"source":"iana","extensions":["odi"]},"application/vnd.oasis.opendocument.image-template":{"source":"iana","extensions":["oti"]},"application/vnd.oasis.opendocument.presentation":{"source":"iana","compressible":false,"extensions":["odp"]},"application/vnd.oasis.opendocument.presentation-template":{"source":"iana","extensions":["otp"]},"application/vnd.oasis.opendocument.spreadsheet":{"source":"iana","compressible":false,"extensions":["ods"]},"application/vnd.oasis.opendocument.spreadsheet-template":{"source":"iana","extensions":["ots"]},"application/vnd.oasis.opendocument.text":{"source":"iana","compressible":false,"extensions":["odt"]},"application/vnd.oasis.opendocument.text-master":{"source":"iana","extensions":["odm"]},"application/vnd.oasis.opendocument.text-template":{"source":"iana","extensions":["ott"]},"application/vnd.oasis.opendocument.text-web":{"source":"iana","extensions":["oth"]},"application/vnd.obn":{"source":"iana"},"application/vnd.ocf+cbor":{"source":"iana"},"application/vnd.oftn.l10n+json":{"source":"iana","compressible":true},"application/vnd.oipf.contentaccessdownload+xml":{"source":"iana","compressible":true},"application/vnd.oipf.contentaccessstreaming+xml":{"source":"iana","compressible":true},"application/vnd.oipf.cspg-hexbinary":{"source":"iana"},"application/vnd.oipf.dae.svg+xml":{"source":"iana","compressible":true},"application/vnd.oipf.dae.xhtml+xml":{"source":"iana","compressible":true},"application/vnd.oipf.mippvcontrolmessage+xml":{"source":"iana","compressible":true},"application/vnd.oipf.pae.gem":{"source":"iana"},"application/vnd.oipf.spdiscovery+xml":{"source":"iana","compressible":true},"application/vnd.oipf.spdlist+xml":{"source":"iana","compressible":true},"application/vnd.oipf.ueprofile+xml":{"source":"iana","compressible":true},"application/vnd.oipf.userprofile+xml":{"source":"iana","compressible":true},"application/vnd.olpc-sugar":{"source":"iana","extensions":["xo"]},"application/vnd.oma-scws-config":{"source":"iana"},"application/vnd.oma-scws-http-request":{"source":"iana"},"application/vnd.oma-scws-http-response":{"source":"iana"},"application/vnd.oma.bcast.associated-procedure-parameter+xml":{"source":"iana","compressible":true},"application/vnd.oma.bcast.drm-trigger+xml":{"source":"iana","compressible":true},"application/vnd.oma.bcast.imd+xml":{"source":"iana","compressible":true},"application/vnd.oma.bcast.ltkm":{"source":"iana"},"application/vnd.oma.bcast.notification+xml":{"source":"iana","compressible":true},"application/vnd.oma.bcast.provisioningtrigger":{"source":"iana"},"application/vnd.oma.bcast.sgboot":{"source":"iana"},"application/vnd.oma.bcast.sgdd+xml":{"source":"iana","compressible":true},"application/vnd.oma.bcast.sgdu":{"source":"iana"},"application/vnd.oma.bcast.simple-symbol-container":{"source":"iana"},"application/vnd.oma.bcast.smartcard-trigger+xml":{"source":"iana","compressible":true},"application/vnd.oma.bcast.sprov+xml":{"source":"iana","compressible":true},"application/vnd.oma.bcast.stkm":{"source":"iana"},"application/vnd.oma.cab-address-book+xml":{"source":"iana","compressible":true},"application/vnd.oma.cab-feature-handler+xml":{"source":"iana","compressible":true},"application/vnd.oma.cab-pcc+xml":{"source":"iana","compressible":true},"application/vnd.oma.cab-subs-invite+xml":{"source":"iana","compressible":true},"application/vnd.oma.cab-user-prefs+xml":{"source":"iana","compressible":true},"application/vnd.oma.dcd":{"source":"iana"},"application/vnd.oma.dcdc":{"source":"iana"},"application/vnd.oma.dd2+xml":{"source":"iana","compressible":true,"extensions":["dd2"]},"application/vnd.oma.drm.risd+xml":{"source":"iana","compressible":true},"application/vnd.oma.group-usage-list+xml":{"source":"iana","compressible":true},"application/vnd.oma.lwm2m+json":{"source":"iana","compressible":true},"application/vnd.oma.lwm2m+tlv":{"source":"iana"},"application/vnd.oma.pal+xml":{"source":"iana","compressible":true},"application/vnd.oma.poc.detailed-progress-report+xml":{"source":"iana","compressible":true},"application/vnd.oma.poc.final-report+xml":{"source":"iana","compressible":true},"application/vnd.oma.poc.groups+xml":{"source":"iana","compressible":true},"application/vnd.oma.poc.invocation-descriptor+xml":{"source":"iana","compressible":true},"application/vnd.oma.poc.optimized-progress-report+xml":{"source":"iana","compressible":true},"application/vnd.oma.push":{"source":"iana"},"application/vnd.oma.scidm.messages+xml":{"source":"iana","compressible":true},"application/vnd.oma.xcap-directory+xml":{"source":"iana","compressible":true},"application/vnd.omads-email+xml":{"source":"iana","compressible":true},"application/vnd.omads-file+xml":{"source":"iana","compressible":true},"application/vnd.omads-folder+xml":{"source":"iana","compressible":true},"application/vnd.omaloc-supl-init":{"source":"iana"},"application/vnd.onepager":{"source":"iana"},"application/vnd.onepagertamp":{"source":"iana"},"application/vnd.onepagertamx":{"source":"iana"},"application/vnd.onepagertat":{"source":"iana"},"application/vnd.onepagertatp":{"source":"iana"},"application/vnd.onepagertatx":{"source":"iana"},"application/vnd.openblox.game+xml":{"source":"iana","compressible":true,"extensions":["obgx"]},"application/vnd.openblox.game-binary":{"source":"iana"},"application/vnd.openeye.oeb":{"source":"iana"},"application/vnd.openofficeorg.extension":{"source":"apache","extensions":["oxt"]},"application/vnd.openstreetmap.data+xml":{"source":"iana","compressible":true,"extensions":["osm"]},"application/vnd.openxmlformats-officedocument.custom-properties+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.customxmlproperties+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.drawing+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.drawingml.chart+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.drawingml.chartshapes+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.drawingml.diagramcolors+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.drawingml.diagramdata+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.drawingml.diagramlayout+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.drawingml.diagramstyle+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.extended-properties+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.commentauthors+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.comments+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.handoutmaster+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.notesmaster+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.notesslide+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.presentation":{"source":"iana","compressible":false,"extensions":["pptx"]},"application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.presprops+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.slide":{"source":"iana","extensions":["sldx"]},"application/vnd.openxmlformats-officedocument.presentationml.slide+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.slidelayout+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.slidemaster+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.slideshow":{"source":"iana","extensions":["ppsx"]},"application/vnd.openxmlformats-officedocument.presentationml.slideshow.main+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.slideupdateinfo+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.tablestyles+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.tags+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.template":{"source":"iana","extensions":["potx"]},"application/vnd.openxmlformats-officedocument.presentationml.template.main+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.viewprops+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.calcchain+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.chartsheet+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.connections+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.dialogsheet+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.externallink+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.pivotcachedefinition+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.pivotcacherecords+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.pivottable+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.querytable+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.revisionheaders+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.revisionlog+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedstrings+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":{"source":"iana","compressible":false,"extensions":["xlsx"]},"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.sheetmetadata+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.tablesinglecells+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.template":{"source":"iana","extensions":["xltx"]},"application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.usernames+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.volatiledependencies+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.theme+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.themeoverride+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.vmldrawing":{"source":"iana"},"application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.document":{"source":"iana","compressible":false,"extensions":["docx"]},"application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.fonttable+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.template":{"source":"iana","extensions":["dotx"]},"application/vnd.openxmlformats-officedocument.wordprocessingml.template.main+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.websettings+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-package.core-properties+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-package.digital-signature-xmlsignature+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-package.relationships+xml":{"source":"iana","compressible":true},"application/vnd.oracle.resource+json":{"source":"iana","compressible":true},"application/vnd.orange.indata":{"source":"iana"},"application/vnd.osa.netdeploy":{"source":"iana"},"application/vnd.osgeo.mapguide.package":{"source":"iana","extensions":["mgp"]},"application/vnd.osgi.bundle":{"source":"iana"},"application/vnd.osgi.dp":{"source":"iana","extensions":["dp"]},"application/vnd.osgi.subsystem":{"source":"iana","extensions":["esa"]},"application/vnd.otps.ct-kip+xml":{"source":"iana","compressible":true},"application/vnd.oxli.countgraph":{"source":"iana"},"application/vnd.pagerduty+json":{"source":"iana","compressible":true},"application/vnd.palm":{"source":"iana","extensions":["pdb","pqa","oprc"]},"application/vnd.panoply":{"source":"iana"},"application/vnd.paos.xml":{"source":"iana"},"application/vnd.patentdive":{"source":"iana"},"application/vnd.patientecommsdoc":{"source":"iana"},"application/vnd.pawaafile":{"source":"iana","extensions":["paw"]},"application/vnd.pcos":{"source":"iana"},"application/vnd.pg.format":{"source":"iana","extensions":["str"]},"application/vnd.pg.osasli":{"source":"iana","extensions":["ei6"]},"application/vnd.piaccess.application-licence":{"source":"iana"},"application/vnd.picsel":{"source":"iana","extensions":["efif"]},"application/vnd.pmi.widget":{"source":"iana","extensions":["wg"]},"application/vnd.poc.group-advertisement+xml":{"source":"iana","compressible":true},"application/vnd.pocketlearn":{"source":"iana","extensions":["plf"]},"application/vnd.powerbuilder6":{"source":"iana","extensions":["pbd"]},"application/vnd.powerbuilder6-s":{"source":"iana"},"application/vnd.powerbuilder7":{"source":"iana"},"application/vnd.powerbuilder7-s":{"source":"iana"},"application/vnd.powerbuilder75":{"source":"iana"},"application/vnd.powerbuilder75-s":{"source":"iana"},"application/vnd.preminet":{"source":"iana"},"application/vnd.previewsystems.box":{"source":"iana","extensions":["box"]},"application/vnd.proteus.magazine":{"source":"iana","extensions":["mgz"]},"application/vnd.psfs":{"source":"iana"},"application/vnd.publishare-delta-tree":{"source":"iana","extensions":["qps"]},"application/vnd.pvi.ptid1":{"source":"iana","extensions":["ptid"]},"application/vnd.pwg-multiplexed":{"source":"iana"},"application/vnd.pwg-xhtml-print+xml":{"source":"iana","compressible":true},"application/vnd.qualcomm.brew-app-res":{"source":"iana"},"application/vnd.quarantainenet":{"source":"iana"},"application/vnd.quark.quarkxpress":{"source":"iana","extensions":["qxd","qxt","qwd","qwt","qxl","qxb"]},"application/vnd.quobject-quoxdocument":{"source":"iana"},"application/vnd.radisys.moml+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-audit+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-audit-conf+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-audit-conn+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-audit-dialog+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-audit-stream+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-conf+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-dialog+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-dialog-base+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-dialog-fax-detect+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-dialog-fax-sendrecv+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-dialog-group+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-dialog-speech+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-dialog-transform+xml":{"source":"iana","compressible":true},"application/vnd.rainstor.data":{"source":"iana"},"application/vnd.rapid":{"source":"iana"},"application/vnd.rar":{"source":"iana"},"application/vnd.realvnc.bed":{"source":"iana","extensions":["bed"]},"application/vnd.recordare.musicxml":{"source":"iana","extensions":["mxl"]},"application/vnd.recordare.musicxml+xml":{"source":"iana","compressible":true,"extensions":["musicxml"]},"application/vnd.renlearn.rlprint":{"source":"iana"},"application/vnd.restful+json":{"source":"iana","compressible":true},"application/vnd.rig.cryptonote":{"source":"iana","extensions":["cryptonote"]},"application/vnd.rim.cod":{"source":"apache","extensions":["cod"]},"application/vnd.rn-realmedia":{"source":"apache","extensions":["rm"]},"application/vnd.rn-realmedia-vbr":{"source":"apache","extensions":["rmvb"]},"application/vnd.route66.link66+xml":{"source":"iana","compressible":true,"extensions":["link66"]},"application/vnd.rs-274x":{"source":"iana"},"application/vnd.ruckus.download":{"source":"iana"},"application/vnd.s3sms":{"source":"iana"},"application/vnd.sailingtracker.track":{"source":"iana","extensions":["st"]},"application/vnd.sbm.cid":{"source":"iana"},"application/vnd.sbm.mid2":{"source":"iana"},"application/vnd.scribus":{"source":"iana"},"application/vnd.sealed.3df":{"source":"iana"},"application/vnd.sealed.csf":{"source":"iana"},"application/vnd.sealed.doc":{"source":"iana"},"application/vnd.sealed.eml":{"source":"iana"},"application/vnd.sealed.mht":{"source":"iana"},"application/vnd.sealed.net":{"source":"iana"},"application/vnd.sealed.ppt":{"source":"iana"},"application/vnd.sealed.tiff":{"source":"iana"},"application/vnd.sealed.xls":{"source":"iana"},"application/vnd.sealedmedia.softseal.html":{"source":"iana"},"application/vnd.sealedmedia.softseal.pdf":{"source":"iana"},"application/vnd.seemail":{"source":"iana","extensions":["see"]},"application/vnd.sema":{"source":"iana","extensions":["sema"]},"application/vnd.semd":{"source":"iana","extensions":["semd"]},"application/vnd.semf":{"source":"iana","extensions":["semf"]},"application/vnd.shade-save-file":{"source":"iana"},"application/vnd.shana.informed.formdata":{"source":"iana","extensions":["ifm"]},"application/vnd.shana.informed.formtemplate":{"source":"iana","extensions":["itp"]},"application/vnd.shana.informed.interchange":{"source":"iana","extensions":["iif"]},"application/vnd.shana.informed.package":{"source":"iana","extensions":["ipk"]},"application/vnd.shootproof+json":{"source":"iana","compressible":true},"application/vnd.shopkick+json":{"source":"iana","compressible":true},"application/vnd.sigrok.session":{"source":"iana"},"application/vnd.simtech-mindmapper":{"source":"iana","extensions":["twd","twds"]},"application/vnd.siren+json":{"source":"iana","compressible":true},"application/vnd.smaf":{"source":"iana","extensions":["mmf"]},"application/vnd.smart.notebook":{"source":"iana"},"application/vnd.smart.teacher":{"source":"iana","extensions":["teacher"]},"application/vnd.software602.filler.form+xml":{"source":"iana","compressible":true,"extensions":["fo"]},"application/vnd.software602.filler.form-xml-zip":{"source":"iana"},"application/vnd.solent.sdkm+xml":{"source":"iana","compressible":true,"extensions":["sdkm","sdkd"]},"application/vnd.spotfire.dxp":{"source":"iana","extensions":["dxp"]},"application/vnd.spotfire.sfs":{"source":"iana","extensions":["sfs"]},"application/vnd.sqlite3":{"source":"iana"},"application/vnd.sss-cod":{"source":"iana"},"application/vnd.sss-dtf":{"source":"iana"},"application/vnd.sss-ntf":{"source":"iana"},"application/vnd.stardivision.calc":{"source":"apache","extensions":["sdc"]},"application/vnd.stardivision.draw":{"source":"apache","extensions":["sda"]},"application/vnd.stardivision.impress":{"source":"apache","extensions":["sdd"]},"application/vnd.stardivision.math":{"source":"apache","extensions":["smf"]},"application/vnd.stardivision.writer":{"source":"apache","extensions":["sdw","vor"]},"application/vnd.stardivision.writer-global":{"source":"apache","extensions":["sgl"]},"application/vnd.stepmania.package":{"source":"iana","extensions":["smzip"]},"application/vnd.stepmania.stepchart":{"source":"iana","extensions":["sm"]},"application/vnd.street-stream":{"source":"iana"},"application/vnd.sun.wadl+xml":{"source":"iana","compressible":true,"extensions":["wadl"]},"application/vnd.sun.xml.calc":{"source":"apache","extensions":["sxc"]},"application/vnd.sun.xml.calc.template":{"source":"apache","extensions":["stc"]},"application/vnd.sun.xml.draw":{"source":"apache","extensions":["sxd"]},"application/vnd.sun.xml.draw.template":{"source":"apache","extensions":["std"]},"application/vnd.sun.xml.impress":{"source":"apache","extensions":["sxi"]},"application/vnd.sun.xml.impress.template":{"source":"apache","extensions":["sti"]},"application/vnd.sun.xml.math":{"source":"apache","extensions":["sxm"]},"application/vnd.sun.xml.writer":{"source":"apache","extensions":["sxw"]},"application/vnd.sun.xml.writer.global":{"source":"apache","extensions":["sxg"]},"application/vnd.sun.xml.writer.template":{"source":"apache","extensions":["stw"]},"application/vnd.sus-calendar":{"source":"iana","extensions":["sus","susp"]},"application/vnd.svd":{"source":"iana","extensions":["svd"]},"application/vnd.swiftview-ics":{"source":"iana"},"application/vnd.symbian.install":{"source":"apache","extensions":["sis","sisx"]},"application/vnd.syncml+xml":{"source":"iana","compressible":true,"extensions":["xsm"]},"application/vnd.syncml.dm+wbxml":{"source":"iana","extensions":["bdm"]},"application/vnd.syncml.dm+xml":{"source":"iana","compressible":true,"extensions":["xdm"]},"application/vnd.syncml.dm.notification":{"source":"iana"},"application/vnd.syncml.dmddf+wbxml":{"source":"iana"},"application/vnd.syncml.dmddf+xml":{"source":"iana","compressible":true,"extensions":["ddf"]},"application/vnd.syncml.dmtnds+wbxml":{"source":"iana"},"application/vnd.syncml.dmtnds+xml":{"source":"iana","compressible":true},"application/vnd.syncml.ds.notification":{"source":"iana"},"application/vnd.tableschema+json":{"source":"iana","compressible":true},"application/vnd.tao.intent-module-archive":{"source":"iana","extensions":["tao"]},"application/vnd.tcpdump.pcap":{"source":"iana","extensions":["pcap","cap","dmp"]},"application/vnd.think-cell.ppttc+json":{"source":"iana","compressible":true},"application/vnd.tmd.mediaflex.api+xml":{"source":"iana","compressible":true},"application/vnd.tml":{"source":"iana"},"application/vnd.tmobile-livetv":{"source":"iana","extensions":["tmo"]},"application/vnd.tri.onesource":{"source":"iana"},"application/vnd.trid.tpt":{"source":"iana","extensions":["tpt"]},"application/vnd.triscape.mxs":{"source":"iana","extensions":["mxs"]},"application/vnd.trueapp":{"source":"iana","extensions":["tra"]},"application/vnd.truedoc":{"source":"iana"},"application/vnd.ubisoft.webplayer":{"source":"iana"},"application/vnd.ufdl":{"source":"iana","extensions":["ufd","ufdl"]},"application/vnd.uiq.theme":{"source":"iana","extensions":["utz"]},"application/vnd.umajin":{"source":"iana","extensions":["umj"]},"application/vnd.unity":{"source":"iana","extensions":["unityweb"]},"application/vnd.uoml+xml":{"source":"iana","compressible":true,"extensions":["uoml"]},"application/vnd.uplanet.alert":{"source":"iana"},"application/vnd.uplanet.alert-wbxml":{"source":"iana"},"application/vnd.uplanet.bearer-choice":{"source":"iana"},"application/vnd.uplanet.bearer-choice-wbxml":{"source":"iana"},"application/vnd.uplanet.cacheop":{"source":"iana"},"application/vnd.uplanet.cacheop-wbxml":{"source":"iana"},"application/vnd.uplanet.channel":{"source":"iana"},"application/vnd.uplanet.channel-wbxml":{"source":"iana"},"application/vnd.uplanet.list":{"source":"iana"},"application/vnd.uplanet.list-wbxml":{"source":"iana"},"application/vnd.uplanet.listcmd":{"source":"iana"},"application/vnd.uplanet.listcmd-wbxml":{"source":"iana"},"application/vnd.uplanet.signal":{"source":"iana"},"application/vnd.uri-map":{"source":"iana"},"application/vnd.valve.source.material":{"source":"iana"},"application/vnd.vcx":{"source":"iana","extensions":["vcx"]},"application/vnd.vd-study":{"source":"iana"},"application/vnd.vectorworks":{"source":"iana"},"application/vnd.vel+json":{"source":"iana","compressible":true},"application/vnd.verimatrix.vcas":{"source":"iana"},"application/vnd.veryant.thin":{"source":"iana"},"application/vnd.ves.encrypted":{"source":"iana"},"application/vnd.vidsoft.vidconference":{"source":"iana"},"application/vnd.visio":{"source":"iana","extensions":["vsd","vst","vss","vsw"]},"application/vnd.visionary":{"source":"iana","extensions":["vis"]},"application/vnd.vividence.scriptfile":{"source":"iana"},"application/vnd.vsf":{"source":"iana","extensions":["vsf"]},"application/vnd.wap.sic":{"source":"iana"},"application/vnd.wap.slc":{"source":"iana"},"application/vnd.wap.wbxml":{"source":"iana","extensions":["wbxml"]},"application/vnd.wap.wmlc":{"source":"iana","extensions":["wmlc"]},"application/vnd.wap.wmlscriptc":{"source":"iana","extensions":["wmlsc"]},"application/vnd.webturbo":{"source":"iana","extensions":["wtb"]},"application/vnd.wfa.p2p":{"source":"iana"},"application/vnd.wfa.wsc":{"source":"iana"},"application/vnd.windows.devicepairing":{"source":"iana"},"application/vnd.wmc":{"source":"iana"},"application/vnd.wmf.bootstrap":{"source":"iana"},"application/vnd.wolfram.mathematica":{"source":"iana"},"application/vnd.wolfram.mathematica.package":{"source":"iana"},"application/vnd.wolfram.player":{"source":"iana","extensions":["nbp"]},"application/vnd.wordperfect":{"source":"iana","extensions":["wpd"]},"application/vnd.wqd":{"source":"iana","extensions":["wqd"]},"application/vnd.wrq-hp3000-labelled":{"source":"iana"},"application/vnd.wt.stf":{"source":"iana","extensions":["stf"]},"application/vnd.wv.csp+wbxml":{"source":"iana"},"application/vnd.wv.csp+xml":{"source":"iana","compressible":true},"application/vnd.wv.ssp+xml":{"source":"iana","compressible":true},"application/vnd.xacml+json":{"source":"iana","compressible":true},"application/vnd.xara":{"source":"iana","extensions":["xar"]},"application/vnd.xfdl":{"source":"iana","extensions":["xfdl"]},"application/vnd.xfdl.webform":{"source":"iana"},"application/vnd.xmi+xml":{"source":"iana","compressible":true},"application/vnd.xmpie.cpkg":{"source":"iana"},"application/vnd.xmpie.dpkg":{"source":"iana"},"application/vnd.xmpie.plan":{"source":"iana"},"application/vnd.xmpie.ppkg":{"source":"iana"},"application/vnd.xmpie.xlim":{"source":"iana"},"application/vnd.yamaha.hv-dic":{"source":"iana","extensions":["hvd"]},"application/vnd.yamaha.hv-script":{"source":"iana","extensions":["hvs"]},"application/vnd.yamaha.hv-voice":{"source":"iana","extensions":["hvp"]},"application/vnd.yamaha.openscoreformat":{"source":"iana","extensions":["osf"]},"application/vnd.yamaha.openscoreformat.osfpvg+xml":{"source":"iana","compressible":true,"extensions":["osfpvg"]},"application/vnd.yamaha.remote-setup":{"source":"iana"},"application/vnd.yamaha.smaf-audio":{"source":"iana","extensions":["saf"]},"application/vnd.yamaha.smaf-phrase":{"source":"iana","extensions":["spf"]},"application/vnd.yamaha.through-ngn":{"source":"iana"},"application/vnd.yamaha.tunnel-udpencap":{"source":"iana"},"application/vnd.yaoweme":{"source":"iana"},"application/vnd.yellowriver-custom-menu":{"source":"iana","extensions":["cmp"]},"application/vnd.youtube.yt":{"source":"iana"},"application/vnd.zul":{"source":"iana","extensions":["zir","zirz"]},"application/vnd.zzazz.deck+xml":{"source":"iana","compressible":true,"extensions":["zaz"]},"application/voicexml+xml":{"source":"iana","compressible":true,"extensions":["vxml"]},"application/voucher-cms+json":{"source":"iana","compressible":true},"application/vq-rtcpxr":{"source":"iana"},"application/wasm":{"compressible":true,"extensions":["wasm"]},"application/watcherinfo+xml":{"source":"iana","compressible":true},"application/webpush-options+json":{"source":"iana","compressible":true},"application/whoispp-query":{"source":"iana"},"application/whoispp-response":{"source":"iana"},"application/widget":{"source":"iana","extensions":["wgt"]},"application/winhlp":{"source":"apache","extensions":["hlp"]},"application/wita":{"source":"iana"},"application/wordperfect5.1":{"source":"iana"},"application/wsdl+xml":{"source":"iana","compressible":true,"extensions":["wsdl"]},"application/wspolicy+xml":{"source":"iana","compressible":true,"extensions":["wspolicy"]},"application/x-7z-compressed":{"source":"apache","compressible":false,"extensions":["7z"]},"application/x-abiword":{"source":"apache","extensions":["abw"]},"application/x-ace-compressed":{"source":"apache","extensions":["ace"]},"application/x-amf":{"source":"apache"},"application/x-apple-diskimage":{"source":"apache","extensions":["dmg"]},"application/x-arj":{"compressible":false,"extensions":["arj"]},"application/x-authorware-bin":{"source":"apache","extensions":["aab","x32","u32","vox"]},"application/x-authorware-map":{"source":"apache","extensions":["aam"]},"application/x-authorware-seg":{"source":"apache","extensions":["aas"]},"application/x-bcpio":{"source":"apache","extensions":["bcpio"]},"application/x-bdoc":{"compressible":false,"extensions":["bdoc"]},"application/x-bittorrent":{"source":"apache","extensions":["torrent"]},"application/x-blorb":{"source":"apache","extensions":["blb","blorb"]},"application/x-bzip":{"source":"apache","compressible":false,"extensions":["bz"]},"application/x-bzip2":{"source":"apache","compressible":false,"extensions":["bz2","boz"]},"application/x-cbr":{"source":"apache","extensions":["cbr","cba","cbt","cbz","cb7"]},"application/x-cdlink":{"source":"apache","extensions":["vcd"]},"application/x-cfs-compressed":{"source":"apache","extensions":["cfs"]},"application/x-chat":{"source":"apache","extensions":["chat"]},"application/x-chess-pgn":{"source":"apache","extensions":["pgn"]},"application/x-chrome-extension":{"extensions":["crx"]},"application/x-cocoa":{"source":"nginx","extensions":["cco"]},"application/x-compress":{"source":"apache"},"application/x-conference":{"source":"apache","extensions":["nsc"]},"application/x-cpio":{"source":"apache","extensions":["cpio"]},"application/x-csh":{"source":"apache","extensions":["csh"]},"application/x-deb":{"compressible":false},"application/x-debian-package":{"source":"apache","extensions":["deb","udeb"]},"application/x-dgc-compressed":{"source":"apache","extensions":["dgc"]},"application/x-director":{"source":"apache","extensions":["dir","dcr","dxr","cst","cct","cxt","w3d","fgd","swa"]},"application/x-doom":{"source":"apache","extensions":["wad"]},"application/x-dtbncx+xml":{"source":"apache","compressible":true,"extensions":["ncx"]},"application/x-dtbook+xml":{"source":"apache","compressible":true,"extensions":["dtb"]},"application/x-dtbresource+xml":{"source":"apache","compressible":true,"extensions":["res"]},"application/x-dvi":{"source":"apache","compressible":false,"extensions":["dvi"]},"application/x-envoy":{"source":"apache","extensions":["evy"]},"application/x-eva":{"source":"apache","extensions":["eva"]},"application/x-font-bdf":{"source":"apache","extensions":["bdf"]},"application/x-font-dos":{"source":"apache"},"application/x-font-framemaker":{"source":"apache"},"application/x-font-ghostscript":{"source":"apache","extensions":["gsf"]},"application/x-font-libgrx":{"source":"apache"},"application/x-font-linux-psf":{"source":"apache","extensions":["psf"]},"application/x-font-pcf":{"source":"apache","extensions":["pcf"]},"application/x-font-snf":{"source":"apache","extensions":["snf"]},"application/x-font-speedo":{"source":"apache"},"application/x-font-sunos-news":{"source":"apache"},"application/x-font-type1":{"source":"apache","extensions":["pfa","pfb","pfm","afm"]},"application/x-font-vfont":{"source":"apache"},"application/x-freearc":{"source":"apache","extensions":["arc"]},"application/x-futuresplash":{"source":"apache","extensions":["spl"]},"application/x-gca-compressed":{"source":"apache","extensions":["gca"]},"application/x-glulx":{"source":"apache","extensions":["ulx"]},"application/x-gnumeric":{"source":"apache","extensions":["gnumeric"]},"application/x-gramps-xml":{"source":"apache","extensions":["gramps"]},"application/x-gtar":{"source":"apache","extensions":["gtar"]},"application/x-gzip":{"source":"apache"},"application/x-hdf":{"source":"apache","extensions":["hdf"]},"application/x-httpd-php":{"compressible":true,"extensions":["php"]},"application/x-install-instructions":{"source":"apache","extensions":["install"]},"application/x-iso9660-image":{"source":"apache","extensions":["iso"]},"application/x-java-archive-diff":{"source":"nginx","extensions":["jardiff"]},"application/x-java-jnlp-file":{"source":"apache","compressible":false,"extensions":["jnlp"]},"application/x-javascript":{"compressible":true},"application/x-keepass2":{"extensions":["kdbx"]},"application/x-latex":{"source":"apache","compressible":false,"extensions":["latex"]},"application/x-lua-bytecode":{"extensions":["luac"]},"application/x-lzh-compressed":{"source":"apache","extensions":["lzh","lha"]},"application/x-makeself":{"source":"nginx","extensions":["run"]},"application/x-mie":{"source":"apache","extensions":["mie"]},"application/x-mobipocket-ebook":{"source":"apache","extensions":["prc","mobi"]},"application/x-mpegurl":{"compressible":false},"application/x-ms-application":{"source":"apache","extensions":["application"]},"application/x-ms-shortcut":{"source":"apache","extensions":["lnk"]},"application/x-ms-wmd":{"source":"apache","extensions":["wmd"]},"application/x-ms-wmz":{"source":"apache","extensions":["wmz"]},"application/x-ms-xbap":{"source":"apache","extensions":["xbap"]},"application/x-msaccess":{"source":"apache","extensions":["mdb"]},"application/x-msbinder":{"source":"apache","extensions":["obd"]},"application/x-mscardfile":{"source":"apache","extensions":["crd"]},"application/x-msclip":{"source":"apache","extensions":["clp"]},"application/x-msdos-program":{"extensions":["exe"]},"application/x-msdownload":{"source":"apache","extensions":["exe","dll","com","bat","msi"]},"application/x-msmediaview":{"source":"apache","extensions":["mvb","m13","m14"]},"application/x-msmetafile":{"source":"apache","extensions":["wmf","wmz","emf","emz"]},"application/x-msmoney":{"source":"apache","extensions":["mny"]},"application/x-mspublisher":{"source":"apache","extensions":["pub"]},"application/x-msschedule":{"source":"apache","extensions":["scd"]},"application/x-msterminal":{"source":"apache","extensions":["trm"]},"application/x-mswrite":{"source":"apache","extensions":["wri"]},"application/x-netcdf":{"source":"apache","extensions":["nc","cdf"]},"application/x-ns-proxy-autoconfig":{"compressible":true,"extensions":["pac"]},"application/x-nzb":{"source":"apache","extensions":["nzb"]},"application/x-perl":{"source":"nginx","extensions":["pl","pm"]},"application/x-pilot":{"source":"nginx","extensions":["prc","pdb"]},"application/x-pkcs12":{"source":"apache","compressible":false,"extensions":["p12","pfx"]},"application/x-pkcs7-certificates":{"source":"apache","extensions":["p7b","spc"]},"application/x-pkcs7-certreqresp":{"source":"apache","extensions":["p7r"]},"application/x-rar-compressed":{"source":"apache","compressible":false,"extensions":["rar"]},"application/x-redhat-package-manager":{"source":"nginx","extensions":["rpm"]},"application/x-research-info-systems":{"source":"apache","extensions":["ris"]},"application/x-sea":{"source":"nginx","extensions":["sea"]},"application/x-sh":{"source":"apache","compressible":true,"extensions":["sh"]},"application/x-shar":{"source":"apache","extensions":["shar"]},"application/x-shockwave-flash":{"source":"apache","compressible":false,"extensions":["swf"]},"application/x-silverlight-app":{"source":"apache","extensions":["xap"]},"application/x-sql":{"source":"apache","extensions":["sql"]},"application/x-stuffit":{"source":"apache","compressible":false,"extensions":["sit"]},"application/x-stuffitx":{"source":"apache","extensions":["sitx"]},"application/x-subrip":{"source":"apache","extensions":["srt"]},"application/x-sv4cpio":{"source":"apache","extensions":["sv4cpio"]},"application/x-sv4crc":{"source":"apache","extensions":["sv4crc"]},"application/x-t3vm-image":{"source":"apache","extensions":["t3"]},"application/x-tads":{"source":"apache","extensions":["gam"]},"application/x-tar":{"source":"apache","compressible":true,"extensions":["tar"]},"application/x-tcl":{"source":"apache","extensions":["tcl","tk"]},"application/x-tex":{"source":"apache","extensions":["tex"]},"application/x-tex-tfm":{"source":"apache","extensions":["tfm"]},"application/x-texinfo":{"source":"apache","extensions":["texinfo","texi"]},"application/x-tgif":{"source":"apache","extensions":["obj"]},"application/x-ustar":{"source":"apache","extensions":["ustar"]},"application/x-virtualbox-hdd":{"compressible":true,"extensions":["hdd"]},"application/x-virtualbox-ova":{"compressible":true,"extensions":["ova"]},"application/x-virtualbox-ovf":{"compressible":true,"extensions":["ovf"]},"application/x-virtualbox-vbox":{"compressible":true,"extensions":["vbox"]},"application/x-virtualbox-vbox-extpack":{"compressible":false,"extensions":["vbox-extpack"]},"application/x-virtualbox-vdi":{"compressible":true,"extensions":["vdi"]},"application/x-virtualbox-vhd":{"compressible":true,"extensions":["vhd"]},"application/x-virtualbox-vmdk":{"compressible":true,"extensions":["vmdk"]},"application/x-wais-source":{"source":"apache","extensions":["src"]},"application/x-web-app-manifest+json":{"compressible":true,"extensions":["webapp"]},"application/x-www-form-urlencoded":{"source":"iana","compressible":true},"application/x-x509-ca-cert":{"source":"apache","extensions":["der","crt","pem"]},"application/x-xfig":{"source":"apache","extensions":["fig"]},"application/x-xliff+xml":{"source":"apache","compressible":true,"extensions":["xlf"]},"application/x-xpinstall":{"source":"apache","compressible":false,"extensions":["xpi"]},"application/x-xz":{"source":"apache","extensions":["xz"]},"application/x-zmachine":{"source":"apache","extensions":["z1","z2","z3","z4","z5","z6","z7","z8"]},"application/x400-bp":{"source":"iana"},"application/xacml+xml":{"source":"iana","compressible":true},"application/xaml+xml":{"source":"apache","compressible":true,"extensions":["xaml"]},"application/xcap-att+xml":{"source":"iana","compressible":true,"extensions":["xav"]},"application/xcap-caps+xml":{"source":"iana","compressible":true,"extensions":["xca"]},"application/xcap-diff+xml":{"source":"iana","compressible":true,"extensions":["xdf"]},"application/xcap-el+xml":{"source":"iana","compressible":true,"extensions":["xel"]},"application/xcap-error+xml":{"source":"iana","compressible":true,"extensions":["xer"]},"application/xcap-ns+xml":{"source":"iana","compressible":true,"extensions":["xns"]},"application/xcon-conference-info+xml":{"source":"iana","compressible":true},"application/xcon-conference-info-diff+xml":{"source":"iana","compressible":true},"application/xenc+xml":{"source":"iana","compressible":true,"extensions":["xenc"]},"application/xhtml+xml":{"source":"iana","compressible":true,"extensions":["xhtml","xht"]},"application/xhtml-voice+xml":{"source":"apache","compressible":true},"application/xliff+xml":{"source":"iana","compressible":true,"extensions":["xlf"]},"application/xml":{"source":"iana","compressible":true,"extensions":["xml","xsl","xsd","rng"]},"application/xml-dtd":{"source":"iana","compressible":true,"extensions":["dtd"]},"application/xml-external-parsed-entity":{"source":"iana"},"application/xml-patch+xml":{"source":"iana","compressible":true},"application/xmpp+xml":{"source":"iana","compressible":true},"application/xop+xml":{"source":"iana","compressible":true,"extensions":["xop"]},"application/xproc+xml":{"source":"apache","compressible":true,"extensions":["xpl"]},"application/xslt+xml":{"source":"iana","compressible":true,"extensions":["xslt"]},"application/xspf+xml":{"source":"apache","compressible":true,"extensions":["xspf"]},"application/xv+xml":{"source":"iana","compressible":true,"extensions":["mxml","xhvml","xvml","xvm"]},"application/yang":{"source":"iana","extensions":["yang"]},"application/yang-data+json":{"source":"iana","compressible":true},"application/yang-data+xml":{"source":"iana","compressible":true},"application/yang-patch+json":{"source":"iana","compressible":true},"application/yang-patch+xml":{"source":"iana","compressible":true},"application/yin+xml":{"source":"iana","compressible":true,"extensions":["yin"]},"application/zip":{"source":"iana","compressible":false,"extensions":["zip"]},"application/zlib":{"source":"iana"},"application/zstd":{"source":"iana"},"audio/1d-interleaved-parityfec":{"source":"iana"},"audio/32kadpcm":{"source":"iana"},"audio/3gpp":{"source":"iana","compressible":false,"extensions":["3gpp"]},"audio/3gpp2":{"source":"iana"},"audio/aac":{"source":"iana"},"audio/ac3":{"source":"iana"},"audio/adpcm":{"source":"apache","extensions":["adp"]},"audio/amr":{"source":"iana"},"audio/amr-wb":{"source":"iana"},"audio/amr-wb+":{"source":"iana"},"audio/aptx":{"source":"iana"},"audio/asc":{"source":"iana"},"audio/atrac-advanced-lossless":{"source":"iana"},"audio/atrac-x":{"source":"iana"},"audio/atrac3":{"source":"iana"},"audio/basic":{"source":"iana","compressible":false,"extensions":["au","snd"]},"audio/bv16":{"source":"iana"},"audio/bv32":{"source":"iana"},"audio/clearmode":{"source":"iana"},"audio/cn":{"source":"iana"},"audio/dat12":{"source":"iana"},"audio/dls":{"source":"iana"},"audio/dsr-es201108":{"source":"iana"},"audio/dsr-es202050":{"source":"iana"},"audio/dsr-es202211":{"source":"iana"},"audio/dsr-es202212":{"source":"iana"},"audio/dv":{"source":"iana"},"audio/dvi4":{"source":"iana"},"audio/eac3":{"source":"iana"},"audio/encaprtp":{"source":"iana"},"audio/evrc":{"source":"iana"},"audio/evrc-qcp":{"source":"iana"},"audio/evrc0":{"source":"iana"},"audio/evrc1":{"source":"iana"},"audio/evrcb":{"source":"iana"},"audio/evrcb0":{"source":"iana"},"audio/evrcb1":{"source":"iana"},"audio/evrcnw":{"source":"iana"},"audio/evrcnw0":{"source":"iana"},"audio/evrcnw1":{"source":"iana"},"audio/evrcwb":{"source":"iana"},"audio/evrcwb0":{"source":"iana"},"audio/evrcwb1":{"source":"iana"},"audio/evs":{"source":"iana"},"audio/flexfec":{"source":"iana"},"audio/fwdred":{"source":"iana"},"audio/g711-0":{"source":"iana"},"audio/g719":{"source":"iana"},"audio/g722":{"source":"iana"},"audio/g7221":{"source":"iana"},"audio/g723":{"source":"iana"},"audio/g726-16":{"source":"iana"},"audio/g726-24":{"source":"iana"},"audio/g726-32":{"source":"iana"},"audio/g726-40":{"source":"iana"},"audio/g728":{"source":"iana"},"audio/g729":{"source":"iana"},"audio/g7291":{"source":"iana"},"audio/g729d":{"source":"iana"},"audio/g729e":{"source":"iana"},"audio/gsm":{"source":"iana"},"audio/gsm-efr":{"source":"iana"},"audio/gsm-hr-08":{"source":"iana"},"audio/ilbc":{"source":"iana"},"audio/ip-mr_v2.5":{"source":"iana"},"audio/isac":{"source":"apache"},"audio/l16":{"source":"iana"},"audio/l20":{"source":"iana"},"audio/l24":{"source":"iana","compressible":false},"audio/l8":{"source":"iana"},"audio/lpc":{"source":"iana"},"audio/melp":{"source":"iana"},"audio/melp1200":{"source":"iana"},"audio/melp2400":{"source":"iana"},"audio/melp600":{"source":"iana"},"audio/midi":{"source":"apache","extensions":["mid","midi","kar","rmi"]},"audio/mobile-xmf":{"source":"iana","extensions":["mxmf"]},"audio/mp3":{"compressible":false,"extensions":["mp3"]},"audio/mp4":{"source":"iana","compressible":false,"extensions":["m4a","mp4a"]},"audio/mp4a-latm":{"source":"iana"},"audio/mpa":{"source":"iana"},"audio/mpa-robust":{"source":"iana"},"audio/mpeg":{"source":"iana","compressible":false,"extensions":["mpga","mp2","mp2a","mp3","m2a","m3a"]},"audio/mpeg4-generic":{"source":"iana"},"audio/musepack":{"source":"apache"},"audio/ogg":{"source":"iana","compressible":false,"extensions":["oga","ogg","spx"]},"audio/opus":{"source":"iana"},"audio/parityfec":{"source":"iana"},"audio/pcma":{"source":"iana"},"audio/pcma-wb":{"source":"iana"},"audio/pcmu":{"source":"iana"},"audio/pcmu-wb":{"source":"iana"},"audio/prs.sid":{"source":"iana"},"audio/qcelp":{"source":"iana"},"audio/raptorfec":{"source":"iana"},"audio/red":{"source":"iana"},"audio/rtp-enc-aescm128":{"source":"iana"},"audio/rtp-midi":{"source":"iana"},"audio/rtploopback":{"source":"iana"},"audio/rtx":{"source":"iana"},"audio/s3m":{"source":"apache","extensions":["s3m"]},"audio/silk":{"source":"apache","extensions":["sil"]},"audio/smv":{"source":"iana"},"audio/smv-qcp":{"source":"iana"},"audio/smv0":{"source":"iana"},"audio/sp-midi":{"source":"iana"},"audio/speex":{"source":"iana"},"audio/t140c":{"source":"iana"},"audio/t38":{"source":"iana"},"audio/telephone-event":{"source":"iana"},"audio/tetra_acelp":{"source":"iana"},"audio/tone":{"source":"iana"},"audio/uemclip":{"source":"iana"},"audio/ulpfec":{"source":"iana"},"audio/usac":{"source":"iana"},"audio/vdvi":{"source":"iana"},"audio/vmr-wb":{"source":"iana"},"audio/vnd.3gpp.iufp":{"source":"iana"},"audio/vnd.4sb":{"source":"iana"},"audio/vnd.audiokoz":{"source":"iana"},"audio/vnd.celp":{"source":"iana"},"audio/vnd.cisco.nse":{"source":"iana"},"audio/vnd.cmles.radio-events":{"source":"iana"},"audio/vnd.cns.anp1":{"source":"iana"},"audio/vnd.cns.inf1":{"source":"iana"},"audio/vnd.dece.audio":{"source":"iana","extensions":["uva","uvva"]},"audio/vnd.digital-winds":{"source":"iana","extensions":["eol"]},"audio/vnd.dlna.adts":{"source":"iana"},"audio/vnd.dolby.heaac.1":{"source":"iana"},"audio/vnd.dolby.heaac.2":{"source":"iana"},"audio/vnd.dolby.mlp":{"source":"iana"},"audio/vnd.dolby.mps":{"source":"iana"},"audio/vnd.dolby.pl2":{"source":"iana"},"audio/vnd.dolby.pl2x":{"source":"iana"},"audio/vnd.dolby.pl2z":{"source":"iana"},"audio/vnd.dolby.pulse.1":{"source":"iana"},"audio/vnd.dra":{"source":"iana","extensions":["dra"]},"audio/vnd.dts":{"source":"iana","extensions":["dts"]},"audio/vnd.dts.hd":{"source":"iana","extensions":["dtshd"]},"audio/vnd.dts.uhd":{"source":"iana"},"audio/vnd.dvb.file":{"source":"iana"},"audio/vnd.everad.plj":{"source":"iana"},"audio/vnd.hns.audio":{"source":"iana"},"audio/vnd.lucent.voice":{"source":"iana","extensions":["lvp"]},"audio/vnd.ms-playready.media.pya":{"source":"iana","extensions":["pya"]},"audio/vnd.nokia.mobile-xmf":{"source":"iana"},"audio/vnd.nortel.vbk":{"source":"iana"},"audio/vnd.nuera.ecelp4800":{"source":"iana","extensions":["ecelp4800"]},"audio/vnd.nuera.ecelp7470":{"source":"iana","extensions":["ecelp7470"]},"audio/vnd.nuera.ecelp9600":{"source":"iana","extensions":["ecelp9600"]},"audio/vnd.octel.sbc":{"source":"iana"},"audio/vnd.presonus.multitrack":{"source":"iana"},"audio/vnd.qcelp":{"source":"iana"},"audio/vnd.rhetorex.32kadpcm":{"source":"iana"},"audio/vnd.rip":{"source":"iana","extensions":["rip"]},"audio/vnd.rn-realaudio":{"compressible":false},"audio/vnd.sealedmedia.softseal.mpeg":{"source":"iana"},"audio/vnd.vmx.cvsd":{"source":"iana"},"audio/vnd.wave":{"compressible":false},"audio/vorbis":{"source":"iana","compressible":false},"audio/vorbis-config":{"source":"iana"},"audio/wav":{"compressible":false,"extensions":["wav"]},"audio/wave":{"compressible":false,"extensions":["wav"]},"audio/webm":{"source":"apache","compressible":false,"extensions":["weba"]},"audio/x-aac":{"source":"apache","compressible":false,"extensions":["aac"]},"audio/x-aiff":{"source":"apache","extensions":["aif","aiff","aifc"]},"audio/x-caf":{"source":"apache","compressible":false,"extensions":["caf"]},"audio/x-flac":{"source":"apache","extensions":["flac"]},"audio/x-m4a":{"source":"nginx","extensions":["m4a"]},"audio/x-matroska":{"source":"apache","extensions":["mka"]},"audio/x-mpegurl":{"source":"apache","extensions":["m3u"]},"audio/x-ms-wax":{"source":"apache","extensions":["wax"]},"audio/x-ms-wma":{"source":"apache","extensions":["wma"]},"audio/x-pn-realaudio":{"source":"apache","extensions":["ram","ra"]},"audio/x-pn-realaudio-plugin":{"source":"apache","extensions":["rmp"]},"audio/x-realaudio":{"source":"nginx","extensions":["ra"]},"audio/x-tta":{"source":"apache"},"audio/x-wav":{"source":"apache","extensions":["wav"]},"audio/xm":{"source":"apache","extensions":["xm"]},"chemical/x-cdx":{"source":"apache","extensions":["cdx"]},"chemical/x-cif":{"source":"apache","extensions":["cif"]},"chemical/x-cmdf":{"source":"apache","extensions":["cmdf"]},"chemical/x-cml":{"source":"apache","extensions":["cml"]},"chemical/x-csml":{"source":"apache","extensions":["csml"]},"chemical/x-pdb":{"source":"apache"},"chemical/x-xyz":{"source":"apache","extensions":["xyz"]},"font/collection":{"source":"iana","extensions":["ttc"]},"font/otf":{"source":"iana","compressible":true,"extensions":["otf"]},"font/sfnt":{"source":"iana"},"font/ttf":{"source":"iana","compressible":true,"extensions":["ttf"]},"font/woff":{"source":"iana","extensions":["woff"]},"font/woff2":{"source":"iana","extensions":["woff2"]},"image/aces":{"source":"iana","extensions":["exr"]},"image/apng":{"compressible":false,"extensions":["apng"]},"image/avci":{"source":"iana"},"image/avcs":{"source":"iana"},"image/bmp":{"source":"iana","compressible":true,"extensions":["bmp"]},"image/cgm":{"source":"iana","extensions":["cgm"]},"image/dicom-rle":{"source":"iana","extensions":["drle"]},"image/emf":{"source":"iana","extensions":["emf"]},"image/fits":{"source":"iana","extensions":["fits"]},"image/g3fax":{"source":"iana","extensions":["g3"]},"image/gif":{"source":"iana","compressible":false,"extensions":["gif"]},"image/heic":{"source":"iana","extensions":["heic"]},"image/heic-sequence":{"source":"iana","extensions":["heics"]},"image/heif":{"source":"iana","extensions":["heif"]},"image/heif-sequence":{"source":"iana","extensions":["heifs"]},"image/hej2k":{"source":"iana","extensions":["hej2"]},"image/hsj2":{"source":"iana","extensions":["hsj2"]},"image/ief":{"source":"iana","extensions":["ief"]},"image/jls":{"source":"iana","extensions":["jls"]},"image/jp2":{"source":"iana","compressible":false,"extensions":["jp2","jpg2"]},"image/jpeg":{"source":"iana","compressible":false,"extensions":["jpeg","jpg","jpe"]},"image/jph":{"source":"iana","extensions":["jph"]},"image/jphc":{"source":"iana","extensions":["jhc"]},"image/jpm":{"source":"iana","compressible":false,"extensions":["jpm"]},"image/jpx":{"source":"iana","compressible":false,"extensions":["jpx","jpf"]},"image/jxr":{"source":"iana","extensions":["jxr"]},"image/jxra":{"source":"iana","extensions":["jxra"]},"image/jxrs":{"source":"iana","extensions":["jxrs"]},"image/jxs":{"source":"iana","extensions":["jxs"]},"image/jxsc":{"source":"iana","extensions":["jxsc"]},"image/jxsi":{"source":"iana","extensions":["jxsi"]},"image/jxss":{"source":"iana","extensions":["jxss"]},"image/ktx":{"source":"iana","extensions":["ktx"]},"image/naplps":{"source":"iana"},"image/pjpeg":{"compressible":false},"image/png":{"source":"iana","compressible":false,"extensions":["png"]},"image/prs.btif":{"source":"iana","extensions":["btif"]},"image/prs.pti":{"source":"iana","extensions":["pti"]},"image/pwg-raster":{"source":"iana"},"image/sgi":{"source":"apache","extensions":["sgi"]},"image/svg+xml":{"source":"iana","compressible":true,"extensions":["svg","svgz"]},"image/t38":{"source":"iana","extensions":["t38"]},"image/tiff":{"source":"iana","compressible":false,"extensions":["tif","tiff"]},"image/tiff-fx":{"source":"iana","extensions":["tfx"]},"image/vnd.adobe.photoshop":{"source":"iana","compressible":true,"extensions":["psd"]},"image/vnd.airzip.accelerator.azv":{"source":"iana","extensions":["azv"]},"image/vnd.cns.inf2":{"source":"iana"},"image/vnd.dece.graphic":{"source":"iana","extensions":["uvi","uvvi","uvg","uvvg"]},"image/vnd.djvu":{"source":"iana","extensions":["djvu","djv"]},"image/vnd.dvb.subtitle":{"source":"iana","extensions":["sub"]},"image/vnd.dwg":{"source":"iana","extensions":["dwg"]},"image/vnd.dxf":{"source":"iana","extensions":["dxf"]},"image/vnd.fastbidsheet":{"source":"iana","extensions":["fbs"]},"image/vnd.fpx":{"source":"iana","extensions":["fpx"]},"image/vnd.fst":{"source":"iana","extensions":["fst"]},"image/vnd.fujixerox.edmics-mmr":{"source":"iana","extensions":["mmr"]},"image/vnd.fujixerox.edmics-rlc":{"source":"iana","extensions":["rlc"]},"image/vnd.globalgraphics.pgb":{"source":"iana"},"image/vnd.microsoft.icon":{"source":"iana","extensions":["ico"]},"image/vnd.mix":{"source":"iana"},"image/vnd.mozilla.apng":{"source":"iana"},"image/vnd.ms-dds":{"extensions":["dds"]},"image/vnd.ms-modi":{"source":"iana","extensions":["mdi"]},"image/vnd.ms-photo":{"source":"apache","extensions":["wdp"]},"image/vnd.net-fpx":{"source":"iana","extensions":["npx"]},"image/vnd.radiance":{"source":"iana"},"image/vnd.sealed.png":{"source":"iana"},"image/vnd.sealedmedia.softseal.gif":{"source":"iana"},"image/vnd.sealedmedia.softseal.jpg":{"source":"iana"},"image/vnd.svf":{"source":"iana"},"image/vnd.tencent.tap":{"source":"iana","extensions":["tap"]},"image/vnd.valve.source.texture":{"source":"iana","extensions":["vtf"]},"image/vnd.wap.wbmp":{"source":"iana","extensions":["wbmp"]},"image/vnd.xiff":{"source":"iana","extensions":["xif"]},"image/vnd.zbrush.pcx":{"source":"iana","extensions":["pcx"]},"image/webp":{"source":"apache","extensions":["webp"]},"image/wmf":{"source":"iana","extensions":["wmf"]},"image/x-3ds":{"source":"apache","extensions":["3ds"]},"image/x-cmu-raster":{"source":"apache","extensions":["ras"]},"image/x-cmx":{"source":"apache","extensions":["cmx"]},"image/x-freehand":{"source":"apache","extensions":["fh","fhc","fh4","fh5","fh7"]},"image/x-icon":{"source":"apache","compressible":true,"extensions":["ico"]},"image/x-jng":{"source":"nginx","extensions":["jng"]},"image/x-mrsid-image":{"source":"apache","extensions":["sid"]},"image/x-ms-bmp":{"source":"nginx","compressible":true,"extensions":["bmp"]},"image/x-pcx":{"source":"apache","extensions":["pcx"]},"image/x-pict":{"source":"apache","extensions":["pic","pct"]},"image/x-portable-anymap":{"source":"apache","extensions":["pnm"]},"image/x-portable-bitmap":{"source":"apache","extensions":["pbm"]},"image/x-portable-graymap":{"source":"apache","extensions":["pgm"]},"image/x-portable-pixmap":{"source":"apache","extensions":["ppm"]},"image/x-rgb":{"source":"apache","extensions":["rgb"]},"image/x-tga":{"source":"apache","extensions":["tga"]},"image/x-xbitmap":{"source":"apache","extensions":["xbm"]},"image/x-xcf":{"compressible":false},"image/x-xpixmap":{"source":"apache","extensions":["xpm"]},"image/x-xwindowdump":{"source":"apache","extensions":["xwd"]},"message/cpim":{"source":"iana"},"message/delivery-status":{"source":"iana"},"message/disposition-notification":{"source":"iana","extensions":["disposition-notification"]},"message/external-body":{"source":"iana"},"message/feedback-report":{"source":"iana"},"message/global":{"source":"iana","extensions":["u8msg"]},"message/global-delivery-status":{"source":"iana","extensions":["u8dsn"]},"message/global-disposition-notification":{"source":"iana","extensions":["u8mdn"]},"message/global-headers":{"source":"iana","extensions":["u8hdr"]},"message/http":{"source":"iana","compressible":false},"message/imdn+xml":{"source":"iana","compressible":true},"message/news":{"source":"iana"},"message/partial":{"source":"iana","compressible":false},"message/rfc822":{"source":"iana","compressible":true,"extensions":["eml","mime"]},"message/s-http":{"source":"iana"},"message/sip":{"source":"iana"},"message/sipfrag":{"source":"iana"},"message/tracking-status":{"source":"iana"},"message/vnd.si.simp":{"source":"iana"},"message/vnd.wfa.wsc":{"source":"iana","extensions":["wsc"]},"model/3mf":{"source":"iana","extensions":["3mf"]},"model/gltf+json":{"source":"iana","compressible":true,"extensions":["gltf"]},"model/gltf-binary":{"source":"iana","compressible":true,"extensions":["glb"]},"model/iges":{"source":"iana","compressible":false,"extensions":["igs","iges"]},"model/mesh":{"source":"iana","compressible":false,"extensions":["msh","mesh","silo"]},"model/stl":{"source":"iana","extensions":["stl"]},"model/vnd.collada+xml":{"source":"iana","compressible":true,"extensions":["dae"]},"model/vnd.dwf":{"source":"iana","extensions":["dwf"]},"model/vnd.flatland.3dml":{"source":"iana"},"model/vnd.gdl":{"source":"iana","extensions":["gdl"]},"model/vnd.gs-gdl":{"source":"apache"},"model/vnd.gs.gdl":{"source":"iana"},"model/vnd.gtw":{"source":"iana","extensions":["gtw"]},"model/vnd.moml+xml":{"source":"iana","compressible":true},"model/vnd.mts":{"source":"iana","extensions":["mts"]},"model/vnd.opengex":{"source":"iana","extensions":["ogex"]},"model/vnd.parasolid.transmit.binary":{"source":"iana","extensions":["x_b"]},"model/vnd.parasolid.transmit.text":{"source":"iana","extensions":["x_t"]},"model/vnd.rosette.annotated-data-model":{"source":"iana"},"model/vnd.usdz+zip":{"source":"iana","compressible":false,"extensions":["usdz"]},"model/vnd.valve.source.compiled-map":{"source":"iana","extensions":["bsp"]},"model/vnd.vtu":{"source":"iana","extensions":["vtu"]},"model/vrml":{"source":"iana","compressible":false,"extensions":["wrl","vrml"]},"model/x3d+binary":{"source":"apache","compressible":false,"extensions":["x3db","x3dbz"]},"model/x3d+fastinfoset":{"source":"iana","extensions":["x3db"]},"model/x3d+vrml":{"source":"apache","compressible":false,"extensions":["x3dv","x3dvz"]},"model/x3d+xml":{"source":"iana","compressible":true,"extensions":["x3d","x3dz"]},"model/x3d-vrml":{"source":"iana","extensions":["x3dv"]},"multipart/alternative":{"source":"iana","compressible":false},"multipart/appledouble":{"source":"iana"},"multipart/byteranges":{"source":"iana"},"multipart/digest":{"source":"iana"},"multipart/encrypted":{"source":"iana","compressible":false},"multipart/form-data":{"source":"iana","compressible":false},"multipart/header-set":{"source":"iana"},"multipart/mixed":{"source":"iana"},"multipart/multilingual":{"source":"iana"},"multipart/parallel":{"source":"iana"},"multipart/related":{"source":"iana","compressible":false},"multipart/report":{"source":"iana"},"multipart/signed":{"source":"iana","compressible":false},"multipart/vnd.bint.med-plus":{"source":"iana"},"multipart/voice-message":{"source":"iana"},"multipart/x-mixed-replace":{"source":"iana"},"text/1d-interleaved-parityfec":{"source":"iana"},"text/cache-manifest":{"source":"iana","compressible":true,"extensions":["appcache","manifest"]},"text/calendar":{"source":"iana","extensions":["ics","ifb"]},"text/calender":{"compressible":true},"text/cmd":{"compressible":true},"text/coffeescript":{"extensions":["coffee","litcoffee"]},"text/css":{"source":"iana","charset":"UTF-8","compressible":true,"extensions":["css"]},"text/csv":{"source":"iana","compressible":true,"extensions":["csv"]},"text/csv-schema":{"source":"iana"},"text/directory":{"source":"iana"},"text/dns":{"source":"iana"},"text/ecmascript":{"source":"iana"},"text/encaprtp":{"source":"iana"},"text/enriched":{"source":"iana"},"text/flexfec":{"source":"iana"},"text/fwdred":{"source":"iana"},"text/grammar-ref-list":{"source":"iana"},"text/html":{"source":"iana","compressible":true,"extensions":["html","htm","shtml"]},"text/jade":{"extensions":["jade"]},"text/javascript":{"source":"iana","compressible":true},"text/jcr-cnd":{"source":"iana"},"text/jsx":{"compressible":true,"extensions":["jsx"]},"text/less":{"compressible":true,"extensions":["less"]},"text/markdown":{"source":"iana","compressible":true,"extensions":["markdown","md"]},"text/mathml":{"source":"nginx","extensions":["mml"]},"text/mdx":{"compressible":true,"extensions":["mdx"]},"text/mizar":{"source":"iana"},"text/n3":{"source":"iana","compressible":true,"extensions":["n3"]},"text/parameters":{"source":"iana"},"text/parityfec":{"source":"iana"},"text/plain":{"source":"iana","compressible":true,"extensions":["txt","text","conf","def","list","log","in","ini"]},"text/provenance-notation":{"source":"iana"},"text/prs.fallenstein.rst":{"source":"iana"},"text/prs.lines.tag":{"source":"iana","extensions":["dsc"]},"text/prs.prop.logic":{"source":"iana"},"text/raptorfec":{"source":"iana"},"text/red":{"source":"iana"},"text/rfc822-headers":{"source":"iana"},"text/richtext":{"source":"iana","compressible":true,"extensions":["rtx"]},"text/rtf":{"source":"iana","compressible":true,"extensions":["rtf"]},"text/rtp-enc-aescm128":{"source":"iana"},"text/rtploopback":{"source":"iana"},"text/rtx":{"source":"iana"},"text/sgml":{"source":"iana","extensions":["sgml","sgm"]},"text/shex":{"extensions":["shex"]},"text/slim":{"extensions":["slim","slm"]},"text/strings":{"source":"iana"},"text/stylus":{"extensions":["stylus","styl"]},"text/t140":{"source":"iana"},"text/tab-separated-values":{"source":"iana","compressible":true,"extensions":["tsv"]},"text/troff":{"source":"iana","extensions":["t","tr","roff","man","me","ms"]},"text/turtle":{"source":"iana","charset":"UTF-8","extensions":["ttl"]},"text/ulpfec":{"source":"iana"},"text/uri-list":{"source":"iana","compressible":true,"extensions":["uri","uris","urls"]},"text/vcard":{"source":"iana","compressible":true,"extensions":["vcard"]},"text/vnd.a":{"source":"iana"},"text/vnd.abc":{"source":"iana"},"text/vnd.ascii-art":{"source":"iana"},"text/vnd.curl":{"source":"iana","extensions":["curl"]},"text/vnd.curl.dcurl":{"source":"apache","extensions":["dcurl"]},"text/vnd.curl.mcurl":{"source":"apache","extensions":["mcurl"]},"text/vnd.curl.scurl":{"source":"apache","extensions":["scurl"]},"text/vnd.debian.copyright":{"source":"iana"},"text/vnd.dmclientscript":{"source":"iana"},"text/vnd.dvb.subtitle":{"source":"iana","extensions":["sub"]},"text/vnd.esmertec.theme-descriptor":{"source":"iana"},"text/vnd.ficlab.flt":{"source":"iana"},"text/vnd.fly":{"source":"iana","extensions":["fly"]},"text/vnd.fmi.flexstor":{"source":"iana","extensions":["flx"]},"text/vnd.gml":{"source":"iana"},"text/vnd.graphviz":{"source":"iana","extensions":["gv"]},"text/vnd.hgl":{"source":"iana"},"text/vnd.in3d.3dml":{"source":"iana","extensions":["3dml"]},"text/vnd.in3d.spot":{"source":"iana","extensions":["spot"]},"text/vnd.iptc.newsml":{"source":"iana"},"text/vnd.iptc.nitf":{"source":"iana"},"text/vnd.latex-z":{"source":"iana"},"text/vnd.motorola.reflex":{"source":"iana"},"text/vnd.ms-mediapackage":{"source":"iana"},"text/vnd.net2phone.commcenter.command":{"source":"iana"},"text/vnd.radisys.msml-basic-layout":{"source":"iana"},"text/vnd.senx.warpscript":{"source":"iana"},"text/vnd.si.uricatalogue":{"source":"iana"},"text/vnd.sosi":{"source":"iana"},"text/vnd.sun.j2me.app-descriptor":{"source":"iana","extensions":["jad"]},"text/vnd.trolltech.linguist":{"source":"iana"},"text/vnd.wap.si":{"source":"iana"},"text/vnd.wap.sl":{"source":"iana"},"text/vnd.wap.wml":{"source":"iana","extensions":["wml"]},"text/vnd.wap.wmlscript":{"source":"iana","extensions":["wmls"]},"text/vtt":{"source":"iana","charset":"UTF-8","compressible":true,"extensions":["vtt"]},"text/x-asm":{"source":"apache","extensions":["s","asm"]},"text/x-c":{"source":"apache","extensions":["c","cc","cxx","cpp","h","hh","dic"]},"text/x-component":{"source":"nginx","extensions":["htc"]},"text/x-fortran":{"source":"apache","extensions":["f","for","f77","f90"]},"text/x-gwt-rpc":{"compressible":true},"text/x-handlebars-template":{"extensions":["hbs"]},"text/x-java-source":{"source":"apache","extensions":["java"]},"text/x-jquery-tmpl":{"compressible":true},"text/x-lua":{"extensions":["lua"]},"text/x-markdown":{"compressible":true,"extensions":["mkd"]},"text/x-nfo":{"source":"apache","extensions":["nfo"]},"text/x-opml":{"source":"apache","extensions":["opml"]},"text/x-org":{"compressible":true,"extensions":["org"]},"text/x-pascal":{"source":"apache","extensions":["p","pas"]},"text/x-processing":{"compressible":true,"extensions":["pde"]},"text/x-sass":{"extensions":["sass"]},"text/x-scss":{"extensions":["scss"]},"text/x-setext":{"source":"apache","extensions":["etx"]},"text/x-sfv":{"source":"apache","extensions":["sfv"]},"text/x-suse-ymp":{"compressible":true,"extensions":["ymp"]},"text/x-uuencode":{"source":"apache","extensions":["uu"]},"text/x-vcalendar":{"source":"apache","extensions":["vcs"]},"text/x-vcard":{"source":"apache","extensions":["vcf"]},"text/xml":{"source":"iana","compressible":true,"extensions":["xml"]},"text/xml-external-parsed-entity":{"source":"iana"},"text/yaml":{"extensions":["yaml","yml"]},"video/1d-interleaved-parityfec":{"source":"iana"},"video/3gpp":{"source":"iana","extensions":["3gp","3gpp"]},"video/3gpp-tt":{"source":"iana"},"video/3gpp2":{"source":"iana","extensions":["3g2"]},"video/bmpeg":{"source":"iana"},"video/bt656":{"source":"iana"},"video/celb":{"source":"iana"},"video/dv":{"source":"iana"},"video/encaprtp":{"source":"iana"},"video/flexfec":{"source":"iana"},"video/h261":{"source":"iana","extensions":["h261"]},"video/h263":{"source":"iana","extensions":["h263"]},"video/h263-1998":{"source":"iana"},"video/h263-2000":{"source":"iana"},"video/h264":{"source":"iana","extensions":["h264"]},"video/h264-rcdo":{"source":"iana"},"video/h264-svc":{"source":"iana"},"video/h265":{"source":"iana"},"video/iso.segment":{"source":"iana"},"video/jpeg":{"source":"iana","extensions":["jpgv"]},"video/jpeg2000":{"source":"iana"},"video/jpm":{"source":"apache","extensions":["jpm","jpgm"]},"video/mj2":{"source":"iana","extensions":["mj2","mjp2"]},"video/mp1s":{"source":"iana"},"video/mp2p":{"source":"iana"},"video/mp2t":{"source":"iana","extensions":["ts"]},"video/mp4":{"source":"iana","compressible":false,"extensions":["mp4","mp4v","mpg4"]},"video/mp4v-es":{"source":"iana"},"video/mpeg":{"source":"iana","compressible":false,"extensions":["mpeg","mpg","mpe","m1v","m2v"]},"video/mpeg4-generic":{"source":"iana"},"video/mpv":{"source":"iana"},"video/nv":{"source":"iana"},"video/ogg":{"source":"iana","compressible":false,"extensions":["ogv"]},"video/parityfec":{"source":"iana"},"video/pointer":{"source":"iana"},"video/quicktime":{"source":"iana","compressible":false,"extensions":["qt","mov"]},"video/raptorfec":{"source":"iana"},"video/raw":{"source":"iana"},"video/rtp-enc-aescm128":{"source":"iana"},"video/rtploopback":{"source":"iana"},"video/rtx":{"source":"iana"},"video/smpte291":{"source":"iana"},"video/smpte292m":{"source":"iana"},"video/ulpfec":{"source":"iana"},"video/vc1":{"source":"iana"},"video/vc2":{"source":"iana"},"video/vnd.cctv":{"source":"iana"},"video/vnd.dece.hd":{"source":"iana","extensions":["uvh","uvvh"]},"video/vnd.dece.mobile":{"source":"iana","extensions":["uvm","uvvm"]},"video/vnd.dece.mp4":{"source":"iana"},"video/vnd.dece.pd":{"source":"iana","extensions":["uvp","uvvp"]},"video/vnd.dece.sd":{"source":"iana","extensions":["uvs","uvvs"]},"video/vnd.dece.video":{"source":"iana","extensions":["uvv","uvvv"]},"video/vnd.directv.mpeg":{"source":"iana"},"video/vnd.directv.mpeg-tts":{"source":"iana"},"video/vnd.dlna.mpeg-tts":{"source":"iana"},"video/vnd.dvb.file":{"source":"iana","extensions":["dvb"]},"video/vnd.fvt":{"source":"iana","extensions":["fvt"]},"video/vnd.hns.video":{"source":"iana"},"video/vnd.iptvforum.1dparityfec-1010":{"source":"iana"},"video/vnd.iptvforum.1dparityfec-2005":{"source":"iana"},"video/vnd.iptvforum.2dparityfec-1010":{"source":"iana"},"video/vnd.iptvforum.2dparityfec-2005":{"source":"iana"},"video/vnd.iptvforum.ttsavc":{"source":"iana"},"video/vnd.iptvforum.ttsmpeg2":{"source":"iana"},"video/vnd.motorola.video":{"source":"iana"},"video/vnd.motorola.videop":{"source":"iana"},"video/vnd.mpegurl":{"source":"iana","extensions":["mxu","m4u"]},"video/vnd.ms-playready.media.pyv":{"source":"iana","extensions":["pyv"]},"video/vnd.nokia.interleaved-multimedia":{"source":"iana"},"video/vnd.nokia.mp4vr":{"source":"iana"},"video/vnd.nokia.videovoip":{"source":"iana"},"video/vnd.objectvideo":{"source":"iana"},"video/vnd.radgamettools.bink":{"source":"iana"},"video/vnd.radgamettools.smacker":{"source":"iana"},"video/vnd.sealed.mpeg1":{"source":"iana"},"video/vnd.sealed.mpeg4":{"source":"iana"},"video/vnd.sealed.swf":{"source":"iana"},"video/vnd.sealedmedia.softseal.mov":{"source":"iana"},"video/vnd.uvvu.mp4":{"source":"iana","extensions":["uvu","uvvu"]},"video/vnd.vivo":{"source":"iana","extensions":["viv"]},"video/vnd.youtube.yt":{"source":"iana"},"video/vp8":{"source":"iana"},"video/webm":{"source":"apache","compressible":false,"extensions":["webm"]},"video/x-f4v":{"source":"apache","extensions":["f4v"]},"video/x-fli":{"source":"apache","extensions":["fli"]},"video/x-flv":{"source":"apache","compressible":false,"extensions":["flv"]},"video/x-m4v":{"source":"apache","extensions":["m4v"]},"video/x-matroska":{"source":"apache","compressible":false,"extensions":["mkv","mk3d","mks"]},"video/x-mng":{"source":"apache","extensions":["mng"]},"video/x-ms-asf":{"source":"apache","extensions":["asf","asx"]},"video/x-ms-vob":{"source":"apache","extensions":["vob"]},"video/x-ms-wm":{"source":"apache","extensions":["wm"]},"video/x-ms-wmv":{"source":"apache","compressible":false,"extensions":["wmv"]},"video/x-ms-wmx":{"source":"apache","extensions":["wmx"]},"video/x-ms-wvx":{"source":"apache","extensions":["wvx"]},"video/x-msvideo":{"source":"apache","extensions":["avi"]},"video/x-sgi-movie":{"source":"apache","extensions":["movie"]},"video/x-smv":{"source":"apache","extensions":["smv"]},"x-conference/x-cooltalk":{"source":"apache","extensions":["ice"]},"x-shader/x-fragment":{"compressible":true},"x-shader/x-vertex":{"compressible":true}}');
+
+/***/ })
+
+/******/ });
+/************************************************************************/
+/******/ // The module cache
+/******/ var __webpack_module_cache__ = {};
+/******/ 
+/******/ // The require function
+/******/ function __nccwpck_require__(moduleId) {
+/******/ 	// Check if module is in cache
+/******/ 	var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 	if (cachedModule !== undefined) {
+/******/ 		return cachedModule.exports;
+/******/ 	}
+/******/ 	// Create a new module (and put it into the cache)
+/******/ 	var module = __webpack_module_cache__[moduleId] = {
+/******/ 		// no module.id needed
+/******/ 		// no module.loaded needed
+/******/ 		exports: {}
+/******/ 	};
+/******/ 
+/******/ 	// Execute the module function
+/******/ 	var threw = true;
+/******/ 	try {
+/******/ 		__webpack_modules__[moduleId].call(module.exports, module, module.exports, __nccwpck_require__);
+/******/ 		threw = false;
+/******/ 	} finally {
+/******/ 		if(threw) delete __webpack_module_cache__[moduleId];
+/******/ 	}
+/******/ 
+/******/ 	// Return the exports of the module
+/******/ 	return module.exports;
+/******/ }
+/******/ 
+/************************************************************************/
+/******/ /* webpack/runtime/create fake namespace object */
+/******/ (() => {
+/******/ 	var getProto = Object.getPrototypeOf ? (obj) => (Object.getPrototypeOf(obj)) : (obj) => (obj.__proto__);
+/******/ 	var leafPrototypes;
+/******/ 	// create a fake namespace object
+/******/ 	// mode & 1: value is a module id, require it
+/******/ 	// mode & 2: merge all properties of value into the ns
+/******/ 	// mode & 4: return value when already ns object
+/******/ 	// mode & 16: return value when it's Promise-like
+/******/ 	// mode & 8|1: behave like require
+/******/ 	__nccwpck_require__.t = function(value, mode) {
+/******/ 		if(mode & 1) value = this(value);
+/******/ 		if(mode & 8) return value;
+/******/ 		if(typeof value === 'object' && value) {
+/******/ 			if((mode & 4) && value.__esModule) return value;
+/******/ 			if((mode & 16) && typeof value.then === 'function') return value;
+/******/ 		}
+/******/ 		var ns = Object.create(null);
+/******/ 		__nccwpck_require__.r(ns);
+/******/ 		var def = {};
+/******/ 		leafPrototypes = leafPrototypes || [null, getProto({}), getProto([]), getProto(getProto)];
+/******/ 		for(var current = mode & 2 && value; typeof current == 'object' && !~leafPrototypes.indexOf(current); current = getProto(current)) {
+/******/ 			Object.getOwnPropertyNames(current).forEach((key) => (def[key] = () => (value[key])));
+/******/ 		}
+/******/ 		def['default'] = () => (value);
+/******/ 		__nccwpck_require__.d(ns, def);
+/******/ 		return ns;
+/******/ 	};
+/******/ })();
+/******/ 
+/******/ /* webpack/runtime/define property getters */
+/******/ (() => {
+/******/ 	// define getter functions for harmony exports
+/******/ 	__nccwpck_require__.d = (exports, definition) => {
+/******/ 		for(var key in definition) {
+/******/ 			if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
+/******/ 				Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 			}
+/******/ 		}
+/******/ 	};
+/******/ })();
+/******/ 
+/******/ /* webpack/runtime/hasOwnProperty shorthand */
+/******/ (() => {
+/******/ 	__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ })();
+/******/ 
+/******/ /* webpack/runtime/make namespace object */
+/******/ (() => {
+/******/ 	// define __esModule on exports
+/******/ 	__nccwpck_require__.r = (exports) => {
+/******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 		}
+/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 	};
+/******/ })();
+/******/ 
+/******/ /* webpack/runtime/compat */
+/******/ 
+/******/ if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";
+/******/ 
+/************************************************************************/
+var __webpack_exports__ = {};
+
+// EXTERNAL MODULE: external "crypto"
+var external_crypto_ = __nccwpck_require__(6982);
+// EXTERNAL MODULE: external "fs"
+var external_fs_ = __nccwpck_require__(9896);
+// EXTERNAL MODULE: external "path"
+var external_path_ = __nccwpck_require__(6928);
+// EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
+var lib_core = __nccwpck_require__(7484);
+// EXTERNAL MODULE: ./node_modules/md5-file/index.js
+var md5_file = __nccwpck_require__(6513);
+// EXTERNAL MODULE: ./node_modules/content-disposition/index.js
+var content_disposition = __nccwpck_require__(8111);
+// EXTERNAL MODULE: ./node_modules/filenamify/index.js
+var filenamify = __nccwpck_require__(3264);
 ;// CONCATENATED MODULE: ./node_modules/@sindresorhus/is/dist/index.js
 const typedArrayTypeNames = [
     'Int8Array',
@@ -13745,7 +10460,7 @@ Object.defineProperties(assert, {
 /* harmony default export */ const dist = (is);
 
 ;// CONCATENATED MODULE: external "node:events"
-const external_node_events_namespaceObject = require("node:events");
+const external_node_events_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:events");
 ;// CONCATENATED MODULE: ./node_modules/p-cancelable/index.js
 class CancelError extends Error {
 	constructor(reason) {
@@ -14039,19 +10754,19 @@ class AbortError extends RequestError {
 }
 
 ;// CONCATENATED MODULE: external "node:process"
-const external_node_process_namespaceObject = require("node:process");
-// EXTERNAL MODULE: external "node:buffer"
-var external_node_buffer_ = __nccwpck_require__(2254);
+const external_node_process_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:process");
+;// CONCATENATED MODULE: external "node:buffer"
+const external_node_buffer_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:buffer");
 // EXTERNAL MODULE: external "node:stream"
-var external_node_stream_ = __nccwpck_require__(4492);
+var external_node_stream_ = __nccwpck_require__(7075);
 ;// CONCATENATED MODULE: external "node:http"
-const external_node_http_namespaceObject = require("node:http");
+const external_node_http_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:http");
 // EXTERNAL MODULE: external "events"
-var external_events_ = __nccwpck_require__(2361);
+var external_events_ = __nccwpck_require__(4434);
 // EXTERNAL MODULE: external "util"
-var external_util_ = __nccwpck_require__(3837);
+var external_util_ = __nccwpck_require__(9023);
 // EXTERNAL MODULE: ./node_modules/defer-to-connect/dist/source/index.js
-var source = __nccwpck_require__(6214);
+var source = __nccwpck_require__(2114);
 ;// CONCATENATED MODULE: ./node_modules/@szmarczak/http-timer/dist/source/index.js
 
 
@@ -14161,9 +10876,9 @@ const timer = (request) => {
 /* harmony default export */ const dist_source = (timer);
 
 ;// CONCATENATED MODULE: external "node:url"
-const external_node_url_namespaceObject = require("node:url");
+const external_node_url_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:url");
 ;// CONCATENATED MODULE: external "node:crypto"
-const external_node_crypto_namespaceObject = require("node:crypto");
+const external_node_crypto_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:crypto");
 ;// CONCATENATED MODULE: ./node_modules/normalize-url/index.js
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs
 const DATA_URL_DEFAULT_MIME_TYPE = 'text/plain';
@@ -14449,9 +11164,9 @@ function normalizeUrl(urlString, options) {
 }
 
 // EXTERNAL MODULE: ./node_modules/get-stream/index.js
-var get_stream = __nccwpck_require__(1766);
+var get_stream = __nccwpck_require__(6771);
 // EXTERNAL MODULE: ./node_modules/http-cache-semantics/index.js
-var http_cache_semantics = __nccwpck_require__(1002);
+var http_cache_semantics = __nccwpck_require__(4584);
 ;// CONCATENATED MODULE: ./node_modules/lowercase-keys/index.js
 function lowercaseKeys(object) {
 	return Object.fromEntries(Object.entries(object).map(([key, value]) => [key.toLowerCase(), value]));
@@ -14499,7 +11214,7 @@ class Response extends external_node_stream_.Readable {
 }
 
 // EXTERNAL MODULE: ./node_modules/keyv/src/index.js
-var src = __nccwpck_require__(1531);
+var src = __nccwpck_require__(6018);
 ;// CONCATENATED MODULE: ./node_modules/mimic-response/index.js
 // We define these manually to ensure they're always copied
 // even if they would move up the prototype chain
@@ -14874,7 +11589,7 @@ const convertHeaders = (headers) => {
 const onResponse = 'onResponse';
 //# sourceMappingURL=index.js.map
 // EXTERNAL MODULE: ./node_modules/decompress-response/index.js
-var decompress_response = __nccwpck_require__(2391);
+var decompress_response = __nccwpck_require__(1373);
 ;// CONCATENATED MODULE: ./node_modules/form-data-encoder/lib/util/isFunction.js
 const isFunction = (value) => (typeof value === "function");
 
@@ -15115,7 +11830,7 @@ class FormDataEncoder {
 }
 
 ;// CONCATENATED MODULE: external "node:util"
-const external_node_util_namespaceObject = require("node:util");
+const external_node_util_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:util");
 ;// CONCATENATED MODULE: ./node_modules/got/dist/source/core/utils/is-form-data.js
 
 function is_form_data_isFormData(body) {
@@ -15135,7 +11850,7 @@ async function getBodySize(body, headers) {
         return 0;
     }
     if (dist.string(body)) {
-        return external_node_buffer_.Buffer.byteLength(body);
+        return external_node_buffer_namespaceObject.Buffer.byteLength(body);
     }
     if (dist.buffer(body)) {
         return body.length;
@@ -15164,7 +11879,7 @@ function proxyEvents(from, to, events) {
 }
 
 ;// CONCATENATED MODULE: external "node:net"
-const external_node_net_namespaceObject = require("node:net");
+const external_node_net_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:net");
 ;// CONCATENATED MODULE: ./node_modules/got/dist/source/core/utils/unhandle.js
 // When attaching listeners, it's very easy to forget about them.
 // Especially if you do error handling and set timeouts.
@@ -15423,13 +12138,13 @@ const calculateRetryDelay = ({ attemptCount, retryOptions, error, retryAfter, co
 /* harmony default export */ const calculate_retry_delay = (calculateRetryDelay);
 
 ;// CONCATENATED MODULE: external "node:tls"
-const external_node_tls_namespaceObject = require("node:tls");
+const external_node_tls_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:tls");
 ;// CONCATENATED MODULE: external "node:https"
-const external_node_https_namespaceObject = require("node:https");
+const external_node_https_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:https");
 ;// CONCATENATED MODULE: external "node:dns"
-const external_node_dns_namespaceObject = require("node:dns");
+const external_node_dns_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:dns");
 ;// CONCATENATED MODULE: external "node:os"
-const external_node_os_namespaceObject = require("node:os");
+const external_node_os_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:os");
 ;// CONCATENATED MODULE: ./node_modules/cacheable-lookup/source/index.js
 
 
@@ -15879,7 +12594,7 @@ class CacheableLookup {
 }
 
 // EXTERNAL MODULE: ./node_modules/http2-wrapper/source/index.js
-var http2_wrapper_source = __nccwpck_require__(4645);
+var http2_wrapper_source = __nccwpck_require__(4956);
 ;// CONCATENATED MODULE: ./node_modules/got/dist/source/core/parse-link-header.js
 function parseLinkHeader(link) {
     const parsed = [];
@@ -18281,7 +14996,7 @@ class Request extends external_node_stream_.Duplex {
             }
             try {
                 // We need this in order to support UTF-8
-                const redirectBuffer = external_node_buffer_.Buffer.from(response.headers.location, 'binary').toString();
+                const redirectBuffer = external_node_buffer_namespaceObject.Buffer.from(response.headers.location, 'binary').toString();
                 const redirectUrl = new URL(redirectBuffer, url);
                 if (!isUnixSocketURL(url) && isUnixSocketURL(redirectUrl)) {
                     this._beforeError(new RequestError('Cannot redirect to UNIX socket', {}, this));
@@ -18550,7 +15265,7 @@ class Request extends external_node_stream_.Duplex {
             headers['accept-encoding'] = supportsBrotli ? 'gzip, deflate, br' : 'gzip, deflate';
         }
         if (username || password) {
-            const credentials = external_node_buffer_.Buffer.from(`${username}:${password}`).toString('base64');
+            const credentials = external_node_buffer_namespaceObject.Buffer.from(`${username}:${password}`).toString('base64');
             headers.authorization = `Basic ${credentials}`;
         }
         // Set cookies
@@ -18646,7 +15361,7 @@ class Request extends external_node_stream_.Duplex {
         this._request.write(chunk, encoding, (error) => {
             // The `!destroyed` check is required to prevent `uploadProgress` being emitted after the stream was destroyed
             if (!error && !this._request.destroyed) {
-                this._uploadedSize += external_node_buffer_.Buffer.byteLength(chunk, encoding);
+                this._uploadedSize += external_node_buffer_namespaceObject.Buffer.byteLength(chunk, encoding);
                 const progress = this.uploadProgress;
                 if (progress.percent < 1) {
                     this.emit('uploadProgress', progress);
@@ -19128,7 +15843,7 @@ const defaults = {
     mutableDefaults: false,
 };
 const got = source_create(defaults);
-/* harmony default export */ const got_dist_source = (got);
+/* harmony default export */ const got_dist_source = ((/* unused pure expression or super */ null && (got)));
 
 
 
@@ -19141,119 +15856,3073 @@ const got = source_create(defaults);
 
 
 
+// EXTERNAL MODULE: ./node_modules/make-dir/index.js
+var make_dir = __nccwpck_require__(6512);
+// EXTERNAL MODULE: ./node_modules/p-event/index.js
+var p_event = __nccwpck_require__(5089);
+;// CONCATENATED MODULE: external "node:fs"
+const external_node_fs_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs");
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/FsPromise.js
+/**
+ * Module convert fs functions to promise based functions
+ */
 
-/***/ }),
+const pathExists = external_node_fs_namespaceObject.existsSync;
+const createReadStream = external_node_fs_namespaceObject.createReadStream;
+async function stat(path) {
+    return new Promise((resolve, reject) => {
+        fs.stat(path, (err, stats) => {
+            if (err)
+                reject(err);
+            else
+                resolve(stats);
+        });
+    });
+}
+async function FsPromise_close(fd) {
+    return new Promise((resolve, reject) => {
+        external_node_fs_namespaceObject.close(fd, err => {
+            if (err)
+                reject(err);
+            else
+                resolve();
+        });
+    });
+}
+async function FsPromise_open(path, mode) {
+    return new Promise((resolve, reject) => {
+        fs.open(path, mode, (err, fd) => {
+            if (err)
+                reject(err);
+            else
+                resolve(fd);
+        });
+    });
+}
+async function read(fd, buffer, offset, length, position) {
+    return new Promise((resolve, reject) => {
+        external_node_fs_namespaceObject.read(fd, buffer, offset, length, position, (err, bytesRead, _buffer) => {
+            if (err)
+                reject(err);
+            else
+                resolve({ bytesRead, buffer: _buffer });
+        });
+    });
+}
+async function writeFile(path, data) {
+    return new Promise((resolve, reject) => {
+        fs.writeFile(path, data, err => {
+            if (err)
+                reject(err);
+            else
+                resolve();
+        });
+    });
+}
+function writeFileSync(path, data) {
+    fs.writeFileSync(path, data);
+}
+async function readFile(path) {
+    return new Promise((resolve, reject) => {
+        fs.readFile(path, (err, buffer) => {
+            if (err)
+                reject(err);
+            else
+                resolve(buffer);
+        });
+    });
+}
 
-/***/ 3765:
-/***/ ((module) => {
+;// CONCATENATED MODULE: ./node_modules/peek-readable/lib/EndOfFileStream.js
+const defaultMessages = 'End-Of-Stream';
+/**
+ * Thrown on read operation of the end of file or stream has been reached
+ */
+class EndOfStreamError extends Error {
+    constructor() {
+        super(defaultMessages);
+    }
+}
 
-"use strict";
-module.exports = JSON.parse('{"application/1d-interleaved-parityfec":{"source":"iana"},"application/3gpdash-qoe-report+xml":{"source":"iana","compressible":true},"application/3gpp-ims+xml":{"source":"iana","compressible":true},"application/a2l":{"source":"iana"},"application/activemessage":{"source":"iana"},"application/activity+json":{"source":"iana","compressible":true},"application/alto-costmap+json":{"source":"iana","compressible":true},"application/alto-costmapfilter+json":{"source":"iana","compressible":true},"application/alto-directory+json":{"source":"iana","compressible":true},"application/alto-endpointcost+json":{"source":"iana","compressible":true},"application/alto-endpointcostparams+json":{"source":"iana","compressible":true},"application/alto-endpointprop+json":{"source":"iana","compressible":true},"application/alto-endpointpropparams+json":{"source":"iana","compressible":true},"application/alto-error+json":{"source":"iana","compressible":true},"application/alto-networkmap+json":{"source":"iana","compressible":true},"application/alto-networkmapfilter+json":{"source":"iana","compressible":true},"application/aml":{"source":"iana"},"application/andrew-inset":{"source":"iana","extensions":["ez"]},"application/applefile":{"source":"iana"},"application/applixware":{"source":"apache","extensions":["aw"]},"application/atf":{"source":"iana"},"application/atfx":{"source":"iana"},"application/atom+xml":{"source":"iana","compressible":true,"extensions":["atom"]},"application/atomcat+xml":{"source":"iana","compressible":true,"extensions":["atomcat"]},"application/atomdeleted+xml":{"source":"iana","compressible":true,"extensions":["atomdeleted"]},"application/atomicmail":{"source":"iana"},"application/atomsvc+xml":{"source":"iana","compressible":true,"extensions":["atomsvc"]},"application/atsc-dwd+xml":{"source":"iana","compressible":true,"extensions":["dwd"]},"application/atsc-held+xml":{"source":"iana","compressible":true,"extensions":["held"]},"application/atsc-rdt+json":{"source":"iana","compressible":true},"application/atsc-rsat+xml":{"source":"iana","compressible":true,"extensions":["rsat"]},"application/atxml":{"source":"iana"},"application/auth-policy+xml":{"source":"iana","compressible":true},"application/bacnet-xdd+zip":{"source":"iana","compressible":false},"application/batch-smtp":{"source":"iana"},"application/bdoc":{"compressible":false,"extensions":["bdoc"]},"application/beep+xml":{"source":"iana","compressible":true},"application/calendar+json":{"source":"iana","compressible":true},"application/calendar+xml":{"source":"iana","compressible":true,"extensions":["xcs"]},"application/call-completion":{"source":"iana"},"application/cals-1840":{"source":"iana"},"application/cbor":{"source":"iana"},"application/cbor-seq":{"source":"iana"},"application/cccex":{"source":"iana"},"application/ccmp+xml":{"source":"iana","compressible":true},"application/ccxml+xml":{"source":"iana","compressible":true,"extensions":["ccxml"]},"application/cdfx+xml":{"source":"iana","compressible":true,"extensions":["cdfx"]},"application/cdmi-capability":{"source":"iana","extensions":["cdmia"]},"application/cdmi-container":{"source":"iana","extensions":["cdmic"]},"application/cdmi-domain":{"source":"iana","extensions":["cdmid"]},"application/cdmi-object":{"source":"iana","extensions":["cdmio"]},"application/cdmi-queue":{"source":"iana","extensions":["cdmiq"]},"application/cdni":{"source":"iana"},"application/cea":{"source":"iana"},"application/cea-2018+xml":{"source":"iana","compressible":true},"application/cellml+xml":{"source":"iana","compressible":true},"application/cfw":{"source":"iana"},"application/clue+xml":{"source":"iana","compressible":true},"application/clue_info+xml":{"source":"iana","compressible":true},"application/cms":{"source":"iana"},"application/cnrp+xml":{"source":"iana","compressible":true},"application/coap-group+json":{"source":"iana","compressible":true},"application/coap-payload":{"source":"iana"},"application/commonground":{"source":"iana"},"application/conference-info+xml":{"source":"iana","compressible":true},"application/cose":{"source":"iana"},"application/cose-key":{"source":"iana"},"application/cose-key-set":{"source":"iana"},"application/cpl+xml":{"source":"iana","compressible":true},"application/csrattrs":{"source":"iana"},"application/csta+xml":{"source":"iana","compressible":true},"application/cstadata+xml":{"source":"iana","compressible":true},"application/csvm+json":{"source":"iana","compressible":true},"application/cu-seeme":{"source":"apache","extensions":["cu"]},"application/cwt":{"source":"iana"},"application/cybercash":{"source":"iana"},"application/dart":{"compressible":true},"application/dash+xml":{"source":"iana","compressible":true,"extensions":["mpd"]},"application/dashdelta":{"source":"iana"},"application/davmount+xml":{"source":"iana","compressible":true,"extensions":["davmount"]},"application/dca-rft":{"source":"iana"},"application/dcd":{"source":"iana"},"application/dec-dx":{"source":"iana"},"application/dialog-info+xml":{"source":"iana","compressible":true},"application/dicom":{"source":"iana"},"application/dicom+json":{"source":"iana","compressible":true},"application/dicom+xml":{"source":"iana","compressible":true},"application/dii":{"source":"iana"},"application/dit":{"source":"iana"},"application/dns":{"source":"iana"},"application/dns+json":{"source":"iana","compressible":true},"application/dns-message":{"source":"iana"},"application/docbook+xml":{"source":"apache","compressible":true,"extensions":["dbk"]},"application/dskpp+xml":{"source":"iana","compressible":true},"application/dssc+der":{"source":"iana","extensions":["dssc"]},"application/dssc+xml":{"source":"iana","compressible":true,"extensions":["xdssc"]},"application/dvcs":{"source":"iana"},"application/ecmascript":{"source":"iana","compressible":true,"extensions":["ecma","es"]},"application/edi-consent":{"source":"iana"},"application/edi-x12":{"source":"iana","compressible":false},"application/edifact":{"source":"iana","compressible":false},"application/efi":{"source":"iana"},"application/emergencycalldata.comment+xml":{"source":"iana","compressible":true},"application/emergencycalldata.control+xml":{"source":"iana","compressible":true},"application/emergencycalldata.deviceinfo+xml":{"source":"iana","compressible":true},"application/emergencycalldata.ecall.msd":{"source":"iana"},"application/emergencycalldata.providerinfo+xml":{"source":"iana","compressible":true},"application/emergencycalldata.serviceinfo+xml":{"source":"iana","compressible":true},"application/emergencycalldata.subscriberinfo+xml":{"source":"iana","compressible":true},"application/emergencycalldata.veds+xml":{"source":"iana","compressible":true},"application/emma+xml":{"source":"iana","compressible":true,"extensions":["emma"]},"application/emotionml+xml":{"source":"iana","compressible":true,"extensions":["emotionml"]},"application/encaprtp":{"source":"iana"},"application/epp+xml":{"source":"iana","compressible":true},"application/epub+zip":{"source":"iana","compressible":false,"extensions":["epub"]},"application/eshop":{"source":"iana"},"application/exi":{"source":"iana","extensions":["exi"]},"application/expect-ct-report+json":{"source":"iana","compressible":true},"application/fastinfoset":{"source":"iana"},"application/fastsoap":{"source":"iana"},"application/fdt+xml":{"source":"iana","compressible":true,"extensions":["fdt"]},"application/fhir+json":{"source":"iana","compressible":true},"application/fhir+xml":{"source":"iana","compressible":true},"application/fido.trusted-apps+json":{"compressible":true},"application/fits":{"source":"iana"},"application/flexfec":{"source":"iana"},"application/font-sfnt":{"source":"iana"},"application/font-tdpfr":{"source":"iana","extensions":["pfr"]},"application/font-woff":{"source":"iana","compressible":false},"application/framework-attributes+xml":{"source":"iana","compressible":true},"application/geo+json":{"source":"iana","compressible":true,"extensions":["geojson"]},"application/geo+json-seq":{"source":"iana"},"application/geopackage+sqlite3":{"source":"iana"},"application/geoxacml+xml":{"source":"iana","compressible":true},"application/gltf-buffer":{"source":"iana"},"application/gml+xml":{"source":"iana","compressible":true,"extensions":["gml"]},"application/gpx+xml":{"source":"apache","compressible":true,"extensions":["gpx"]},"application/gxf":{"source":"apache","extensions":["gxf"]},"application/gzip":{"source":"iana","compressible":false,"extensions":["gz"]},"application/h224":{"source":"iana"},"application/held+xml":{"source":"iana","compressible":true},"application/hjson":{"extensions":["hjson"]},"application/http":{"source":"iana"},"application/hyperstudio":{"source":"iana","extensions":["stk"]},"application/ibe-key-request+xml":{"source":"iana","compressible":true},"application/ibe-pkg-reply+xml":{"source":"iana","compressible":true},"application/ibe-pp-data":{"source":"iana"},"application/iges":{"source":"iana"},"application/im-iscomposing+xml":{"source":"iana","compressible":true},"application/index":{"source":"iana"},"application/index.cmd":{"source":"iana"},"application/index.obj":{"source":"iana"},"application/index.response":{"source":"iana"},"application/index.vnd":{"source":"iana"},"application/inkml+xml":{"source":"iana","compressible":true,"extensions":["ink","inkml"]},"application/iotp":{"source":"iana"},"application/ipfix":{"source":"iana","extensions":["ipfix"]},"application/ipp":{"source":"iana"},"application/isup":{"source":"iana"},"application/its+xml":{"source":"iana","compressible":true,"extensions":["its"]},"application/java-archive":{"source":"apache","compressible":false,"extensions":["jar","war","ear"]},"application/java-serialized-object":{"source":"apache","compressible":false,"extensions":["ser"]},"application/java-vm":{"source":"apache","compressible":false,"extensions":["class"]},"application/javascript":{"source":"iana","charset":"UTF-8","compressible":true,"extensions":["js","mjs"]},"application/jf2feed+json":{"source":"iana","compressible":true},"application/jose":{"source":"iana"},"application/jose+json":{"source":"iana","compressible":true},"application/jrd+json":{"source":"iana","compressible":true},"application/json":{"source":"iana","charset":"UTF-8","compressible":true,"extensions":["json","map"]},"application/json-patch+json":{"source":"iana","compressible":true},"application/json-seq":{"source":"iana"},"application/json5":{"extensions":["json5"]},"application/jsonml+json":{"source":"apache","compressible":true,"extensions":["jsonml"]},"application/jwk+json":{"source":"iana","compressible":true},"application/jwk-set+json":{"source":"iana","compressible":true},"application/jwt":{"source":"iana"},"application/kpml-request+xml":{"source":"iana","compressible":true},"application/kpml-response+xml":{"source":"iana","compressible":true},"application/ld+json":{"source":"iana","compressible":true,"extensions":["jsonld"]},"application/lgr+xml":{"source":"iana","compressible":true,"extensions":["lgr"]},"application/link-format":{"source":"iana"},"application/load-control+xml":{"source":"iana","compressible":true},"application/lost+xml":{"source":"iana","compressible":true,"extensions":["lostxml"]},"application/lostsync+xml":{"source":"iana","compressible":true},"application/lxf":{"source":"iana"},"application/mac-binhex40":{"source":"iana","extensions":["hqx"]},"application/mac-compactpro":{"source":"apache","extensions":["cpt"]},"application/macwriteii":{"source":"iana"},"application/mads+xml":{"source":"iana","compressible":true,"extensions":["mads"]},"application/manifest+json":{"charset":"UTF-8","compressible":true,"extensions":["webmanifest"]},"application/marc":{"source":"iana","extensions":["mrc"]},"application/marcxml+xml":{"source":"iana","compressible":true,"extensions":["mrcx"]},"application/mathematica":{"source":"iana","extensions":["ma","nb","mb"]},"application/mathml+xml":{"source":"iana","compressible":true,"extensions":["mathml"]},"application/mathml-content+xml":{"source":"iana","compressible":true},"application/mathml-presentation+xml":{"source":"iana","compressible":true},"application/mbms-associated-procedure-description+xml":{"source":"iana","compressible":true},"application/mbms-deregister+xml":{"source":"iana","compressible":true},"application/mbms-envelope+xml":{"source":"iana","compressible":true},"application/mbms-msk+xml":{"source":"iana","compressible":true},"application/mbms-msk-response+xml":{"source":"iana","compressible":true},"application/mbms-protection-description+xml":{"source":"iana","compressible":true},"application/mbms-reception-report+xml":{"source":"iana","compressible":true},"application/mbms-register+xml":{"source":"iana","compressible":true},"application/mbms-register-response+xml":{"source":"iana","compressible":true},"application/mbms-schedule+xml":{"source":"iana","compressible":true},"application/mbms-user-service-description+xml":{"source":"iana","compressible":true},"application/mbox":{"source":"iana","extensions":["mbox"]},"application/media-policy-dataset+xml":{"source":"iana","compressible":true},"application/media_control+xml":{"source":"iana","compressible":true},"application/mediaservercontrol+xml":{"source":"iana","compressible":true,"extensions":["mscml"]},"application/merge-patch+json":{"source":"iana","compressible":true},"application/metalink+xml":{"source":"apache","compressible":true,"extensions":["metalink"]},"application/metalink4+xml":{"source":"iana","compressible":true,"extensions":["meta4"]},"application/mets+xml":{"source":"iana","compressible":true,"extensions":["mets"]},"application/mf4":{"source":"iana"},"application/mikey":{"source":"iana"},"application/mipc":{"source":"iana"},"application/mmt-aei+xml":{"source":"iana","compressible":true,"extensions":["maei"]},"application/mmt-usd+xml":{"source":"iana","compressible":true,"extensions":["musd"]},"application/mods+xml":{"source":"iana","compressible":true,"extensions":["mods"]},"application/moss-keys":{"source":"iana"},"application/moss-signature":{"source":"iana"},"application/mosskey-data":{"source":"iana"},"application/mosskey-request":{"source":"iana"},"application/mp21":{"source":"iana","extensions":["m21","mp21"]},"application/mp4":{"source":"iana","extensions":["mp4s","m4p"]},"application/mpeg4-generic":{"source":"iana"},"application/mpeg4-iod":{"source":"iana"},"application/mpeg4-iod-xmt":{"source":"iana"},"application/mrb-consumer+xml":{"source":"iana","compressible":true,"extensions":["xdf"]},"application/mrb-publish+xml":{"source":"iana","compressible":true,"extensions":["xdf"]},"application/msc-ivr+xml":{"source":"iana","compressible":true},"application/msc-mixer+xml":{"source":"iana","compressible":true},"application/msword":{"source":"iana","compressible":false,"extensions":["doc","dot"]},"application/mud+json":{"source":"iana","compressible":true},"application/multipart-core":{"source":"iana"},"application/mxf":{"source":"iana","extensions":["mxf"]},"application/n-quads":{"source":"iana","extensions":["nq"]},"application/n-triples":{"source":"iana","extensions":["nt"]},"application/nasdata":{"source":"iana"},"application/news-checkgroups":{"source":"iana"},"application/news-groupinfo":{"source":"iana"},"application/news-transmission":{"source":"iana"},"application/nlsml+xml":{"source":"iana","compressible":true},"application/node":{"source":"iana"},"application/nss":{"source":"iana"},"application/ocsp-request":{"source":"iana"},"application/ocsp-response":{"source":"iana"},"application/octet-stream":{"source":"iana","compressible":false,"extensions":["bin","dms","lrf","mar","so","dist","distz","pkg","bpk","dump","elc","deploy","exe","dll","deb","dmg","iso","img","msi","msp","msm","buffer"]},"application/oda":{"source":"iana","extensions":["oda"]},"application/odm+xml":{"source":"iana","compressible":true},"application/odx":{"source":"iana"},"application/oebps-package+xml":{"source":"iana","compressible":true,"extensions":["opf"]},"application/ogg":{"source":"iana","compressible":false,"extensions":["ogx"]},"application/omdoc+xml":{"source":"apache","compressible":true,"extensions":["omdoc"]},"application/onenote":{"source":"apache","extensions":["onetoc","onetoc2","onetmp","onepkg"]},"application/oscore":{"source":"iana"},"application/oxps":{"source":"iana","extensions":["oxps"]},"application/p2p-overlay+xml":{"source":"iana","compressible":true,"extensions":["relo"]},"application/parityfec":{"source":"iana"},"application/passport":{"source":"iana"},"application/patch-ops-error+xml":{"source":"iana","compressible":true,"extensions":["xer"]},"application/pdf":{"source":"iana","compressible":false,"extensions":["pdf"]},"application/pdx":{"source":"iana"},"application/pem-certificate-chain":{"source":"iana"},"application/pgp-encrypted":{"source":"iana","compressible":false,"extensions":["pgp"]},"application/pgp-keys":{"source":"iana"},"application/pgp-signature":{"source":"iana","extensions":["asc","sig"]},"application/pics-rules":{"source":"apache","extensions":["prf"]},"application/pidf+xml":{"source":"iana","compressible":true},"application/pidf-diff+xml":{"source":"iana","compressible":true},"application/pkcs10":{"source":"iana","extensions":["p10"]},"application/pkcs12":{"source":"iana"},"application/pkcs7-mime":{"source":"iana","extensions":["p7m","p7c"]},"application/pkcs7-signature":{"source":"iana","extensions":["p7s"]},"application/pkcs8":{"source":"iana","extensions":["p8"]},"application/pkcs8-encrypted":{"source":"iana"},"application/pkix-attr-cert":{"source":"iana","extensions":["ac"]},"application/pkix-cert":{"source":"iana","extensions":["cer"]},"application/pkix-crl":{"source":"iana","extensions":["crl"]},"application/pkix-pkipath":{"source":"iana","extensions":["pkipath"]},"application/pkixcmp":{"source":"iana","extensions":["pki"]},"application/pls+xml":{"source":"iana","compressible":true,"extensions":["pls"]},"application/poc-settings+xml":{"source":"iana","compressible":true},"application/postscript":{"source":"iana","compressible":true,"extensions":["ai","eps","ps"]},"application/ppsp-tracker+json":{"source":"iana","compressible":true},"application/problem+json":{"source":"iana","compressible":true},"application/problem+xml":{"source":"iana","compressible":true},"application/provenance+xml":{"source":"iana","compressible":true,"extensions":["provx"]},"application/prs.alvestrand.titrax-sheet":{"source":"iana"},"application/prs.cww":{"source":"iana","extensions":["cww"]},"application/prs.hpub+zip":{"source":"iana","compressible":false},"application/prs.nprend":{"source":"iana"},"application/prs.plucker":{"source":"iana"},"application/prs.rdf-xml-crypt":{"source":"iana"},"application/prs.xsf+xml":{"source":"iana","compressible":true},"application/pskc+xml":{"source":"iana","compressible":true,"extensions":["pskcxml"]},"application/qsig":{"source":"iana"},"application/raml+yaml":{"compressible":true,"extensions":["raml"]},"application/raptorfec":{"source":"iana"},"application/rdap+json":{"source":"iana","compressible":true},"application/rdf+xml":{"source":"iana","compressible":true,"extensions":["rdf","owl"]},"application/reginfo+xml":{"source":"iana","compressible":true,"extensions":["rif"]},"application/relax-ng-compact-syntax":{"source":"iana","extensions":["rnc"]},"application/remote-printing":{"source":"iana"},"application/reputon+json":{"source":"iana","compressible":true},"application/resource-lists+xml":{"source":"iana","compressible":true,"extensions":["rl"]},"application/resource-lists-diff+xml":{"source":"iana","compressible":true,"extensions":["rld"]},"application/rfc+xml":{"source":"iana","compressible":true},"application/riscos":{"source":"iana"},"application/rlmi+xml":{"source":"iana","compressible":true},"application/rls-services+xml":{"source":"iana","compressible":true,"extensions":["rs"]},"application/route-apd+xml":{"source":"iana","compressible":true,"extensions":["rapd"]},"application/route-s-tsid+xml":{"source":"iana","compressible":true,"extensions":["sls"]},"application/route-usd+xml":{"source":"iana","compressible":true,"extensions":["rusd"]},"application/rpki-ghostbusters":{"source":"iana","extensions":["gbr"]},"application/rpki-manifest":{"source":"iana","extensions":["mft"]},"application/rpki-publication":{"source":"iana"},"application/rpki-roa":{"source":"iana","extensions":["roa"]},"application/rpki-updown":{"source":"iana"},"application/rsd+xml":{"source":"apache","compressible":true,"extensions":["rsd"]},"application/rss+xml":{"source":"apache","compressible":true,"extensions":["rss"]},"application/rtf":{"source":"iana","compressible":true,"extensions":["rtf"]},"application/rtploopback":{"source":"iana"},"application/rtx":{"source":"iana"},"application/samlassertion+xml":{"source":"iana","compressible":true},"application/samlmetadata+xml":{"source":"iana","compressible":true},"application/sbml+xml":{"source":"iana","compressible":true,"extensions":["sbml"]},"application/scaip+xml":{"source":"iana","compressible":true},"application/scim+json":{"source":"iana","compressible":true},"application/scvp-cv-request":{"source":"iana","extensions":["scq"]},"application/scvp-cv-response":{"source":"iana","extensions":["scs"]},"application/scvp-vp-request":{"source":"iana","extensions":["spq"]},"application/scvp-vp-response":{"source":"iana","extensions":["spp"]},"application/sdp":{"source":"iana","extensions":["sdp"]},"application/secevent+jwt":{"source":"iana"},"application/senml+cbor":{"source":"iana"},"application/senml+json":{"source":"iana","compressible":true},"application/senml+xml":{"source":"iana","compressible":true,"extensions":["senmlx"]},"application/senml-exi":{"source":"iana"},"application/sensml+cbor":{"source":"iana"},"application/sensml+json":{"source":"iana","compressible":true},"application/sensml+xml":{"source":"iana","compressible":true,"extensions":["sensmlx"]},"application/sensml-exi":{"source":"iana"},"application/sep+xml":{"source":"iana","compressible":true},"application/sep-exi":{"source":"iana"},"application/session-info":{"source":"iana"},"application/set-payment":{"source":"iana"},"application/set-payment-initiation":{"source":"iana","extensions":["setpay"]},"application/set-registration":{"source":"iana"},"application/set-registration-initiation":{"source":"iana","extensions":["setreg"]},"application/sgml":{"source":"iana"},"application/sgml-open-catalog":{"source":"iana"},"application/shf+xml":{"source":"iana","compressible":true,"extensions":["shf"]},"application/sieve":{"source":"iana","extensions":["siv","sieve"]},"application/simple-filter+xml":{"source":"iana","compressible":true},"application/simple-message-summary":{"source":"iana"},"application/simplesymbolcontainer":{"source":"iana"},"application/sipc":{"source":"iana"},"application/slate":{"source":"iana"},"application/smil":{"source":"iana"},"application/smil+xml":{"source":"iana","compressible":true,"extensions":["smi","smil"]},"application/smpte336m":{"source":"iana"},"application/soap+fastinfoset":{"source":"iana"},"application/soap+xml":{"source":"iana","compressible":true},"application/sparql-query":{"source":"iana","extensions":["rq"]},"application/sparql-results+xml":{"source":"iana","compressible":true,"extensions":["srx"]},"application/spirits-event+xml":{"source":"iana","compressible":true},"application/sql":{"source":"iana"},"application/srgs":{"source":"iana","extensions":["gram"]},"application/srgs+xml":{"source":"iana","compressible":true,"extensions":["grxml"]},"application/sru+xml":{"source":"iana","compressible":true,"extensions":["sru"]},"application/ssdl+xml":{"source":"apache","compressible":true,"extensions":["ssdl"]},"application/ssml+xml":{"source":"iana","compressible":true,"extensions":["ssml"]},"application/stix+json":{"source":"iana","compressible":true},"application/swid+xml":{"source":"iana","compressible":true,"extensions":["swidtag"]},"application/tamp-apex-update":{"source":"iana"},"application/tamp-apex-update-confirm":{"source":"iana"},"application/tamp-community-update":{"source":"iana"},"application/tamp-community-update-confirm":{"source":"iana"},"application/tamp-error":{"source":"iana"},"application/tamp-sequence-adjust":{"source":"iana"},"application/tamp-sequence-adjust-confirm":{"source":"iana"},"application/tamp-status-query":{"source":"iana"},"application/tamp-status-response":{"source":"iana"},"application/tamp-update":{"source":"iana"},"application/tamp-update-confirm":{"source":"iana"},"application/tar":{"compressible":true},"application/taxii+json":{"source":"iana","compressible":true},"application/tei+xml":{"source":"iana","compressible":true,"extensions":["tei","teicorpus"]},"application/tetra_isi":{"source":"iana"},"application/thraud+xml":{"source":"iana","compressible":true,"extensions":["tfi"]},"application/timestamp-query":{"source":"iana"},"application/timestamp-reply":{"source":"iana"},"application/timestamped-data":{"source":"iana","extensions":["tsd"]},"application/tlsrpt+gzip":{"source":"iana"},"application/tlsrpt+json":{"source":"iana","compressible":true},"application/tnauthlist":{"source":"iana"},"application/toml":{"compressible":true,"extensions":["toml"]},"application/trickle-ice-sdpfrag":{"source":"iana"},"application/trig":{"source":"iana"},"application/ttml+xml":{"source":"iana","compressible":true,"extensions":["ttml"]},"application/tve-trigger":{"source":"iana"},"application/tzif":{"source":"iana"},"application/tzif-leap":{"source":"iana"},"application/ulpfec":{"source":"iana"},"application/urc-grpsheet+xml":{"source":"iana","compressible":true},"application/urc-ressheet+xml":{"source":"iana","compressible":true,"extensions":["rsheet"]},"application/urc-targetdesc+xml":{"source":"iana","compressible":true},"application/urc-uisocketdesc+xml":{"source":"iana","compressible":true},"application/vcard+json":{"source":"iana","compressible":true},"application/vcard+xml":{"source":"iana","compressible":true},"application/vemmi":{"source":"iana"},"application/vividence.scriptfile":{"source":"apache"},"application/vnd.1000minds.decision-model+xml":{"source":"iana","compressible":true,"extensions":["1km"]},"application/vnd.3gpp-prose+xml":{"source":"iana","compressible":true},"application/vnd.3gpp-prose-pc3ch+xml":{"source":"iana","compressible":true},"application/vnd.3gpp-v2x-local-service-information":{"source":"iana"},"application/vnd.3gpp.access-transfer-events+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.bsf+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.gmop+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mc-signalling-ear":{"source":"iana"},"application/vnd.3gpp.mcdata-affiliation-command+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcdata-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcdata-payload":{"source":"iana"},"application/vnd.3gpp.mcdata-service-config+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcdata-signalling":{"source":"iana"},"application/vnd.3gpp.mcdata-ue-config+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcdata-user-profile+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-affiliation-command+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-floor-request+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-location-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-mbms-usage-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-service-config+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-signed+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-ue-config+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-ue-init-config+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcptt-user-profile+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-affiliation-command+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-affiliation-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-location-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-mbms-usage-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-service-config+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-transmission-request+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-ue-config+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mcvideo-user-profile+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.mid-call+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.pic-bw-large":{"source":"iana","extensions":["plb"]},"application/vnd.3gpp.pic-bw-small":{"source":"iana","extensions":["psb"]},"application/vnd.3gpp.pic-bw-var":{"source":"iana","extensions":["pvb"]},"application/vnd.3gpp.sms":{"source":"iana"},"application/vnd.3gpp.sms+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.srvcc-ext+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.srvcc-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.state-and-event-info+xml":{"source":"iana","compressible":true},"application/vnd.3gpp.ussd+xml":{"source":"iana","compressible":true},"application/vnd.3gpp2.bcmcsinfo+xml":{"source":"iana","compressible":true},"application/vnd.3gpp2.sms":{"source":"iana"},"application/vnd.3gpp2.tcap":{"source":"iana","extensions":["tcap"]},"application/vnd.3lightssoftware.imagescal":{"source":"iana"},"application/vnd.3m.post-it-notes":{"source":"iana","extensions":["pwn"]},"application/vnd.accpac.simply.aso":{"source":"iana","extensions":["aso"]},"application/vnd.accpac.simply.imp":{"source":"iana","extensions":["imp"]},"application/vnd.acucobol":{"source":"iana","extensions":["acu"]},"application/vnd.acucorp":{"source":"iana","extensions":["atc","acutc"]},"application/vnd.adobe.air-application-installer-package+zip":{"source":"apache","compressible":false,"extensions":["air"]},"application/vnd.adobe.flash.movie":{"source":"iana"},"application/vnd.adobe.formscentral.fcdt":{"source":"iana","extensions":["fcdt"]},"application/vnd.adobe.fxp":{"source":"iana","extensions":["fxp","fxpl"]},"application/vnd.adobe.partial-upload":{"source":"iana"},"application/vnd.adobe.xdp+xml":{"source":"iana","compressible":true,"extensions":["xdp"]},"application/vnd.adobe.xfdf":{"source":"iana","extensions":["xfdf"]},"application/vnd.aether.imp":{"source":"iana"},"application/vnd.afpc.afplinedata":{"source":"iana"},"application/vnd.afpc.afplinedata-pagedef":{"source":"iana"},"application/vnd.afpc.foca-charset":{"source":"iana"},"application/vnd.afpc.foca-codedfont":{"source":"iana"},"application/vnd.afpc.foca-codepage":{"source":"iana"},"application/vnd.afpc.modca":{"source":"iana"},"application/vnd.afpc.modca-formdef":{"source":"iana"},"application/vnd.afpc.modca-mediummap":{"source":"iana"},"application/vnd.afpc.modca-objectcontainer":{"source":"iana"},"application/vnd.afpc.modca-overlay":{"source":"iana"},"application/vnd.afpc.modca-pagesegment":{"source":"iana"},"application/vnd.ah-barcode":{"source":"iana"},"application/vnd.ahead.space":{"source":"iana","extensions":["ahead"]},"application/vnd.airzip.filesecure.azf":{"source":"iana","extensions":["azf"]},"application/vnd.airzip.filesecure.azs":{"source":"iana","extensions":["azs"]},"application/vnd.amadeus+json":{"source":"iana","compressible":true},"application/vnd.amazon.ebook":{"source":"apache","extensions":["azw"]},"application/vnd.amazon.mobi8-ebook":{"source":"iana"},"application/vnd.americandynamics.acc":{"source":"iana","extensions":["acc"]},"application/vnd.amiga.ami":{"source":"iana","extensions":["ami"]},"application/vnd.amundsen.maze+xml":{"source":"iana","compressible":true},"application/vnd.android.ota":{"source":"iana"},"application/vnd.android.package-archive":{"source":"apache","compressible":false,"extensions":["apk"]},"application/vnd.anki":{"source":"iana"},"application/vnd.anser-web-certificate-issue-initiation":{"source":"iana","extensions":["cii"]},"application/vnd.anser-web-funds-transfer-initiation":{"source":"apache","extensions":["fti"]},"application/vnd.antix.game-component":{"source":"iana","extensions":["atx"]},"application/vnd.apache.thrift.binary":{"source":"iana"},"application/vnd.apache.thrift.compact":{"source":"iana"},"application/vnd.apache.thrift.json":{"source":"iana"},"application/vnd.api+json":{"source":"iana","compressible":true},"application/vnd.aplextor.warrp+json":{"source":"iana","compressible":true},"application/vnd.apothekende.reservation+json":{"source":"iana","compressible":true},"application/vnd.apple.installer+xml":{"source":"iana","compressible":true,"extensions":["mpkg"]},"application/vnd.apple.keynote":{"source":"iana","extensions":["keynote"]},"application/vnd.apple.mpegurl":{"source":"iana","extensions":["m3u8"]},"application/vnd.apple.numbers":{"source":"iana","extensions":["numbers"]},"application/vnd.apple.pages":{"source":"iana","extensions":["pages"]},"application/vnd.apple.pkpass":{"compressible":false,"extensions":["pkpass"]},"application/vnd.arastra.swi":{"source":"iana"},"application/vnd.aristanetworks.swi":{"source":"iana","extensions":["swi"]},"application/vnd.artisan+json":{"source":"iana","compressible":true},"application/vnd.artsquare":{"source":"iana"},"application/vnd.astraea-software.iota":{"source":"iana","extensions":["iota"]},"application/vnd.audiograph":{"source":"iana","extensions":["aep"]},"application/vnd.autopackage":{"source":"iana"},"application/vnd.avalon+json":{"source":"iana","compressible":true},"application/vnd.avistar+xml":{"source":"iana","compressible":true},"application/vnd.balsamiq.bmml+xml":{"source":"iana","compressible":true,"extensions":["bmml"]},"application/vnd.balsamiq.bmpr":{"source":"iana"},"application/vnd.banana-accounting":{"source":"iana"},"application/vnd.bbf.usp.error":{"source":"iana"},"application/vnd.bbf.usp.msg":{"source":"iana"},"application/vnd.bbf.usp.msg+json":{"source":"iana","compressible":true},"application/vnd.bekitzur-stech+json":{"source":"iana","compressible":true},"application/vnd.bint.med-content":{"source":"iana"},"application/vnd.biopax.rdf+xml":{"source":"iana","compressible":true},"application/vnd.blink-idb-value-wrapper":{"source":"iana"},"application/vnd.blueice.multipass":{"source":"iana","extensions":["mpm"]},"application/vnd.bluetooth.ep.oob":{"source":"iana"},"application/vnd.bluetooth.le.oob":{"source":"iana"},"application/vnd.bmi":{"source":"iana","extensions":["bmi"]},"application/vnd.bpf":{"source":"iana"},"application/vnd.bpf3":{"source":"iana"},"application/vnd.businessobjects":{"source":"iana","extensions":["rep"]},"application/vnd.byu.uapi+json":{"source":"iana","compressible":true},"application/vnd.cab-jscript":{"source":"iana"},"application/vnd.canon-cpdl":{"source":"iana"},"application/vnd.canon-lips":{"source":"iana"},"application/vnd.capasystems-pg+json":{"source":"iana","compressible":true},"application/vnd.cendio.thinlinc.clientconf":{"source":"iana"},"application/vnd.century-systems.tcp_stream":{"source":"iana"},"application/vnd.chemdraw+xml":{"source":"iana","compressible":true,"extensions":["cdxml"]},"application/vnd.chess-pgn":{"source":"iana"},"application/vnd.chipnuts.karaoke-mmd":{"source":"iana","extensions":["mmd"]},"application/vnd.ciedi":{"source":"iana"},"application/vnd.cinderella":{"source":"iana","extensions":["cdy"]},"application/vnd.cirpack.isdn-ext":{"source":"iana"},"application/vnd.citationstyles.style+xml":{"source":"iana","compressible":true,"extensions":["csl"]},"application/vnd.claymore":{"source":"iana","extensions":["cla"]},"application/vnd.cloanto.rp9":{"source":"iana","extensions":["rp9"]},"application/vnd.clonk.c4group":{"source":"iana","extensions":["c4g","c4d","c4f","c4p","c4u"]},"application/vnd.cluetrust.cartomobile-config":{"source":"iana","extensions":["c11amc"]},"application/vnd.cluetrust.cartomobile-config-pkg":{"source":"iana","extensions":["c11amz"]},"application/vnd.coffeescript":{"source":"iana"},"application/vnd.collabio.xodocuments.document":{"source":"iana"},"application/vnd.collabio.xodocuments.document-template":{"source":"iana"},"application/vnd.collabio.xodocuments.presentation":{"source":"iana"},"application/vnd.collabio.xodocuments.presentation-template":{"source":"iana"},"application/vnd.collabio.xodocuments.spreadsheet":{"source":"iana"},"application/vnd.collabio.xodocuments.spreadsheet-template":{"source":"iana"},"application/vnd.collection+json":{"source":"iana","compressible":true},"application/vnd.collection.doc+json":{"source":"iana","compressible":true},"application/vnd.collection.next+json":{"source":"iana","compressible":true},"application/vnd.comicbook+zip":{"source":"iana","compressible":false},"application/vnd.comicbook-rar":{"source":"iana"},"application/vnd.commerce-battelle":{"source":"iana"},"application/vnd.commonspace":{"source":"iana","extensions":["csp"]},"application/vnd.contact.cmsg":{"source":"iana","extensions":["cdbcmsg"]},"application/vnd.coreos.ignition+json":{"source":"iana","compressible":true},"application/vnd.cosmocaller":{"source":"iana","extensions":["cmc"]},"application/vnd.crick.clicker":{"source":"iana","extensions":["clkx"]},"application/vnd.crick.clicker.keyboard":{"source":"iana","extensions":["clkk"]},"application/vnd.crick.clicker.palette":{"source":"iana","extensions":["clkp"]},"application/vnd.crick.clicker.template":{"source":"iana","extensions":["clkt"]},"application/vnd.crick.clicker.wordbank":{"source":"iana","extensions":["clkw"]},"application/vnd.criticaltools.wbs+xml":{"source":"iana","compressible":true,"extensions":["wbs"]},"application/vnd.cryptii.pipe+json":{"source":"iana","compressible":true},"application/vnd.crypto-shade-file":{"source":"iana"},"application/vnd.ctc-posml":{"source":"iana","extensions":["pml"]},"application/vnd.ctct.ws+xml":{"source":"iana","compressible":true},"application/vnd.cups-pdf":{"source":"iana"},"application/vnd.cups-postscript":{"source":"iana"},"application/vnd.cups-ppd":{"source":"iana","extensions":["ppd"]},"application/vnd.cups-raster":{"source":"iana"},"application/vnd.cups-raw":{"source":"iana"},"application/vnd.curl":{"source":"iana"},"application/vnd.curl.car":{"source":"apache","extensions":["car"]},"application/vnd.curl.pcurl":{"source":"apache","extensions":["pcurl"]},"application/vnd.cyan.dean.root+xml":{"source":"iana","compressible":true},"application/vnd.cybank":{"source":"iana"},"application/vnd.d2l.coursepackage1p0+zip":{"source":"iana","compressible":false},"application/vnd.dart":{"source":"iana","compressible":true,"extensions":["dart"]},"application/vnd.data-vision.rdz":{"source":"iana","extensions":["rdz"]},"application/vnd.datapackage+json":{"source":"iana","compressible":true},"application/vnd.dataresource+json":{"source":"iana","compressible":true},"application/vnd.debian.binary-package":{"source":"iana"},"application/vnd.dece.data":{"source":"iana","extensions":["uvf","uvvf","uvd","uvvd"]},"application/vnd.dece.ttml+xml":{"source":"iana","compressible":true,"extensions":["uvt","uvvt"]},"application/vnd.dece.unspecified":{"source":"iana","extensions":["uvx","uvvx"]},"application/vnd.dece.zip":{"source":"iana","extensions":["uvz","uvvz"]},"application/vnd.denovo.fcselayout-link":{"source":"iana","extensions":["fe_launch"]},"application/vnd.desmume.movie":{"source":"iana"},"application/vnd.dir-bi.plate-dl-nosuffix":{"source":"iana"},"application/vnd.dm.delegation+xml":{"source":"iana","compressible":true},"application/vnd.dna":{"source":"iana","extensions":["dna"]},"application/vnd.document+json":{"source":"iana","compressible":true},"application/vnd.dolby.mlp":{"source":"apache","extensions":["mlp"]},"application/vnd.dolby.mobile.1":{"source":"iana"},"application/vnd.dolby.mobile.2":{"source":"iana"},"application/vnd.doremir.scorecloud-binary-document":{"source":"iana"},"application/vnd.dpgraph":{"source":"iana","extensions":["dpg"]},"application/vnd.dreamfactory":{"source":"iana","extensions":["dfac"]},"application/vnd.drive+json":{"source":"iana","compressible":true},"application/vnd.ds-keypoint":{"source":"apache","extensions":["kpxx"]},"application/vnd.dtg.local":{"source":"iana"},"application/vnd.dtg.local.flash":{"source":"iana"},"application/vnd.dtg.local.html":{"source":"iana"},"application/vnd.dvb.ait":{"source":"iana","extensions":["ait"]},"application/vnd.dvb.dvbj":{"source":"iana"},"application/vnd.dvb.esgcontainer":{"source":"iana"},"application/vnd.dvb.ipdcdftnotifaccess":{"source":"iana"},"application/vnd.dvb.ipdcesgaccess":{"source":"iana"},"application/vnd.dvb.ipdcesgaccess2":{"source":"iana"},"application/vnd.dvb.ipdcesgpdd":{"source":"iana"},"application/vnd.dvb.ipdcroaming":{"source":"iana"},"application/vnd.dvb.iptv.alfec-base":{"source":"iana"},"application/vnd.dvb.iptv.alfec-enhancement":{"source":"iana"},"application/vnd.dvb.notif-aggregate-root+xml":{"source":"iana","compressible":true},"application/vnd.dvb.notif-container+xml":{"source":"iana","compressible":true},"application/vnd.dvb.notif-generic+xml":{"source":"iana","compressible":true},"application/vnd.dvb.notif-ia-msglist+xml":{"source":"iana","compressible":true},"application/vnd.dvb.notif-ia-registration-request+xml":{"source":"iana","compressible":true},"application/vnd.dvb.notif-ia-registration-response+xml":{"source":"iana","compressible":true},"application/vnd.dvb.notif-init+xml":{"source":"iana","compressible":true},"application/vnd.dvb.pfr":{"source":"iana"},"application/vnd.dvb.service":{"source":"iana","extensions":["svc"]},"application/vnd.dxr":{"source":"iana"},"application/vnd.dynageo":{"source":"iana","extensions":["geo"]},"application/vnd.dzr":{"source":"iana"},"application/vnd.easykaraoke.cdgdownload":{"source":"iana"},"application/vnd.ecdis-update":{"source":"iana"},"application/vnd.ecip.rlp":{"source":"iana"},"application/vnd.ecowin.chart":{"source":"iana","extensions":["mag"]},"application/vnd.ecowin.filerequest":{"source":"iana"},"application/vnd.ecowin.fileupdate":{"source":"iana"},"application/vnd.ecowin.series":{"source":"iana"},"application/vnd.ecowin.seriesrequest":{"source":"iana"},"application/vnd.ecowin.seriesupdate":{"source":"iana"},"application/vnd.efi.img":{"source":"iana"},"application/vnd.efi.iso":{"source":"iana"},"application/vnd.emclient.accessrequest+xml":{"source":"iana","compressible":true},"application/vnd.enliven":{"source":"iana","extensions":["nml"]},"application/vnd.enphase.envoy":{"source":"iana"},"application/vnd.eprints.data+xml":{"source":"iana","compressible":true},"application/vnd.epson.esf":{"source":"iana","extensions":["esf"]},"application/vnd.epson.msf":{"source":"iana","extensions":["msf"]},"application/vnd.epson.quickanime":{"source":"iana","extensions":["qam"]},"application/vnd.epson.salt":{"source":"iana","extensions":["slt"]},"application/vnd.epson.ssf":{"source":"iana","extensions":["ssf"]},"application/vnd.ericsson.quickcall":{"source":"iana"},"application/vnd.espass-espass+zip":{"source":"iana","compressible":false},"application/vnd.eszigno3+xml":{"source":"iana","compressible":true,"extensions":["es3","et3"]},"application/vnd.etsi.aoc+xml":{"source":"iana","compressible":true},"application/vnd.etsi.asic-e+zip":{"source":"iana","compressible":false},"application/vnd.etsi.asic-s+zip":{"source":"iana","compressible":false},"application/vnd.etsi.cug+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvcommand+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvdiscovery+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvprofile+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvsad-bc+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvsad-cod+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvsad-npvr+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvservice+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvsync+xml":{"source":"iana","compressible":true},"application/vnd.etsi.iptvueprofile+xml":{"source":"iana","compressible":true},"application/vnd.etsi.mcid+xml":{"source":"iana","compressible":true},"application/vnd.etsi.mheg5":{"source":"iana"},"application/vnd.etsi.overload-control-policy-dataset+xml":{"source":"iana","compressible":true},"application/vnd.etsi.pstn+xml":{"source":"iana","compressible":true},"application/vnd.etsi.sci+xml":{"source":"iana","compressible":true},"application/vnd.etsi.simservs+xml":{"source":"iana","compressible":true},"application/vnd.etsi.timestamp-token":{"source":"iana"},"application/vnd.etsi.tsl+xml":{"source":"iana","compressible":true},"application/vnd.etsi.tsl.der":{"source":"iana"},"application/vnd.eudora.data":{"source":"iana"},"application/vnd.evolv.ecig.profile":{"source":"iana"},"application/vnd.evolv.ecig.settings":{"source":"iana"},"application/vnd.evolv.ecig.theme":{"source":"iana"},"application/vnd.exstream-empower+zip":{"source":"iana","compressible":false},"application/vnd.exstream-package":{"source":"iana"},"application/vnd.ezpix-album":{"source":"iana","extensions":["ez2"]},"application/vnd.ezpix-package":{"source":"iana","extensions":["ez3"]},"application/vnd.f-secure.mobile":{"source":"iana"},"application/vnd.fastcopy-disk-image":{"source":"iana"},"application/vnd.fdf":{"source":"iana","extensions":["fdf"]},"application/vnd.fdsn.mseed":{"source":"iana","extensions":["mseed"]},"application/vnd.fdsn.seed":{"source":"iana","extensions":["seed","dataless"]},"application/vnd.ffsns":{"source":"iana"},"application/vnd.ficlab.flb+zip":{"source":"iana","compressible":false},"application/vnd.filmit.zfc":{"source":"iana"},"application/vnd.fints":{"source":"iana"},"application/vnd.firemonkeys.cloudcell":{"source":"iana"},"application/vnd.flographit":{"source":"iana","extensions":["gph"]},"application/vnd.fluxtime.clip":{"source":"iana","extensions":["ftc"]},"application/vnd.font-fontforge-sfd":{"source":"iana"},"application/vnd.framemaker":{"source":"iana","extensions":["fm","frame","maker","book"]},"application/vnd.frogans.fnc":{"source":"iana","extensions":["fnc"]},"application/vnd.frogans.ltf":{"source":"iana","extensions":["ltf"]},"application/vnd.fsc.weblaunch":{"source":"iana","extensions":["fsc"]},"application/vnd.fujitsu.oasys":{"source":"iana","extensions":["oas"]},"application/vnd.fujitsu.oasys2":{"source":"iana","extensions":["oa2"]},"application/vnd.fujitsu.oasys3":{"source":"iana","extensions":["oa3"]},"application/vnd.fujitsu.oasysgp":{"source":"iana","extensions":["fg5"]},"application/vnd.fujitsu.oasysprs":{"source":"iana","extensions":["bh2"]},"application/vnd.fujixerox.art-ex":{"source":"iana"},"application/vnd.fujixerox.art4":{"source":"iana"},"application/vnd.fujixerox.ddd":{"source":"iana","extensions":["ddd"]},"application/vnd.fujixerox.docuworks":{"source":"iana","extensions":["xdw"]},"application/vnd.fujixerox.docuworks.binder":{"source":"iana","extensions":["xbd"]},"application/vnd.fujixerox.docuworks.container":{"source":"iana"},"application/vnd.fujixerox.hbpl":{"source":"iana"},"application/vnd.fut-misnet":{"source":"iana"},"application/vnd.futoin+cbor":{"source":"iana"},"application/vnd.futoin+json":{"source":"iana","compressible":true},"application/vnd.fuzzysheet":{"source":"iana","extensions":["fzs"]},"application/vnd.genomatix.tuxedo":{"source":"iana","extensions":["txd"]},"application/vnd.gentics.grd+json":{"source":"iana","compressible":true},"application/vnd.geo+json":{"source":"iana","compressible":true},"application/vnd.geocube+xml":{"source":"iana","compressible":true},"application/vnd.geogebra.file":{"source":"iana","extensions":["ggb"]},"application/vnd.geogebra.tool":{"source":"iana","extensions":["ggt"]},"application/vnd.geometry-explorer":{"source":"iana","extensions":["gex","gre"]},"application/vnd.geonext":{"source":"iana","extensions":["gxt"]},"application/vnd.geoplan":{"source":"iana","extensions":["g2w"]},"application/vnd.geospace":{"source":"iana","extensions":["g3w"]},"application/vnd.gerber":{"source":"iana"},"application/vnd.globalplatform.card-content-mgt":{"source":"iana"},"application/vnd.globalplatform.card-content-mgt-response":{"source":"iana"},"application/vnd.gmx":{"source":"iana","extensions":["gmx"]},"application/vnd.google-apps.document":{"compressible":false,"extensions":["gdoc"]},"application/vnd.google-apps.presentation":{"compressible":false,"extensions":["gslides"]},"application/vnd.google-apps.spreadsheet":{"compressible":false,"extensions":["gsheet"]},"application/vnd.google-earth.kml+xml":{"source":"iana","compressible":true,"extensions":["kml"]},"application/vnd.google-earth.kmz":{"source":"iana","compressible":false,"extensions":["kmz"]},"application/vnd.gov.sk.e-form+xml":{"source":"iana","compressible":true},"application/vnd.gov.sk.e-form+zip":{"source":"iana","compressible":false},"application/vnd.gov.sk.xmldatacontainer+xml":{"source":"iana","compressible":true},"application/vnd.grafeq":{"source":"iana","extensions":["gqf","gqs"]},"application/vnd.gridmp":{"source":"iana"},"application/vnd.groove-account":{"source":"iana","extensions":["gac"]},"application/vnd.groove-help":{"source":"iana","extensions":["ghf"]},"application/vnd.groove-identity-message":{"source":"iana","extensions":["gim"]},"application/vnd.groove-injector":{"source":"iana","extensions":["grv"]},"application/vnd.groove-tool-message":{"source":"iana","extensions":["gtm"]},"application/vnd.groove-tool-template":{"source":"iana","extensions":["tpl"]},"application/vnd.groove-vcard":{"source":"iana","extensions":["vcg"]},"application/vnd.hal+json":{"source":"iana","compressible":true},"application/vnd.hal+xml":{"source":"iana","compressible":true,"extensions":["hal"]},"application/vnd.handheld-entertainment+xml":{"source":"iana","compressible":true,"extensions":["zmm"]},"application/vnd.hbci":{"source":"iana","extensions":["hbci"]},"application/vnd.hc+json":{"source":"iana","compressible":true},"application/vnd.hcl-bireports":{"source":"iana"},"application/vnd.hdt":{"source":"iana"},"application/vnd.heroku+json":{"source":"iana","compressible":true},"application/vnd.hhe.lesson-player":{"source":"iana","extensions":["les"]},"application/vnd.hp-hpgl":{"source":"iana","extensions":["hpgl"]},"application/vnd.hp-hpid":{"source":"iana","extensions":["hpid"]},"application/vnd.hp-hps":{"source":"iana","extensions":["hps"]},"application/vnd.hp-jlyt":{"source":"iana","extensions":["jlt"]},"application/vnd.hp-pcl":{"source":"iana","extensions":["pcl"]},"application/vnd.hp-pclxl":{"source":"iana","extensions":["pclxl"]},"application/vnd.httphone":{"source":"iana"},"application/vnd.hydrostatix.sof-data":{"source":"iana","extensions":["sfd-hdstx"]},"application/vnd.hyper+json":{"source":"iana","compressible":true},"application/vnd.hyper-item+json":{"source":"iana","compressible":true},"application/vnd.hyperdrive+json":{"source":"iana","compressible":true},"application/vnd.hzn-3d-crossword":{"source":"iana"},"application/vnd.ibm.afplinedata":{"source":"iana"},"application/vnd.ibm.electronic-media":{"source":"iana"},"application/vnd.ibm.minipay":{"source":"iana","extensions":["mpy"]},"application/vnd.ibm.modcap":{"source":"iana","extensions":["afp","listafp","list3820"]},"application/vnd.ibm.rights-management":{"source":"iana","extensions":["irm"]},"application/vnd.ibm.secure-container":{"source":"iana","extensions":["sc"]},"application/vnd.iccprofile":{"source":"iana","extensions":["icc","icm"]},"application/vnd.ieee.1905":{"source":"iana"},"application/vnd.igloader":{"source":"iana","extensions":["igl"]},"application/vnd.imagemeter.folder+zip":{"source":"iana","compressible":false},"application/vnd.imagemeter.image+zip":{"source":"iana","compressible":false},"application/vnd.immervision-ivp":{"source":"iana","extensions":["ivp"]},"application/vnd.immervision-ivu":{"source":"iana","extensions":["ivu"]},"application/vnd.ims.imsccv1p1":{"source":"iana"},"application/vnd.ims.imsccv1p2":{"source":"iana"},"application/vnd.ims.imsccv1p3":{"source":"iana"},"application/vnd.ims.lis.v2.result+json":{"source":"iana","compressible":true},"application/vnd.ims.lti.v2.toolconsumerprofile+json":{"source":"iana","compressible":true},"application/vnd.ims.lti.v2.toolproxy+json":{"source":"iana","compressible":true},"application/vnd.ims.lti.v2.toolproxy.id+json":{"source":"iana","compressible":true},"application/vnd.ims.lti.v2.toolsettings+json":{"source":"iana","compressible":true},"application/vnd.ims.lti.v2.toolsettings.simple+json":{"source":"iana","compressible":true},"application/vnd.informedcontrol.rms+xml":{"source":"iana","compressible":true},"application/vnd.informix-visionary":{"source":"iana"},"application/vnd.infotech.project":{"source":"iana"},"application/vnd.infotech.project+xml":{"source":"iana","compressible":true},"application/vnd.innopath.wamp.notification":{"source":"iana"},"application/vnd.insors.igm":{"source":"iana","extensions":["igm"]},"application/vnd.intercon.formnet":{"source":"iana","extensions":["xpw","xpx"]},"application/vnd.intergeo":{"source":"iana","extensions":["i2g"]},"application/vnd.intertrust.digibox":{"source":"iana"},"application/vnd.intertrust.nncp":{"source":"iana"},"application/vnd.intu.qbo":{"source":"iana","extensions":["qbo"]},"application/vnd.intu.qfx":{"source":"iana","extensions":["qfx"]},"application/vnd.iptc.g2.catalogitem+xml":{"source":"iana","compressible":true},"application/vnd.iptc.g2.conceptitem+xml":{"source":"iana","compressible":true},"application/vnd.iptc.g2.knowledgeitem+xml":{"source":"iana","compressible":true},"application/vnd.iptc.g2.newsitem+xml":{"source":"iana","compressible":true},"application/vnd.iptc.g2.newsmessage+xml":{"source":"iana","compressible":true},"application/vnd.iptc.g2.packageitem+xml":{"source":"iana","compressible":true},"application/vnd.iptc.g2.planningitem+xml":{"source":"iana","compressible":true},"application/vnd.ipunplugged.rcprofile":{"source":"iana","extensions":["rcprofile"]},"application/vnd.irepository.package+xml":{"source":"iana","compressible":true,"extensions":["irp"]},"application/vnd.is-xpr":{"source":"iana","extensions":["xpr"]},"application/vnd.isac.fcs":{"source":"iana","extensions":["fcs"]},"application/vnd.iso11783-10+zip":{"source":"iana","compressible":false},"application/vnd.jam":{"source":"iana","extensions":["jam"]},"application/vnd.japannet-directory-service":{"source":"iana"},"application/vnd.japannet-jpnstore-wakeup":{"source":"iana"},"application/vnd.japannet-payment-wakeup":{"source":"iana"},"application/vnd.japannet-registration":{"source":"iana"},"application/vnd.japannet-registration-wakeup":{"source":"iana"},"application/vnd.japannet-setstore-wakeup":{"source":"iana"},"application/vnd.japannet-verification":{"source":"iana"},"application/vnd.japannet-verification-wakeup":{"source":"iana"},"application/vnd.jcp.javame.midlet-rms":{"source":"iana","extensions":["rms"]},"application/vnd.jisp":{"source":"iana","extensions":["jisp"]},"application/vnd.joost.joda-archive":{"source":"iana","extensions":["joda"]},"application/vnd.jsk.isdn-ngn":{"source":"iana"},"application/vnd.kahootz":{"source":"iana","extensions":["ktz","ktr"]},"application/vnd.kde.karbon":{"source":"iana","extensions":["karbon"]},"application/vnd.kde.kchart":{"source":"iana","extensions":["chrt"]},"application/vnd.kde.kformula":{"source":"iana","extensions":["kfo"]},"application/vnd.kde.kivio":{"source":"iana","extensions":["flw"]},"application/vnd.kde.kontour":{"source":"iana","extensions":["kon"]},"application/vnd.kde.kpresenter":{"source":"iana","extensions":["kpr","kpt"]},"application/vnd.kde.kspread":{"source":"iana","extensions":["ksp"]},"application/vnd.kde.kword":{"source":"iana","extensions":["kwd","kwt"]},"application/vnd.kenameaapp":{"source":"iana","extensions":["htke"]},"application/vnd.kidspiration":{"source":"iana","extensions":["kia"]},"application/vnd.kinar":{"source":"iana","extensions":["kne","knp"]},"application/vnd.koan":{"source":"iana","extensions":["skp","skd","skt","skm"]},"application/vnd.kodak-descriptor":{"source":"iana","extensions":["sse"]},"application/vnd.las":{"source":"iana"},"application/vnd.las.las+json":{"source":"iana","compressible":true},"application/vnd.las.las+xml":{"source":"iana","compressible":true,"extensions":["lasxml"]},"application/vnd.laszip":{"source":"iana"},"application/vnd.leap+json":{"source":"iana","compressible":true},"application/vnd.liberty-request+xml":{"source":"iana","compressible":true},"application/vnd.llamagraphics.life-balance.desktop":{"source":"iana","extensions":["lbd"]},"application/vnd.llamagraphics.life-balance.exchange+xml":{"source":"iana","compressible":true,"extensions":["lbe"]},"application/vnd.logipipe.circuit+zip":{"source":"iana","compressible":false},"application/vnd.loom":{"source":"iana"},"application/vnd.lotus-1-2-3":{"source":"iana","extensions":["123"]},"application/vnd.lotus-approach":{"source":"iana","extensions":["apr"]},"application/vnd.lotus-freelance":{"source":"iana","extensions":["pre"]},"application/vnd.lotus-notes":{"source":"iana","extensions":["nsf"]},"application/vnd.lotus-organizer":{"source":"iana","extensions":["org"]},"application/vnd.lotus-screencam":{"source":"iana","extensions":["scm"]},"application/vnd.lotus-wordpro":{"source":"iana","extensions":["lwp"]},"application/vnd.macports.portpkg":{"source":"iana","extensions":["portpkg"]},"application/vnd.mapbox-vector-tile":{"source":"iana"},"application/vnd.marlin.drm.actiontoken+xml":{"source":"iana","compressible":true},"application/vnd.marlin.drm.conftoken+xml":{"source":"iana","compressible":true},"application/vnd.marlin.drm.license+xml":{"source":"iana","compressible":true},"application/vnd.marlin.drm.mdcf":{"source":"iana"},"application/vnd.mason+json":{"source":"iana","compressible":true},"application/vnd.maxmind.maxmind-db":{"source":"iana"},"application/vnd.mcd":{"source":"iana","extensions":["mcd"]},"application/vnd.medcalcdata":{"source":"iana","extensions":["mc1"]},"application/vnd.mediastation.cdkey":{"source":"iana","extensions":["cdkey"]},"application/vnd.meridian-slingshot":{"source":"iana"},"application/vnd.mfer":{"source":"iana","extensions":["mwf"]},"application/vnd.mfmp":{"source":"iana","extensions":["mfm"]},"application/vnd.micro+json":{"source":"iana","compressible":true},"application/vnd.micrografx.flo":{"source":"iana","extensions":["flo"]},"application/vnd.micrografx.igx":{"source":"iana","extensions":["igx"]},"application/vnd.microsoft.portable-executable":{"source":"iana"},"application/vnd.microsoft.windows.thumbnail-cache":{"source":"iana"},"application/vnd.miele+json":{"source":"iana","compressible":true},"application/vnd.mif":{"source":"iana","extensions":["mif"]},"application/vnd.minisoft-hp3000-save":{"source":"iana"},"application/vnd.mitsubishi.misty-guard.trustweb":{"source":"iana"},"application/vnd.mobius.daf":{"source":"iana","extensions":["daf"]},"application/vnd.mobius.dis":{"source":"iana","extensions":["dis"]},"application/vnd.mobius.mbk":{"source":"iana","extensions":["mbk"]},"application/vnd.mobius.mqy":{"source":"iana","extensions":["mqy"]},"application/vnd.mobius.msl":{"source":"iana","extensions":["msl"]},"application/vnd.mobius.plc":{"source":"iana","extensions":["plc"]},"application/vnd.mobius.txf":{"source":"iana","extensions":["txf"]},"application/vnd.mophun.application":{"source":"iana","extensions":["mpn"]},"application/vnd.mophun.certificate":{"source":"iana","extensions":["mpc"]},"application/vnd.motorola.flexsuite":{"source":"iana"},"application/vnd.motorola.flexsuite.adsi":{"source":"iana"},"application/vnd.motorola.flexsuite.fis":{"source":"iana"},"application/vnd.motorola.flexsuite.gotap":{"source":"iana"},"application/vnd.motorola.flexsuite.kmr":{"source":"iana"},"application/vnd.motorola.flexsuite.ttc":{"source":"iana"},"application/vnd.motorola.flexsuite.wem":{"source":"iana"},"application/vnd.motorola.iprm":{"source":"iana"},"application/vnd.mozilla.xul+xml":{"source":"iana","compressible":true,"extensions":["xul"]},"application/vnd.ms-3mfdocument":{"source":"iana"},"application/vnd.ms-artgalry":{"source":"iana","extensions":["cil"]},"application/vnd.ms-asf":{"source":"iana"},"application/vnd.ms-cab-compressed":{"source":"iana","extensions":["cab"]},"application/vnd.ms-color.iccprofile":{"source":"apache"},"application/vnd.ms-excel":{"source":"iana","compressible":false,"extensions":["xls","xlm","xla","xlc","xlt","xlw"]},"application/vnd.ms-excel.addin.macroenabled.12":{"source":"iana","extensions":["xlam"]},"application/vnd.ms-excel.sheet.binary.macroenabled.12":{"source":"iana","extensions":["xlsb"]},"application/vnd.ms-excel.sheet.macroenabled.12":{"source":"iana","extensions":["xlsm"]},"application/vnd.ms-excel.template.macroenabled.12":{"source":"iana","extensions":["xltm"]},"application/vnd.ms-fontobject":{"source":"iana","compressible":true,"extensions":["eot"]},"application/vnd.ms-htmlhelp":{"source":"iana","extensions":["chm"]},"application/vnd.ms-ims":{"source":"iana","extensions":["ims"]},"application/vnd.ms-lrm":{"source":"iana","extensions":["lrm"]},"application/vnd.ms-office.activex+xml":{"source":"iana","compressible":true},"application/vnd.ms-officetheme":{"source":"iana","extensions":["thmx"]},"application/vnd.ms-opentype":{"source":"apache","compressible":true},"application/vnd.ms-outlook":{"compressible":false,"extensions":["msg"]},"application/vnd.ms-package.obfuscated-opentype":{"source":"apache"},"application/vnd.ms-pki.seccat":{"source":"apache","extensions":["cat"]},"application/vnd.ms-pki.stl":{"source":"apache","extensions":["stl"]},"application/vnd.ms-playready.initiator+xml":{"source":"iana","compressible":true},"application/vnd.ms-powerpoint":{"source":"iana","compressible":false,"extensions":["ppt","pps","pot"]},"application/vnd.ms-powerpoint.addin.macroenabled.12":{"source":"iana","extensions":["ppam"]},"application/vnd.ms-powerpoint.presentation.macroenabled.12":{"source":"iana","extensions":["pptm"]},"application/vnd.ms-powerpoint.slide.macroenabled.12":{"source":"iana","extensions":["sldm"]},"application/vnd.ms-powerpoint.slideshow.macroenabled.12":{"source":"iana","extensions":["ppsm"]},"application/vnd.ms-powerpoint.template.macroenabled.12":{"source":"iana","extensions":["potm"]},"application/vnd.ms-printdevicecapabilities+xml":{"source":"iana","compressible":true},"application/vnd.ms-printing.printticket+xml":{"source":"apache","compressible":true},"application/vnd.ms-printschematicket+xml":{"source":"iana","compressible":true},"application/vnd.ms-project":{"source":"iana","extensions":["mpp","mpt"]},"application/vnd.ms-tnef":{"source":"iana"},"application/vnd.ms-windows.devicepairing":{"source":"iana"},"application/vnd.ms-windows.nwprinting.oob":{"source":"iana"},"application/vnd.ms-windows.printerpairing":{"source":"iana"},"application/vnd.ms-windows.wsd.oob":{"source":"iana"},"application/vnd.ms-wmdrm.lic-chlg-req":{"source":"iana"},"application/vnd.ms-wmdrm.lic-resp":{"source":"iana"},"application/vnd.ms-wmdrm.meter-chlg-req":{"source":"iana"},"application/vnd.ms-wmdrm.meter-resp":{"source":"iana"},"application/vnd.ms-word.document.macroenabled.12":{"source":"iana","extensions":["docm"]},"application/vnd.ms-word.template.macroenabled.12":{"source":"iana","extensions":["dotm"]},"application/vnd.ms-works":{"source":"iana","extensions":["wps","wks","wcm","wdb"]},"application/vnd.ms-wpl":{"source":"iana","extensions":["wpl"]},"application/vnd.ms-xpsdocument":{"source":"iana","compressible":false,"extensions":["xps"]},"application/vnd.msa-disk-image":{"source":"iana"},"application/vnd.mseq":{"source":"iana","extensions":["mseq"]},"application/vnd.msign":{"source":"iana"},"application/vnd.multiad.creator":{"source":"iana"},"application/vnd.multiad.creator.cif":{"source":"iana"},"application/vnd.music-niff":{"source":"iana"},"application/vnd.musician":{"source":"iana","extensions":["mus"]},"application/vnd.muvee.style":{"source":"iana","extensions":["msty"]},"application/vnd.mynfc":{"source":"iana","extensions":["taglet"]},"application/vnd.ncd.control":{"source":"iana"},"application/vnd.ncd.reference":{"source":"iana"},"application/vnd.nearst.inv+json":{"source":"iana","compressible":true},"application/vnd.nervana":{"source":"iana"},"application/vnd.netfpx":{"source":"iana"},"application/vnd.neurolanguage.nlu":{"source":"iana","extensions":["nlu"]},"application/vnd.nimn":{"source":"iana"},"application/vnd.nintendo.nitro.rom":{"source":"iana"},"application/vnd.nintendo.snes.rom":{"source":"iana"},"application/vnd.nitf":{"source":"iana","extensions":["ntf","nitf"]},"application/vnd.noblenet-directory":{"source":"iana","extensions":["nnd"]},"application/vnd.noblenet-sealer":{"source":"iana","extensions":["nns"]},"application/vnd.noblenet-web":{"source":"iana","extensions":["nnw"]},"application/vnd.nokia.catalogs":{"source":"iana"},"application/vnd.nokia.conml+wbxml":{"source":"iana"},"application/vnd.nokia.conml+xml":{"source":"iana","compressible":true},"application/vnd.nokia.iptv.config+xml":{"source":"iana","compressible":true},"application/vnd.nokia.isds-radio-presets":{"source":"iana"},"application/vnd.nokia.landmark+wbxml":{"source":"iana"},"application/vnd.nokia.landmark+xml":{"source":"iana","compressible":true},"application/vnd.nokia.landmarkcollection+xml":{"source":"iana","compressible":true},"application/vnd.nokia.n-gage.ac+xml":{"source":"iana","compressible":true,"extensions":["ac"]},"application/vnd.nokia.n-gage.data":{"source":"iana","extensions":["ngdat"]},"application/vnd.nokia.n-gage.symbian.install":{"source":"iana","extensions":["n-gage"]},"application/vnd.nokia.ncd":{"source":"iana"},"application/vnd.nokia.pcd+wbxml":{"source":"iana"},"application/vnd.nokia.pcd+xml":{"source":"iana","compressible":true},"application/vnd.nokia.radio-preset":{"source":"iana","extensions":["rpst"]},"application/vnd.nokia.radio-presets":{"source":"iana","extensions":["rpss"]},"application/vnd.novadigm.edm":{"source":"iana","extensions":["edm"]},"application/vnd.novadigm.edx":{"source":"iana","extensions":["edx"]},"application/vnd.novadigm.ext":{"source":"iana","extensions":["ext"]},"application/vnd.ntt-local.content-share":{"source":"iana"},"application/vnd.ntt-local.file-transfer":{"source":"iana"},"application/vnd.ntt-local.ogw_remote-access":{"source":"iana"},"application/vnd.ntt-local.sip-ta_remote":{"source":"iana"},"application/vnd.ntt-local.sip-ta_tcp_stream":{"source":"iana"},"application/vnd.oasis.opendocument.chart":{"source":"iana","extensions":["odc"]},"application/vnd.oasis.opendocument.chart-template":{"source":"iana","extensions":["otc"]},"application/vnd.oasis.opendocument.database":{"source":"iana","extensions":["odb"]},"application/vnd.oasis.opendocument.formula":{"source":"iana","extensions":["odf"]},"application/vnd.oasis.opendocument.formula-template":{"source":"iana","extensions":["odft"]},"application/vnd.oasis.opendocument.graphics":{"source":"iana","compressible":false,"extensions":["odg"]},"application/vnd.oasis.opendocument.graphics-template":{"source":"iana","extensions":["otg"]},"application/vnd.oasis.opendocument.image":{"source":"iana","extensions":["odi"]},"application/vnd.oasis.opendocument.image-template":{"source":"iana","extensions":["oti"]},"application/vnd.oasis.opendocument.presentation":{"source":"iana","compressible":false,"extensions":["odp"]},"application/vnd.oasis.opendocument.presentation-template":{"source":"iana","extensions":["otp"]},"application/vnd.oasis.opendocument.spreadsheet":{"source":"iana","compressible":false,"extensions":["ods"]},"application/vnd.oasis.opendocument.spreadsheet-template":{"source":"iana","extensions":["ots"]},"application/vnd.oasis.opendocument.text":{"source":"iana","compressible":false,"extensions":["odt"]},"application/vnd.oasis.opendocument.text-master":{"source":"iana","extensions":["odm"]},"application/vnd.oasis.opendocument.text-template":{"source":"iana","extensions":["ott"]},"application/vnd.oasis.opendocument.text-web":{"source":"iana","extensions":["oth"]},"application/vnd.obn":{"source":"iana"},"application/vnd.ocf+cbor":{"source":"iana"},"application/vnd.oftn.l10n+json":{"source":"iana","compressible":true},"application/vnd.oipf.contentaccessdownload+xml":{"source":"iana","compressible":true},"application/vnd.oipf.contentaccessstreaming+xml":{"source":"iana","compressible":true},"application/vnd.oipf.cspg-hexbinary":{"source":"iana"},"application/vnd.oipf.dae.svg+xml":{"source":"iana","compressible":true},"application/vnd.oipf.dae.xhtml+xml":{"source":"iana","compressible":true},"application/vnd.oipf.mippvcontrolmessage+xml":{"source":"iana","compressible":true},"application/vnd.oipf.pae.gem":{"source":"iana"},"application/vnd.oipf.spdiscovery+xml":{"source":"iana","compressible":true},"application/vnd.oipf.spdlist+xml":{"source":"iana","compressible":true},"application/vnd.oipf.ueprofile+xml":{"source":"iana","compressible":true},"application/vnd.oipf.userprofile+xml":{"source":"iana","compressible":true},"application/vnd.olpc-sugar":{"source":"iana","extensions":["xo"]},"application/vnd.oma-scws-config":{"source":"iana"},"application/vnd.oma-scws-http-request":{"source":"iana"},"application/vnd.oma-scws-http-response":{"source":"iana"},"application/vnd.oma.bcast.associated-procedure-parameter+xml":{"source":"iana","compressible":true},"application/vnd.oma.bcast.drm-trigger+xml":{"source":"iana","compressible":true},"application/vnd.oma.bcast.imd+xml":{"source":"iana","compressible":true},"application/vnd.oma.bcast.ltkm":{"source":"iana"},"application/vnd.oma.bcast.notification+xml":{"source":"iana","compressible":true},"application/vnd.oma.bcast.provisioningtrigger":{"source":"iana"},"application/vnd.oma.bcast.sgboot":{"source":"iana"},"application/vnd.oma.bcast.sgdd+xml":{"source":"iana","compressible":true},"application/vnd.oma.bcast.sgdu":{"source":"iana"},"application/vnd.oma.bcast.simple-symbol-container":{"source":"iana"},"application/vnd.oma.bcast.smartcard-trigger+xml":{"source":"iana","compressible":true},"application/vnd.oma.bcast.sprov+xml":{"source":"iana","compressible":true},"application/vnd.oma.bcast.stkm":{"source":"iana"},"application/vnd.oma.cab-address-book+xml":{"source":"iana","compressible":true},"application/vnd.oma.cab-feature-handler+xml":{"source":"iana","compressible":true},"application/vnd.oma.cab-pcc+xml":{"source":"iana","compressible":true},"application/vnd.oma.cab-subs-invite+xml":{"source":"iana","compressible":true},"application/vnd.oma.cab-user-prefs+xml":{"source":"iana","compressible":true},"application/vnd.oma.dcd":{"source":"iana"},"application/vnd.oma.dcdc":{"source":"iana"},"application/vnd.oma.dd2+xml":{"source":"iana","compressible":true,"extensions":["dd2"]},"application/vnd.oma.drm.risd+xml":{"source":"iana","compressible":true},"application/vnd.oma.group-usage-list+xml":{"source":"iana","compressible":true},"application/vnd.oma.lwm2m+json":{"source":"iana","compressible":true},"application/vnd.oma.lwm2m+tlv":{"source":"iana"},"application/vnd.oma.pal+xml":{"source":"iana","compressible":true},"application/vnd.oma.poc.detailed-progress-report+xml":{"source":"iana","compressible":true},"application/vnd.oma.poc.final-report+xml":{"source":"iana","compressible":true},"application/vnd.oma.poc.groups+xml":{"source":"iana","compressible":true},"application/vnd.oma.poc.invocation-descriptor+xml":{"source":"iana","compressible":true},"application/vnd.oma.poc.optimized-progress-report+xml":{"source":"iana","compressible":true},"application/vnd.oma.push":{"source":"iana"},"application/vnd.oma.scidm.messages+xml":{"source":"iana","compressible":true},"application/vnd.oma.xcap-directory+xml":{"source":"iana","compressible":true},"application/vnd.omads-email+xml":{"source":"iana","compressible":true},"application/vnd.omads-file+xml":{"source":"iana","compressible":true},"application/vnd.omads-folder+xml":{"source":"iana","compressible":true},"application/vnd.omaloc-supl-init":{"source":"iana"},"application/vnd.onepager":{"source":"iana"},"application/vnd.onepagertamp":{"source":"iana"},"application/vnd.onepagertamx":{"source":"iana"},"application/vnd.onepagertat":{"source":"iana"},"application/vnd.onepagertatp":{"source":"iana"},"application/vnd.onepagertatx":{"source":"iana"},"application/vnd.openblox.game+xml":{"source":"iana","compressible":true,"extensions":["obgx"]},"application/vnd.openblox.game-binary":{"source":"iana"},"application/vnd.openeye.oeb":{"source":"iana"},"application/vnd.openofficeorg.extension":{"source":"apache","extensions":["oxt"]},"application/vnd.openstreetmap.data+xml":{"source":"iana","compressible":true,"extensions":["osm"]},"application/vnd.openxmlformats-officedocument.custom-properties+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.customxmlproperties+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.drawing+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.drawingml.chart+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.drawingml.chartshapes+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.drawingml.diagramcolors+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.drawingml.diagramdata+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.drawingml.diagramlayout+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.drawingml.diagramstyle+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.extended-properties+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.commentauthors+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.comments+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.handoutmaster+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.notesmaster+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.notesslide+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.presentation":{"source":"iana","compressible":false,"extensions":["pptx"]},"application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.presprops+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.slide":{"source":"iana","extensions":["sldx"]},"application/vnd.openxmlformats-officedocument.presentationml.slide+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.slidelayout+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.slidemaster+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.slideshow":{"source":"iana","extensions":["ppsx"]},"application/vnd.openxmlformats-officedocument.presentationml.slideshow.main+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.slideupdateinfo+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.tablestyles+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.tags+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.template":{"source":"iana","extensions":["potx"]},"application/vnd.openxmlformats-officedocument.presentationml.template.main+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.presentationml.viewprops+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.calcchain+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.chartsheet+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.connections+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.dialogsheet+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.externallink+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.pivotcachedefinition+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.pivotcacherecords+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.pivottable+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.querytable+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.revisionheaders+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.revisionlog+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedstrings+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":{"source":"iana","compressible":false,"extensions":["xlsx"]},"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.sheetmetadata+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.tablesinglecells+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.template":{"source":"iana","extensions":["xltx"]},"application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.usernames+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.volatiledependencies+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.theme+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.themeoverride+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.vmldrawing":{"source":"iana"},"application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.document":{"source":"iana","compressible":false,"extensions":["docx"]},"application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.fonttable+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.template":{"source":"iana","extensions":["dotx"]},"application/vnd.openxmlformats-officedocument.wordprocessingml.template.main+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-officedocument.wordprocessingml.websettings+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-package.core-properties+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-package.digital-signature-xmlsignature+xml":{"source":"iana","compressible":true},"application/vnd.openxmlformats-package.relationships+xml":{"source":"iana","compressible":true},"application/vnd.oracle.resource+json":{"source":"iana","compressible":true},"application/vnd.orange.indata":{"source":"iana"},"application/vnd.osa.netdeploy":{"source":"iana"},"application/vnd.osgeo.mapguide.package":{"source":"iana","extensions":["mgp"]},"application/vnd.osgi.bundle":{"source":"iana"},"application/vnd.osgi.dp":{"source":"iana","extensions":["dp"]},"application/vnd.osgi.subsystem":{"source":"iana","extensions":["esa"]},"application/vnd.otps.ct-kip+xml":{"source":"iana","compressible":true},"application/vnd.oxli.countgraph":{"source":"iana"},"application/vnd.pagerduty+json":{"source":"iana","compressible":true},"application/vnd.palm":{"source":"iana","extensions":["pdb","pqa","oprc"]},"application/vnd.panoply":{"source":"iana"},"application/vnd.paos.xml":{"source":"iana"},"application/vnd.patentdive":{"source":"iana"},"application/vnd.patientecommsdoc":{"source":"iana"},"application/vnd.pawaafile":{"source":"iana","extensions":["paw"]},"application/vnd.pcos":{"source":"iana"},"application/vnd.pg.format":{"source":"iana","extensions":["str"]},"application/vnd.pg.osasli":{"source":"iana","extensions":["ei6"]},"application/vnd.piaccess.application-licence":{"source":"iana"},"application/vnd.picsel":{"source":"iana","extensions":["efif"]},"application/vnd.pmi.widget":{"source":"iana","extensions":["wg"]},"application/vnd.poc.group-advertisement+xml":{"source":"iana","compressible":true},"application/vnd.pocketlearn":{"source":"iana","extensions":["plf"]},"application/vnd.powerbuilder6":{"source":"iana","extensions":["pbd"]},"application/vnd.powerbuilder6-s":{"source":"iana"},"application/vnd.powerbuilder7":{"source":"iana"},"application/vnd.powerbuilder7-s":{"source":"iana"},"application/vnd.powerbuilder75":{"source":"iana"},"application/vnd.powerbuilder75-s":{"source":"iana"},"application/vnd.preminet":{"source":"iana"},"application/vnd.previewsystems.box":{"source":"iana","extensions":["box"]},"application/vnd.proteus.magazine":{"source":"iana","extensions":["mgz"]},"application/vnd.psfs":{"source":"iana"},"application/vnd.publishare-delta-tree":{"source":"iana","extensions":["qps"]},"application/vnd.pvi.ptid1":{"source":"iana","extensions":["ptid"]},"application/vnd.pwg-multiplexed":{"source":"iana"},"application/vnd.pwg-xhtml-print+xml":{"source":"iana","compressible":true},"application/vnd.qualcomm.brew-app-res":{"source":"iana"},"application/vnd.quarantainenet":{"source":"iana"},"application/vnd.quark.quarkxpress":{"source":"iana","extensions":["qxd","qxt","qwd","qwt","qxl","qxb"]},"application/vnd.quobject-quoxdocument":{"source":"iana"},"application/vnd.radisys.moml+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-audit+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-audit-conf+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-audit-conn+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-audit-dialog+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-audit-stream+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-conf+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-dialog+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-dialog-base+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-dialog-fax-detect+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-dialog-fax-sendrecv+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-dialog-group+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-dialog-speech+xml":{"source":"iana","compressible":true},"application/vnd.radisys.msml-dialog-transform+xml":{"source":"iana","compressible":true},"application/vnd.rainstor.data":{"source":"iana"},"application/vnd.rapid":{"source":"iana"},"application/vnd.rar":{"source":"iana"},"application/vnd.realvnc.bed":{"source":"iana","extensions":["bed"]},"application/vnd.recordare.musicxml":{"source":"iana","extensions":["mxl"]},"application/vnd.recordare.musicxml+xml":{"source":"iana","compressible":true,"extensions":["musicxml"]},"application/vnd.renlearn.rlprint":{"source":"iana"},"application/vnd.restful+json":{"source":"iana","compressible":true},"application/vnd.rig.cryptonote":{"source":"iana","extensions":["cryptonote"]},"application/vnd.rim.cod":{"source":"apache","extensions":["cod"]},"application/vnd.rn-realmedia":{"source":"apache","extensions":["rm"]},"application/vnd.rn-realmedia-vbr":{"source":"apache","extensions":["rmvb"]},"application/vnd.route66.link66+xml":{"source":"iana","compressible":true,"extensions":["link66"]},"application/vnd.rs-274x":{"source":"iana"},"application/vnd.ruckus.download":{"source":"iana"},"application/vnd.s3sms":{"source":"iana"},"application/vnd.sailingtracker.track":{"source":"iana","extensions":["st"]},"application/vnd.sbm.cid":{"source":"iana"},"application/vnd.sbm.mid2":{"source":"iana"},"application/vnd.scribus":{"source":"iana"},"application/vnd.sealed.3df":{"source":"iana"},"application/vnd.sealed.csf":{"source":"iana"},"application/vnd.sealed.doc":{"source":"iana"},"application/vnd.sealed.eml":{"source":"iana"},"application/vnd.sealed.mht":{"source":"iana"},"application/vnd.sealed.net":{"source":"iana"},"application/vnd.sealed.ppt":{"source":"iana"},"application/vnd.sealed.tiff":{"source":"iana"},"application/vnd.sealed.xls":{"source":"iana"},"application/vnd.sealedmedia.softseal.html":{"source":"iana"},"application/vnd.sealedmedia.softseal.pdf":{"source":"iana"},"application/vnd.seemail":{"source":"iana","extensions":["see"]},"application/vnd.sema":{"source":"iana","extensions":["sema"]},"application/vnd.semd":{"source":"iana","extensions":["semd"]},"application/vnd.semf":{"source":"iana","extensions":["semf"]},"application/vnd.shade-save-file":{"source":"iana"},"application/vnd.shana.informed.formdata":{"source":"iana","extensions":["ifm"]},"application/vnd.shana.informed.formtemplate":{"source":"iana","extensions":["itp"]},"application/vnd.shana.informed.interchange":{"source":"iana","extensions":["iif"]},"application/vnd.shana.informed.package":{"source":"iana","extensions":["ipk"]},"application/vnd.shootproof+json":{"source":"iana","compressible":true},"application/vnd.shopkick+json":{"source":"iana","compressible":true},"application/vnd.sigrok.session":{"source":"iana"},"application/vnd.simtech-mindmapper":{"source":"iana","extensions":["twd","twds"]},"application/vnd.siren+json":{"source":"iana","compressible":true},"application/vnd.smaf":{"source":"iana","extensions":["mmf"]},"application/vnd.smart.notebook":{"source":"iana"},"application/vnd.smart.teacher":{"source":"iana","extensions":["teacher"]},"application/vnd.software602.filler.form+xml":{"source":"iana","compressible":true,"extensions":["fo"]},"application/vnd.software602.filler.form-xml-zip":{"source":"iana"},"application/vnd.solent.sdkm+xml":{"source":"iana","compressible":true,"extensions":["sdkm","sdkd"]},"application/vnd.spotfire.dxp":{"source":"iana","extensions":["dxp"]},"application/vnd.spotfire.sfs":{"source":"iana","extensions":["sfs"]},"application/vnd.sqlite3":{"source":"iana"},"application/vnd.sss-cod":{"source":"iana"},"application/vnd.sss-dtf":{"source":"iana"},"application/vnd.sss-ntf":{"source":"iana"},"application/vnd.stardivision.calc":{"source":"apache","extensions":["sdc"]},"application/vnd.stardivision.draw":{"source":"apache","extensions":["sda"]},"application/vnd.stardivision.impress":{"source":"apache","extensions":["sdd"]},"application/vnd.stardivision.math":{"source":"apache","extensions":["smf"]},"application/vnd.stardivision.writer":{"source":"apache","extensions":["sdw","vor"]},"application/vnd.stardivision.writer-global":{"source":"apache","extensions":["sgl"]},"application/vnd.stepmania.package":{"source":"iana","extensions":["smzip"]},"application/vnd.stepmania.stepchart":{"source":"iana","extensions":["sm"]},"application/vnd.street-stream":{"source":"iana"},"application/vnd.sun.wadl+xml":{"source":"iana","compressible":true,"extensions":["wadl"]},"application/vnd.sun.xml.calc":{"source":"apache","extensions":["sxc"]},"application/vnd.sun.xml.calc.template":{"source":"apache","extensions":["stc"]},"application/vnd.sun.xml.draw":{"source":"apache","extensions":["sxd"]},"application/vnd.sun.xml.draw.template":{"source":"apache","extensions":["std"]},"application/vnd.sun.xml.impress":{"source":"apache","extensions":["sxi"]},"application/vnd.sun.xml.impress.template":{"source":"apache","extensions":["sti"]},"application/vnd.sun.xml.math":{"source":"apache","extensions":["sxm"]},"application/vnd.sun.xml.writer":{"source":"apache","extensions":["sxw"]},"application/vnd.sun.xml.writer.global":{"source":"apache","extensions":["sxg"]},"application/vnd.sun.xml.writer.template":{"source":"apache","extensions":["stw"]},"application/vnd.sus-calendar":{"source":"iana","extensions":["sus","susp"]},"application/vnd.svd":{"source":"iana","extensions":["svd"]},"application/vnd.swiftview-ics":{"source":"iana"},"application/vnd.symbian.install":{"source":"apache","extensions":["sis","sisx"]},"application/vnd.syncml+xml":{"source":"iana","compressible":true,"extensions":["xsm"]},"application/vnd.syncml.dm+wbxml":{"source":"iana","extensions":["bdm"]},"application/vnd.syncml.dm+xml":{"source":"iana","compressible":true,"extensions":["xdm"]},"application/vnd.syncml.dm.notification":{"source":"iana"},"application/vnd.syncml.dmddf+wbxml":{"source":"iana"},"application/vnd.syncml.dmddf+xml":{"source":"iana","compressible":true,"extensions":["ddf"]},"application/vnd.syncml.dmtnds+wbxml":{"source":"iana"},"application/vnd.syncml.dmtnds+xml":{"source":"iana","compressible":true},"application/vnd.syncml.ds.notification":{"source":"iana"},"application/vnd.tableschema+json":{"source":"iana","compressible":true},"application/vnd.tao.intent-module-archive":{"source":"iana","extensions":["tao"]},"application/vnd.tcpdump.pcap":{"source":"iana","extensions":["pcap","cap","dmp"]},"application/vnd.think-cell.ppttc+json":{"source":"iana","compressible":true},"application/vnd.tmd.mediaflex.api+xml":{"source":"iana","compressible":true},"application/vnd.tml":{"source":"iana"},"application/vnd.tmobile-livetv":{"source":"iana","extensions":["tmo"]},"application/vnd.tri.onesource":{"source":"iana"},"application/vnd.trid.tpt":{"source":"iana","extensions":["tpt"]},"application/vnd.triscape.mxs":{"source":"iana","extensions":["mxs"]},"application/vnd.trueapp":{"source":"iana","extensions":["tra"]},"application/vnd.truedoc":{"source":"iana"},"application/vnd.ubisoft.webplayer":{"source":"iana"},"application/vnd.ufdl":{"source":"iana","extensions":["ufd","ufdl"]},"application/vnd.uiq.theme":{"source":"iana","extensions":["utz"]},"application/vnd.umajin":{"source":"iana","extensions":["umj"]},"application/vnd.unity":{"source":"iana","extensions":["unityweb"]},"application/vnd.uoml+xml":{"source":"iana","compressible":true,"extensions":["uoml"]},"application/vnd.uplanet.alert":{"source":"iana"},"application/vnd.uplanet.alert-wbxml":{"source":"iana"},"application/vnd.uplanet.bearer-choice":{"source":"iana"},"application/vnd.uplanet.bearer-choice-wbxml":{"source":"iana"},"application/vnd.uplanet.cacheop":{"source":"iana"},"application/vnd.uplanet.cacheop-wbxml":{"source":"iana"},"application/vnd.uplanet.channel":{"source":"iana"},"application/vnd.uplanet.channel-wbxml":{"source":"iana"},"application/vnd.uplanet.list":{"source":"iana"},"application/vnd.uplanet.list-wbxml":{"source":"iana"},"application/vnd.uplanet.listcmd":{"source":"iana"},"application/vnd.uplanet.listcmd-wbxml":{"source":"iana"},"application/vnd.uplanet.signal":{"source":"iana"},"application/vnd.uri-map":{"source":"iana"},"application/vnd.valve.source.material":{"source":"iana"},"application/vnd.vcx":{"source":"iana","extensions":["vcx"]},"application/vnd.vd-study":{"source":"iana"},"application/vnd.vectorworks":{"source":"iana"},"application/vnd.vel+json":{"source":"iana","compressible":true},"application/vnd.verimatrix.vcas":{"source":"iana"},"application/vnd.veryant.thin":{"source":"iana"},"application/vnd.ves.encrypted":{"source":"iana"},"application/vnd.vidsoft.vidconference":{"source":"iana"},"application/vnd.visio":{"source":"iana","extensions":["vsd","vst","vss","vsw"]},"application/vnd.visionary":{"source":"iana","extensions":["vis"]},"application/vnd.vividence.scriptfile":{"source":"iana"},"application/vnd.vsf":{"source":"iana","extensions":["vsf"]},"application/vnd.wap.sic":{"source":"iana"},"application/vnd.wap.slc":{"source":"iana"},"application/vnd.wap.wbxml":{"source":"iana","extensions":["wbxml"]},"application/vnd.wap.wmlc":{"source":"iana","extensions":["wmlc"]},"application/vnd.wap.wmlscriptc":{"source":"iana","extensions":["wmlsc"]},"application/vnd.webturbo":{"source":"iana","extensions":["wtb"]},"application/vnd.wfa.p2p":{"source":"iana"},"application/vnd.wfa.wsc":{"source":"iana"},"application/vnd.windows.devicepairing":{"source":"iana"},"application/vnd.wmc":{"source":"iana"},"application/vnd.wmf.bootstrap":{"source":"iana"},"application/vnd.wolfram.mathematica":{"source":"iana"},"application/vnd.wolfram.mathematica.package":{"source":"iana"},"application/vnd.wolfram.player":{"source":"iana","extensions":["nbp"]},"application/vnd.wordperfect":{"source":"iana","extensions":["wpd"]},"application/vnd.wqd":{"source":"iana","extensions":["wqd"]},"application/vnd.wrq-hp3000-labelled":{"source":"iana"},"application/vnd.wt.stf":{"source":"iana","extensions":["stf"]},"application/vnd.wv.csp+wbxml":{"source":"iana"},"application/vnd.wv.csp+xml":{"source":"iana","compressible":true},"application/vnd.wv.ssp+xml":{"source":"iana","compressible":true},"application/vnd.xacml+json":{"source":"iana","compressible":true},"application/vnd.xara":{"source":"iana","extensions":["xar"]},"application/vnd.xfdl":{"source":"iana","extensions":["xfdl"]},"application/vnd.xfdl.webform":{"source":"iana"},"application/vnd.xmi+xml":{"source":"iana","compressible":true},"application/vnd.xmpie.cpkg":{"source":"iana"},"application/vnd.xmpie.dpkg":{"source":"iana"},"application/vnd.xmpie.plan":{"source":"iana"},"application/vnd.xmpie.ppkg":{"source":"iana"},"application/vnd.xmpie.xlim":{"source":"iana"},"application/vnd.yamaha.hv-dic":{"source":"iana","extensions":["hvd"]},"application/vnd.yamaha.hv-script":{"source":"iana","extensions":["hvs"]},"application/vnd.yamaha.hv-voice":{"source":"iana","extensions":["hvp"]},"application/vnd.yamaha.openscoreformat":{"source":"iana","extensions":["osf"]},"application/vnd.yamaha.openscoreformat.osfpvg+xml":{"source":"iana","compressible":true,"extensions":["osfpvg"]},"application/vnd.yamaha.remote-setup":{"source":"iana"},"application/vnd.yamaha.smaf-audio":{"source":"iana","extensions":["saf"]},"application/vnd.yamaha.smaf-phrase":{"source":"iana","extensions":["spf"]},"application/vnd.yamaha.through-ngn":{"source":"iana"},"application/vnd.yamaha.tunnel-udpencap":{"source":"iana"},"application/vnd.yaoweme":{"source":"iana"},"application/vnd.yellowriver-custom-menu":{"source":"iana","extensions":["cmp"]},"application/vnd.youtube.yt":{"source":"iana"},"application/vnd.zul":{"source":"iana","extensions":["zir","zirz"]},"application/vnd.zzazz.deck+xml":{"source":"iana","compressible":true,"extensions":["zaz"]},"application/voicexml+xml":{"source":"iana","compressible":true,"extensions":["vxml"]},"application/voucher-cms+json":{"source":"iana","compressible":true},"application/vq-rtcpxr":{"source":"iana"},"application/wasm":{"compressible":true,"extensions":["wasm"]},"application/watcherinfo+xml":{"source":"iana","compressible":true},"application/webpush-options+json":{"source":"iana","compressible":true},"application/whoispp-query":{"source":"iana"},"application/whoispp-response":{"source":"iana"},"application/widget":{"source":"iana","extensions":["wgt"]},"application/winhlp":{"source":"apache","extensions":["hlp"]},"application/wita":{"source":"iana"},"application/wordperfect5.1":{"source":"iana"},"application/wsdl+xml":{"source":"iana","compressible":true,"extensions":["wsdl"]},"application/wspolicy+xml":{"source":"iana","compressible":true,"extensions":["wspolicy"]},"application/x-7z-compressed":{"source":"apache","compressible":false,"extensions":["7z"]},"application/x-abiword":{"source":"apache","extensions":["abw"]},"application/x-ace-compressed":{"source":"apache","extensions":["ace"]},"application/x-amf":{"source":"apache"},"application/x-apple-diskimage":{"source":"apache","extensions":["dmg"]},"application/x-arj":{"compressible":false,"extensions":["arj"]},"application/x-authorware-bin":{"source":"apache","extensions":["aab","x32","u32","vox"]},"application/x-authorware-map":{"source":"apache","extensions":["aam"]},"application/x-authorware-seg":{"source":"apache","extensions":["aas"]},"application/x-bcpio":{"source":"apache","extensions":["bcpio"]},"application/x-bdoc":{"compressible":false,"extensions":["bdoc"]},"application/x-bittorrent":{"source":"apache","extensions":["torrent"]},"application/x-blorb":{"source":"apache","extensions":["blb","blorb"]},"application/x-bzip":{"source":"apache","compressible":false,"extensions":["bz"]},"application/x-bzip2":{"source":"apache","compressible":false,"extensions":["bz2","boz"]},"application/x-cbr":{"source":"apache","extensions":["cbr","cba","cbt","cbz","cb7"]},"application/x-cdlink":{"source":"apache","extensions":["vcd"]},"application/x-cfs-compressed":{"source":"apache","extensions":["cfs"]},"application/x-chat":{"source":"apache","extensions":["chat"]},"application/x-chess-pgn":{"source":"apache","extensions":["pgn"]},"application/x-chrome-extension":{"extensions":["crx"]},"application/x-cocoa":{"source":"nginx","extensions":["cco"]},"application/x-compress":{"source":"apache"},"application/x-conference":{"source":"apache","extensions":["nsc"]},"application/x-cpio":{"source":"apache","extensions":["cpio"]},"application/x-csh":{"source":"apache","extensions":["csh"]},"application/x-deb":{"compressible":false},"application/x-debian-package":{"source":"apache","extensions":["deb","udeb"]},"application/x-dgc-compressed":{"source":"apache","extensions":["dgc"]},"application/x-director":{"source":"apache","extensions":["dir","dcr","dxr","cst","cct","cxt","w3d","fgd","swa"]},"application/x-doom":{"source":"apache","extensions":["wad"]},"application/x-dtbncx+xml":{"source":"apache","compressible":true,"extensions":["ncx"]},"application/x-dtbook+xml":{"source":"apache","compressible":true,"extensions":["dtb"]},"application/x-dtbresource+xml":{"source":"apache","compressible":true,"extensions":["res"]},"application/x-dvi":{"source":"apache","compressible":false,"extensions":["dvi"]},"application/x-envoy":{"source":"apache","extensions":["evy"]},"application/x-eva":{"source":"apache","extensions":["eva"]},"application/x-font-bdf":{"source":"apache","extensions":["bdf"]},"application/x-font-dos":{"source":"apache"},"application/x-font-framemaker":{"source":"apache"},"application/x-font-ghostscript":{"source":"apache","extensions":["gsf"]},"application/x-font-libgrx":{"source":"apache"},"application/x-font-linux-psf":{"source":"apache","extensions":["psf"]},"application/x-font-pcf":{"source":"apache","extensions":["pcf"]},"application/x-font-snf":{"source":"apache","extensions":["snf"]},"application/x-font-speedo":{"source":"apache"},"application/x-font-sunos-news":{"source":"apache"},"application/x-font-type1":{"source":"apache","extensions":["pfa","pfb","pfm","afm"]},"application/x-font-vfont":{"source":"apache"},"application/x-freearc":{"source":"apache","extensions":["arc"]},"application/x-futuresplash":{"source":"apache","extensions":["spl"]},"application/x-gca-compressed":{"source":"apache","extensions":["gca"]},"application/x-glulx":{"source":"apache","extensions":["ulx"]},"application/x-gnumeric":{"source":"apache","extensions":["gnumeric"]},"application/x-gramps-xml":{"source":"apache","extensions":["gramps"]},"application/x-gtar":{"source":"apache","extensions":["gtar"]},"application/x-gzip":{"source":"apache"},"application/x-hdf":{"source":"apache","extensions":["hdf"]},"application/x-httpd-php":{"compressible":true,"extensions":["php"]},"application/x-install-instructions":{"source":"apache","extensions":["install"]},"application/x-iso9660-image":{"source":"apache","extensions":["iso"]},"application/x-java-archive-diff":{"source":"nginx","extensions":["jardiff"]},"application/x-java-jnlp-file":{"source":"apache","compressible":false,"extensions":["jnlp"]},"application/x-javascript":{"compressible":true},"application/x-keepass2":{"extensions":["kdbx"]},"application/x-latex":{"source":"apache","compressible":false,"extensions":["latex"]},"application/x-lua-bytecode":{"extensions":["luac"]},"application/x-lzh-compressed":{"source":"apache","extensions":["lzh","lha"]},"application/x-makeself":{"source":"nginx","extensions":["run"]},"application/x-mie":{"source":"apache","extensions":["mie"]},"application/x-mobipocket-ebook":{"source":"apache","extensions":["prc","mobi"]},"application/x-mpegurl":{"compressible":false},"application/x-ms-application":{"source":"apache","extensions":["application"]},"application/x-ms-shortcut":{"source":"apache","extensions":["lnk"]},"application/x-ms-wmd":{"source":"apache","extensions":["wmd"]},"application/x-ms-wmz":{"source":"apache","extensions":["wmz"]},"application/x-ms-xbap":{"source":"apache","extensions":["xbap"]},"application/x-msaccess":{"source":"apache","extensions":["mdb"]},"application/x-msbinder":{"source":"apache","extensions":["obd"]},"application/x-mscardfile":{"source":"apache","extensions":["crd"]},"application/x-msclip":{"source":"apache","extensions":["clp"]},"application/x-msdos-program":{"extensions":["exe"]},"application/x-msdownload":{"source":"apache","extensions":["exe","dll","com","bat","msi"]},"application/x-msmediaview":{"source":"apache","extensions":["mvb","m13","m14"]},"application/x-msmetafile":{"source":"apache","extensions":["wmf","wmz","emf","emz"]},"application/x-msmoney":{"source":"apache","extensions":["mny"]},"application/x-mspublisher":{"source":"apache","extensions":["pub"]},"application/x-msschedule":{"source":"apache","extensions":["scd"]},"application/x-msterminal":{"source":"apache","extensions":["trm"]},"application/x-mswrite":{"source":"apache","extensions":["wri"]},"application/x-netcdf":{"source":"apache","extensions":["nc","cdf"]},"application/x-ns-proxy-autoconfig":{"compressible":true,"extensions":["pac"]},"application/x-nzb":{"source":"apache","extensions":["nzb"]},"application/x-perl":{"source":"nginx","extensions":["pl","pm"]},"application/x-pilot":{"source":"nginx","extensions":["prc","pdb"]},"application/x-pkcs12":{"source":"apache","compressible":false,"extensions":["p12","pfx"]},"application/x-pkcs7-certificates":{"source":"apache","extensions":["p7b","spc"]},"application/x-pkcs7-certreqresp":{"source":"apache","extensions":["p7r"]},"application/x-rar-compressed":{"source":"apache","compressible":false,"extensions":["rar"]},"application/x-redhat-package-manager":{"source":"nginx","extensions":["rpm"]},"application/x-research-info-systems":{"source":"apache","extensions":["ris"]},"application/x-sea":{"source":"nginx","extensions":["sea"]},"application/x-sh":{"source":"apache","compressible":true,"extensions":["sh"]},"application/x-shar":{"source":"apache","extensions":["shar"]},"application/x-shockwave-flash":{"source":"apache","compressible":false,"extensions":["swf"]},"application/x-silverlight-app":{"source":"apache","extensions":["xap"]},"application/x-sql":{"source":"apache","extensions":["sql"]},"application/x-stuffit":{"source":"apache","compressible":false,"extensions":["sit"]},"application/x-stuffitx":{"source":"apache","extensions":["sitx"]},"application/x-subrip":{"source":"apache","extensions":["srt"]},"application/x-sv4cpio":{"source":"apache","extensions":["sv4cpio"]},"application/x-sv4crc":{"source":"apache","extensions":["sv4crc"]},"application/x-t3vm-image":{"source":"apache","extensions":["t3"]},"application/x-tads":{"source":"apache","extensions":["gam"]},"application/x-tar":{"source":"apache","compressible":true,"extensions":["tar"]},"application/x-tcl":{"source":"apache","extensions":["tcl","tk"]},"application/x-tex":{"source":"apache","extensions":["tex"]},"application/x-tex-tfm":{"source":"apache","extensions":["tfm"]},"application/x-texinfo":{"source":"apache","extensions":["texinfo","texi"]},"application/x-tgif":{"source":"apache","extensions":["obj"]},"application/x-ustar":{"source":"apache","extensions":["ustar"]},"application/x-virtualbox-hdd":{"compressible":true,"extensions":["hdd"]},"application/x-virtualbox-ova":{"compressible":true,"extensions":["ova"]},"application/x-virtualbox-ovf":{"compressible":true,"extensions":["ovf"]},"application/x-virtualbox-vbox":{"compressible":true,"extensions":["vbox"]},"application/x-virtualbox-vbox-extpack":{"compressible":false,"extensions":["vbox-extpack"]},"application/x-virtualbox-vdi":{"compressible":true,"extensions":["vdi"]},"application/x-virtualbox-vhd":{"compressible":true,"extensions":["vhd"]},"application/x-virtualbox-vmdk":{"compressible":true,"extensions":["vmdk"]},"application/x-wais-source":{"source":"apache","extensions":["src"]},"application/x-web-app-manifest+json":{"compressible":true,"extensions":["webapp"]},"application/x-www-form-urlencoded":{"source":"iana","compressible":true},"application/x-x509-ca-cert":{"source":"apache","extensions":["der","crt","pem"]},"application/x-xfig":{"source":"apache","extensions":["fig"]},"application/x-xliff+xml":{"source":"apache","compressible":true,"extensions":["xlf"]},"application/x-xpinstall":{"source":"apache","compressible":false,"extensions":["xpi"]},"application/x-xz":{"source":"apache","extensions":["xz"]},"application/x-zmachine":{"source":"apache","extensions":["z1","z2","z3","z4","z5","z6","z7","z8"]},"application/x400-bp":{"source":"iana"},"application/xacml+xml":{"source":"iana","compressible":true},"application/xaml+xml":{"source":"apache","compressible":true,"extensions":["xaml"]},"application/xcap-att+xml":{"source":"iana","compressible":true,"extensions":["xav"]},"application/xcap-caps+xml":{"source":"iana","compressible":true,"extensions":["xca"]},"application/xcap-diff+xml":{"source":"iana","compressible":true,"extensions":["xdf"]},"application/xcap-el+xml":{"source":"iana","compressible":true,"extensions":["xel"]},"application/xcap-error+xml":{"source":"iana","compressible":true,"extensions":["xer"]},"application/xcap-ns+xml":{"source":"iana","compressible":true,"extensions":["xns"]},"application/xcon-conference-info+xml":{"source":"iana","compressible":true},"application/xcon-conference-info-diff+xml":{"source":"iana","compressible":true},"application/xenc+xml":{"source":"iana","compressible":true,"extensions":["xenc"]},"application/xhtml+xml":{"source":"iana","compressible":true,"extensions":["xhtml","xht"]},"application/xhtml-voice+xml":{"source":"apache","compressible":true},"application/xliff+xml":{"source":"iana","compressible":true,"extensions":["xlf"]},"application/xml":{"source":"iana","compressible":true,"extensions":["xml","xsl","xsd","rng"]},"application/xml-dtd":{"source":"iana","compressible":true,"extensions":["dtd"]},"application/xml-external-parsed-entity":{"source":"iana"},"application/xml-patch+xml":{"source":"iana","compressible":true},"application/xmpp+xml":{"source":"iana","compressible":true},"application/xop+xml":{"source":"iana","compressible":true,"extensions":["xop"]},"application/xproc+xml":{"source":"apache","compressible":true,"extensions":["xpl"]},"application/xslt+xml":{"source":"iana","compressible":true,"extensions":["xslt"]},"application/xspf+xml":{"source":"apache","compressible":true,"extensions":["xspf"]},"application/xv+xml":{"source":"iana","compressible":true,"extensions":["mxml","xhvml","xvml","xvm"]},"application/yang":{"source":"iana","extensions":["yang"]},"application/yang-data+json":{"source":"iana","compressible":true},"application/yang-data+xml":{"source":"iana","compressible":true},"application/yang-patch+json":{"source":"iana","compressible":true},"application/yang-patch+xml":{"source":"iana","compressible":true},"application/yin+xml":{"source":"iana","compressible":true,"extensions":["yin"]},"application/zip":{"source":"iana","compressible":false,"extensions":["zip"]},"application/zlib":{"source":"iana"},"application/zstd":{"source":"iana"},"audio/1d-interleaved-parityfec":{"source":"iana"},"audio/32kadpcm":{"source":"iana"},"audio/3gpp":{"source":"iana","compressible":false,"extensions":["3gpp"]},"audio/3gpp2":{"source":"iana"},"audio/aac":{"source":"iana"},"audio/ac3":{"source":"iana"},"audio/adpcm":{"source":"apache","extensions":["adp"]},"audio/amr":{"source":"iana"},"audio/amr-wb":{"source":"iana"},"audio/amr-wb+":{"source":"iana"},"audio/aptx":{"source":"iana"},"audio/asc":{"source":"iana"},"audio/atrac-advanced-lossless":{"source":"iana"},"audio/atrac-x":{"source":"iana"},"audio/atrac3":{"source":"iana"},"audio/basic":{"source":"iana","compressible":false,"extensions":["au","snd"]},"audio/bv16":{"source":"iana"},"audio/bv32":{"source":"iana"},"audio/clearmode":{"source":"iana"},"audio/cn":{"source":"iana"},"audio/dat12":{"source":"iana"},"audio/dls":{"source":"iana"},"audio/dsr-es201108":{"source":"iana"},"audio/dsr-es202050":{"source":"iana"},"audio/dsr-es202211":{"source":"iana"},"audio/dsr-es202212":{"source":"iana"},"audio/dv":{"source":"iana"},"audio/dvi4":{"source":"iana"},"audio/eac3":{"source":"iana"},"audio/encaprtp":{"source":"iana"},"audio/evrc":{"source":"iana"},"audio/evrc-qcp":{"source":"iana"},"audio/evrc0":{"source":"iana"},"audio/evrc1":{"source":"iana"},"audio/evrcb":{"source":"iana"},"audio/evrcb0":{"source":"iana"},"audio/evrcb1":{"source":"iana"},"audio/evrcnw":{"source":"iana"},"audio/evrcnw0":{"source":"iana"},"audio/evrcnw1":{"source":"iana"},"audio/evrcwb":{"source":"iana"},"audio/evrcwb0":{"source":"iana"},"audio/evrcwb1":{"source":"iana"},"audio/evs":{"source":"iana"},"audio/flexfec":{"source":"iana"},"audio/fwdred":{"source":"iana"},"audio/g711-0":{"source":"iana"},"audio/g719":{"source":"iana"},"audio/g722":{"source":"iana"},"audio/g7221":{"source":"iana"},"audio/g723":{"source":"iana"},"audio/g726-16":{"source":"iana"},"audio/g726-24":{"source":"iana"},"audio/g726-32":{"source":"iana"},"audio/g726-40":{"source":"iana"},"audio/g728":{"source":"iana"},"audio/g729":{"source":"iana"},"audio/g7291":{"source":"iana"},"audio/g729d":{"source":"iana"},"audio/g729e":{"source":"iana"},"audio/gsm":{"source":"iana"},"audio/gsm-efr":{"source":"iana"},"audio/gsm-hr-08":{"source":"iana"},"audio/ilbc":{"source":"iana"},"audio/ip-mr_v2.5":{"source":"iana"},"audio/isac":{"source":"apache"},"audio/l16":{"source":"iana"},"audio/l20":{"source":"iana"},"audio/l24":{"source":"iana","compressible":false},"audio/l8":{"source":"iana"},"audio/lpc":{"source":"iana"},"audio/melp":{"source":"iana"},"audio/melp1200":{"source":"iana"},"audio/melp2400":{"source":"iana"},"audio/melp600":{"source":"iana"},"audio/midi":{"source":"apache","extensions":["mid","midi","kar","rmi"]},"audio/mobile-xmf":{"source":"iana","extensions":["mxmf"]},"audio/mp3":{"compressible":false,"extensions":["mp3"]},"audio/mp4":{"source":"iana","compressible":false,"extensions":["m4a","mp4a"]},"audio/mp4a-latm":{"source":"iana"},"audio/mpa":{"source":"iana"},"audio/mpa-robust":{"source":"iana"},"audio/mpeg":{"source":"iana","compressible":false,"extensions":["mpga","mp2","mp2a","mp3","m2a","m3a"]},"audio/mpeg4-generic":{"source":"iana"},"audio/musepack":{"source":"apache"},"audio/ogg":{"source":"iana","compressible":false,"extensions":["oga","ogg","spx"]},"audio/opus":{"source":"iana"},"audio/parityfec":{"source":"iana"},"audio/pcma":{"source":"iana"},"audio/pcma-wb":{"source":"iana"},"audio/pcmu":{"source":"iana"},"audio/pcmu-wb":{"source":"iana"},"audio/prs.sid":{"source":"iana"},"audio/qcelp":{"source":"iana"},"audio/raptorfec":{"source":"iana"},"audio/red":{"source":"iana"},"audio/rtp-enc-aescm128":{"source":"iana"},"audio/rtp-midi":{"source":"iana"},"audio/rtploopback":{"source":"iana"},"audio/rtx":{"source":"iana"},"audio/s3m":{"source":"apache","extensions":["s3m"]},"audio/silk":{"source":"apache","extensions":["sil"]},"audio/smv":{"source":"iana"},"audio/smv-qcp":{"source":"iana"},"audio/smv0":{"source":"iana"},"audio/sp-midi":{"source":"iana"},"audio/speex":{"source":"iana"},"audio/t140c":{"source":"iana"},"audio/t38":{"source":"iana"},"audio/telephone-event":{"source":"iana"},"audio/tetra_acelp":{"source":"iana"},"audio/tone":{"source":"iana"},"audio/uemclip":{"source":"iana"},"audio/ulpfec":{"source":"iana"},"audio/usac":{"source":"iana"},"audio/vdvi":{"source":"iana"},"audio/vmr-wb":{"source":"iana"},"audio/vnd.3gpp.iufp":{"source":"iana"},"audio/vnd.4sb":{"source":"iana"},"audio/vnd.audiokoz":{"source":"iana"},"audio/vnd.celp":{"source":"iana"},"audio/vnd.cisco.nse":{"source":"iana"},"audio/vnd.cmles.radio-events":{"source":"iana"},"audio/vnd.cns.anp1":{"source":"iana"},"audio/vnd.cns.inf1":{"source":"iana"},"audio/vnd.dece.audio":{"source":"iana","extensions":["uva","uvva"]},"audio/vnd.digital-winds":{"source":"iana","extensions":["eol"]},"audio/vnd.dlna.adts":{"source":"iana"},"audio/vnd.dolby.heaac.1":{"source":"iana"},"audio/vnd.dolby.heaac.2":{"source":"iana"},"audio/vnd.dolby.mlp":{"source":"iana"},"audio/vnd.dolby.mps":{"source":"iana"},"audio/vnd.dolby.pl2":{"source":"iana"},"audio/vnd.dolby.pl2x":{"source":"iana"},"audio/vnd.dolby.pl2z":{"source":"iana"},"audio/vnd.dolby.pulse.1":{"source":"iana"},"audio/vnd.dra":{"source":"iana","extensions":["dra"]},"audio/vnd.dts":{"source":"iana","extensions":["dts"]},"audio/vnd.dts.hd":{"source":"iana","extensions":["dtshd"]},"audio/vnd.dts.uhd":{"source":"iana"},"audio/vnd.dvb.file":{"source":"iana"},"audio/vnd.everad.plj":{"source":"iana"},"audio/vnd.hns.audio":{"source":"iana"},"audio/vnd.lucent.voice":{"source":"iana","extensions":["lvp"]},"audio/vnd.ms-playready.media.pya":{"source":"iana","extensions":["pya"]},"audio/vnd.nokia.mobile-xmf":{"source":"iana"},"audio/vnd.nortel.vbk":{"source":"iana"},"audio/vnd.nuera.ecelp4800":{"source":"iana","extensions":["ecelp4800"]},"audio/vnd.nuera.ecelp7470":{"source":"iana","extensions":["ecelp7470"]},"audio/vnd.nuera.ecelp9600":{"source":"iana","extensions":["ecelp9600"]},"audio/vnd.octel.sbc":{"source":"iana"},"audio/vnd.presonus.multitrack":{"source":"iana"},"audio/vnd.qcelp":{"source":"iana"},"audio/vnd.rhetorex.32kadpcm":{"source":"iana"},"audio/vnd.rip":{"source":"iana","extensions":["rip"]},"audio/vnd.rn-realaudio":{"compressible":false},"audio/vnd.sealedmedia.softseal.mpeg":{"source":"iana"},"audio/vnd.vmx.cvsd":{"source":"iana"},"audio/vnd.wave":{"compressible":false},"audio/vorbis":{"source":"iana","compressible":false},"audio/vorbis-config":{"source":"iana"},"audio/wav":{"compressible":false,"extensions":["wav"]},"audio/wave":{"compressible":false,"extensions":["wav"]},"audio/webm":{"source":"apache","compressible":false,"extensions":["weba"]},"audio/x-aac":{"source":"apache","compressible":false,"extensions":["aac"]},"audio/x-aiff":{"source":"apache","extensions":["aif","aiff","aifc"]},"audio/x-caf":{"source":"apache","compressible":false,"extensions":["caf"]},"audio/x-flac":{"source":"apache","extensions":["flac"]},"audio/x-m4a":{"source":"nginx","extensions":["m4a"]},"audio/x-matroska":{"source":"apache","extensions":["mka"]},"audio/x-mpegurl":{"source":"apache","extensions":["m3u"]},"audio/x-ms-wax":{"source":"apache","extensions":["wax"]},"audio/x-ms-wma":{"source":"apache","extensions":["wma"]},"audio/x-pn-realaudio":{"source":"apache","extensions":["ram","ra"]},"audio/x-pn-realaudio-plugin":{"source":"apache","extensions":["rmp"]},"audio/x-realaudio":{"source":"nginx","extensions":["ra"]},"audio/x-tta":{"source":"apache"},"audio/x-wav":{"source":"apache","extensions":["wav"]},"audio/xm":{"source":"apache","extensions":["xm"]},"chemical/x-cdx":{"source":"apache","extensions":["cdx"]},"chemical/x-cif":{"source":"apache","extensions":["cif"]},"chemical/x-cmdf":{"source":"apache","extensions":["cmdf"]},"chemical/x-cml":{"source":"apache","extensions":["cml"]},"chemical/x-csml":{"source":"apache","extensions":["csml"]},"chemical/x-pdb":{"source":"apache"},"chemical/x-xyz":{"source":"apache","extensions":["xyz"]},"font/collection":{"source":"iana","extensions":["ttc"]},"font/otf":{"source":"iana","compressible":true,"extensions":["otf"]},"font/sfnt":{"source":"iana"},"font/ttf":{"source":"iana","compressible":true,"extensions":["ttf"]},"font/woff":{"source":"iana","extensions":["woff"]},"font/woff2":{"source":"iana","extensions":["woff2"]},"image/aces":{"source":"iana","extensions":["exr"]},"image/apng":{"compressible":false,"extensions":["apng"]},"image/avci":{"source":"iana"},"image/avcs":{"source":"iana"},"image/bmp":{"source":"iana","compressible":true,"extensions":["bmp"]},"image/cgm":{"source":"iana","extensions":["cgm"]},"image/dicom-rle":{"source":"iana","extensions":["drle"]},"image/emf":{"source":"iana","extensions":["emf"]},"image/fits":{"source":"iana","extensions":["fits"]},"image/g3fax":{"source":"iana","extensions":["g3"]},"image/gif":{"source":"iana","compressible":false,"extensions":["gif"]},"image/heic":{"source":"iana","extensions":["heic"]},"image/heic-sequence":{"source":"iana","extensions":["heics"]},"image/heif":{"source":"iana","extensions":["heif"]},"image/heif-sequence":{"source":"iana","extensions":["heifs"]},"image/hej2k":{"source":"iana","extensions":["hej2"]},"image/hsj2":{"source":"iana","extensions":["hsj2"]},"image/ief":{"source":"iana","extensions":["ief"]},"image/jls":{"source":"iana","extensions":["jls"]},"image/jp2":{"source":"iana","compressible":false,"extensions":["jp2","jpg2"]},"image/jpeg":{"source":"iana","compressible":false,"extensions":["jpeg","jpg","jpe"]},"image/jph":{"source":"iana","extensions":["jph"]},"image/jphc":{"source":"iana","extensions":["jhc"]},"image/jpm":{"source":"iana","compressible":false,"extensions":["jpm"]},"image/jpx":{"source":"iana","compressible":false,"extensions":["jpx","jpf"]},"image/jxr":{"source":"iana","extensions":["jxr"]},"image/jxra":{"source":"iana","extensions":["jxra"]},"image/jxrs":{"source":"iana","extensions":["jxrs"]},"image/jxs":{"source":"iana","extensions":["jxs"]},"image/jxsc":{"source":"iana","extensions":["jxsc"]},"image/jxsi":{"source":"iana","extensions":["jxsi"]},"image/jxss":{"source":"iana","extensions":["jxss"]},"image/ktx":{"source":"iana","extensions":["ktx"]},"image/naplps":{"source":"iana"},"image/pjpeg":{"compressible":false},"image/png":{"source":"iana","compressible":false,"extensions":["png"]},"image/prs.btif":{"source":"iana","extensions":["btif"]},"image/prs.pti":{"source":"iana","extensions":["pti"]},"image/pwg-raster":{"source":"iana"},"image/sgi":{"source":"apache","extensions":["sgi"]},"image/svg+xml":{"source":"iana","compressible":true,"extensions":["svg","svgz"]},"image/t38":{"source":"iana","extensions":["t38"]},"image/tiff":{"source":"iana","compressible":false,"extensions":["tif","tiff"]},"image/tiff-fx":{"source":"iana","extensions":["tfx"]},"image/vnd.adobe.photoshop":{"source":"iana","compressible":true,"extensions":["psd"]},"image/vnd.airzip.accelerator.azv":{"source":"iana","extensions":["azv"]},"image/vnd.cns.inf2":{"source":"iana"},"image/vnd.dece.graphic":{"source":"iana","extensions":["uvi","uvvi","uvg","uvvg"]},"image/vnd.djvu":{"source":"iana","extensions":["djvu","djv"]},"image/vnd.dvb.subtitle":{"source":"iana","extensions":["sub"]},"image/vnd.dwg":{"source":"iana","extensions":["dwg"]},"image/vnd.dxf":{"source":"iana","extensions":["dxf"]},"image/vnd.fastbidsheet":{"source":"iana","extensions":["fbs"]},"image/vnd.fpx":{"source":"iana","extensions":["fpx"]},"image/vnd.fst":{"source":"iana","extensions":["fst"]},"image/vnd.fujixerox.edmics-mmr":{"source":"iana","extensions":["mmr"]},"image/vnd.fujixerox.edmics-rlc":{"source":"iana","extensions":["rlc"]},"image/vnd.globalgraphics.pgb":{"source":"iana"},"image/vnd.microsoft.icon":{"source":"iana","extensions":["ico"]},"image/vnd.mix":{"source":"iana"},"image/vnd.mozilla.apng":{"source":"iana"},"image/vnd.ms-dds":{"extensions":["dds"]},"image/vnd.ms-modi":{"source":"iana","extensions":["mdi"]},"image/vnd.ms-photo":{"source":"apache","extensions":["wdp"]},"image/vnd.net-fpx":{"source":"iana","extensions":["npx"]},"image/vnd.radiance":{"source":"iana"},"image/vnd.sealed.png":{"source":"iana"},"image/vnd.sealedmedia.softseal.gif":{"source":"iana"},"image/vnd.sealedmedia.softseal.jpg":{"source":"iana"},"image/vnd.svf":{"source":"iana"},"image/vnd.tencent.tap":{"source":"iana","extensions":["tap"]},"image/vnd.valve.source.texture":{"source":"iana","extensions":["vtf"]},"image/vnd.wap.wbmp":{"source":"iana","extensions":["wbmp"]},"image/vnd.xiff":{"source":"iana","extensions":["xif"]},"image/vnd.zbrush.pcx":{"source":"iana","extensions":["pcx"]},"image/webp":{"source":"apache","extensions":["webp"]},"image/wmf":{"source":"iana","extensions":["wmf"]},"image/x-3ds":{"source":"apache","extensions":["3ds"]},"image/x-cmu-raster":{"source":"apache","extensions":["ras"]},"image/x-cmx":{"source":"apache","extensions":["cmx"]},"image/x-freehand":{"source":"apache","extensions":["fh","fhc","fh4","fh5","fh7"]},"image/x-icon":{"source":"apache","compressible":true,"extensions":["ico"]},"image/x-jng":{"source":"nginx","extensions":["jng"]},"image/x-mrsid-image":{"source":"apache","extensions":["sid"]},"image/x-ms-bmp":{"source":"nginx","compressible":true,"extensions":["bmp"]},"image/x-pcx":{"source":"apache","extensions":["pcx"]},"image/x-pict":{"source":"apache","extensions":["pic","pct"]},"image/x-portable-anymap":{"source":"apache","extensions":["pnm"]},"image/x-portable-bitmap":{"source":"apache","extensions":["pbm"]},"image/x-portable-graymap":{"source":"apache","extensions":["pgm"]},"image/x-portable-pixmap":{"source":"apache","extensions":["ppm"]},"image/x-rgb":{"source":"apache","extensions":["rgb"]},"image/x-tga":{"source":"apache","extensions":["tga"]},"image/x-xbitmap":{"source":"apache","extensions":["xbm"]},"image/x-xcf":{"compressible":false},"image/x-xpixmap":{"source":"apache","extensions":["xpm"]},"image/x-xwindowdump":{"source":"apache","extensions":["xwd"]},"message/cpim":{"source":"iana"},"message/delivery-status":{"source":"iana"},"message/disposition-notification":{"source":"iana","extensions":["disposition-notification"]},"message/external-body":{"source":"iana"},"message/feedback-report":{"source":"iana"},"message/global":{"source":"iana","extensions":["u8msg"]},"message/global-delivery-status":{"source":"iana","extensions":["u8dsn"]},"message/global-disposition-notification":{"source":"iana","extensions":["u8mdn"]},"message/global-headers":{"source":"iana","extensions":["u8hdr"]},"message/http":{"source":"iana","compressible":false},"message/imdn+xml":{"source":"iana","compressible":true},"message/news":{"source":"iana"},"message/partial":{"source":"iana","compressible":false},"message/rfc822":{"source":"iana","compressible":true,"extensions":["eml","mime"]},"message/s-http":{"source":"iana"},"message/sip":{"source":"iana"},"message/sipfrag":{"source":"iana"},"message/tracking-status":{"source":"iana"},"message/vnd.si.simp":{"source":"iana"},"message/vnd.wfa.wsc":{"source":"iana","extensions":["wsc"]},"model/3mf":{"source":"iana","extensions":["3mf"]},"model/gltf+json":{"source":"iana","compressible":true,"extensions":["gltf"]},"model/gltf-binary":{"source":"iana","compressible":true,"extensions":["glb"]},"model/iges":{"source":"iana","compressible":false,"extensions":["igs","iges"]},"model/mesh":{"source":"iana","compressible":false,"extensions":["msh","mesh","silo"]},"model/stl":{"source":"iana","extensions":["stl"]},"model/vnd.collada+xml":{"source":"iana","compressible":true,"extensions":["dae"]},"model/vnd.dwf":{"source":"iana","extensions":["dwf"]},"model/vnd.flatland.3dml":{"source":"iana"},"model/vnd.gdl":{"source":"iana","extensions":["gdl"]},"model/vnd.gs-gdl":{"source":"apache"},"model/vnd.gs.gdl":{"source":"iana"},"model/vnd.gtw":{"source":"iana","extensions":["gtw"]},"model/vnd.moml+xml":{"source":"iana","compressible":true},"model/vnd.mts":{"source":"iana","extensions":["mts"]},"model/vnd.opengex":{"source":"iana","extensions":["ogex"]},"model/vnd.parasolid.transmit.binary":{"source":"iana","extensions":["x_b"]},"model/vnd.parasolid.transmit.text":{"source":"iana","extensions":["x_t"]},"model/vnd.rosette.annotated-data-model":{"source":"iana"},"model/vnd.usdz+zip":{"source":"iana","compressible":false,"extensions":["usdz"]},"model/vnd.valve.source.compiled-map":{"source":"iana","extensions":["bsp"]},"model/vnd.vtu":{"source":"iana","extensions":["vtu"]},"model/vrml":{"source":"iana","compressible":false,"extensions":["wrl","vrml"]},"model/x3d+binary":{"source":"apache","compressible":false,"extensions":["x3db","x3dbz"]},"model/x3d+fastinfoset":{"source":"iana","extensions":["x3db"]},"model/x3d+vrml":{"source":"apache","compressible":false,"extensions":["x3dv","x3dvz"]},"model/x3d+xml":{"source":"iana","compressible":true,"extensions":["x3d","x3dz"]},"model/x3d-vrml":{"source":"iana","extensions":["x3dv"]},"multipart/alternative":{"source":"iana","compressible":false},"multipart/appledouble":{"source":"iana"},"multipart/byteranges":{"source":"iana"},"multipart/digest":{"source":"iana"},"multipart/encrypted":{"source":"iana","compressible":false},"multipart/form-data":{"source":"iana","compressible":false},"multipart/header-set":{"source":"iana"},"multipart/mixed":{"source":"iana"},"multipart/multilingual":{"source":"iana"},"multipart/parallel":{"source":"iana"},"multipart/related":{"source":"iana","compressible":false},"multipart/report":{"source":"iana"},"multipart/signed":{"source":"iana","compressible":false},"multipart/vnd.bint.med-plus":{"source":"iana"},"multipart/voice-message":{"source":"iana"},"multipart/x-mixed-replace":{"source":"iana"},"text/1d-interleaved-parityfec":{"source":"iana"},"text/cache-manifest":{"source":"iana","compressible":true,"extensions":["appcache","manifest"]},"text/calendar":{"source":"iana","extensions":["ics","ifb"]},"text/calender":{"compressible":true},"text/cmd":{"compressible":true},"text/coffeescript":{"extensions":["coffee","litcoffee"]},"text/css":{"source":"iana","charset":"UTF-8","compressible":true,"extensions":["css"]},"text/csv":{"source":"iana","compressible":true,"extensions":["csv"]},"text/csv-schema":{"source":"iana"},"text/directory":{"source":"iana"},"text/dns":{"source":"iana"},"text/ecmascript":{"source":"iana"},"text/encaprtp":{"source":"iana"},"text/enriched":{"source":"iana"},"text/flexfec":{"source":"iana"},"text/fwdred":{"source":"iana"},"text/grammar-ref-list":{"source":"iana"},"text/html":{"source":"iana","compressible":true,"extensions":["html","htm","shtml"]},"text/jade":{"extensions":["jade"]},"text/javascript":{"source":"iana","compressible":true},"text/jcr-cnd":{"source":"iana"},"text/jsx":{"compressible":true,"extensions":["jsx"]},"text/less":{"compressible":true,"extensions":["less"]},"text/markdown":{"source":"iana","compressible":true,"extensions":["markdown","md"]},"text/mathml":{"source":"nginx","extensions":["mml"]},"text/mdx":{"compressible":true,"extensions":["mdx"]},"text/mizar":{"source":"iana"},"text/n3":{"source":"iana","compressible":true,"extensions":["n3"]},"text/parameters":{"source":"iana"},"text/parityfec":{"source":"iana"},"text/plain":{"source":"iana","compressible":true,"extensions":["txt","text","conf","def","list","log","in","ini"]},"text/provenance-notation":{"source":"iana"},"text/prs.fallenstein.rst":{"source":"iana"},"text/prs.lines.tag":{"source":"iana","extensions":["dsc"]},"text/prs.prop.logic":{"source":"iana"},"text/raptorfec":{"source":"iana"},"text/red":{"source":"iana"},"text/rfc822-headers":{"source":"iana"},"text/richtext":{"source":"iana","compressible":true,"extensions":["rtx"]},"text/rtf":{"source":"iana","compressible":true,"extensions":["rtf"]},"text/rtp-enc-aescm128":{"source":"iana"},"text/rtploopback":{"source":"iana"},"text/rtx":{"source":"iana"},"text/sgml":{"source":"iana","extensions":["sgml","sgm"]},"text/shex":{"extensions":["shex"]},"text/slim":{"extensions":["slim","slm"]},"text/strings":{"source":"iana"},"text/stylus":{"extensions":["stylus","styl"]},"text/t140":{"source":"iana"},"text/tab-separated-values":{"source":"iana","compressible":true,"extensions":["tsv"]},"text/troff":{"source":"iana","extensions":["t","tr","roff","man","me","ms"]},"text/turtle":{"source":"iana","charset":"UTF-8","extensions":["ttl"]},"text/ulpfec":{"source":"iana"},"text/uri-list":{"source":"iana","compressible":true,"extensions":["uri","uris","urls"]},"text/vcard":{"source":"iana","compressible":true,"extensions":["vcard"]},"text/vnd.a":{"source":"iana"},"text/vnd.abc":{"source":"iana"},"text/vnd.ascii-art":{"source":"iana"},"text/vnd.curl":{"source":"iana","extensions":["curl"]},"text/vnd.curl.dcurl":{"source":"apache","extensions":["dcurl"]},"text/vnd.curl.mcurl":{"source":"apache","extensions":["mcurl"]},"text/vnd.curl.scurl":{"source":"apache","extensions":["scurl"]},"text/vnd.debian.copyright":{"source":"iana"},"text/vnd.dmclientscript":{"source":"iana"},"text/vnd.dvb.subtitle":{"source":"iana","extensions":["sub"]},"text/vnd.esmertec.theme-descriptor":{"source":"iana"},"text/vnd.ficlab.flt":{"source":"iana"},"text/vnd.fly":{"source":"iana","extensions":["fly"]},"text/vnd.fmi.flexstor":{"source":"iana","extensions":["flx"]},"text/vnd.gml":{"source":"iana"},"text/vnd.graphviz":{"source":"iana","extensions":["gv"]},"text/vnd.hgl":{"source":"iana"},"text/vnd.in3d.3dml":{"source":"iana","extensions":["3dml"]},"text/vnd.in3d.spot":{"source":"iana","extensions":["spot"]},"text/vnd.iptc.newsml":{"source":"iana"},"text/vnd.iptc.nitf":{"source":"iana"},"text/vnd.latex-z":{"source":"iana"},"text/vnd.motorola.reflex":{"source":"iana"},"text/vnd.ms-mediapackage":{"source":"iana"},"text/vnd.net2phone.commcenter.command":{"source":"iana"},"text/vnd.radisys.msml-basic-layout":{"source":"iana"},"text/vnd.senx.warpscript":{"source":"iana"},"text/vnd.si.uricatalogue":{"source":"iana"},"text/vnd.sosi":{"source":"iana"},"text/vnd.sun.j2me.app-descriptor":{"source":"iana","extensions":["jad"]},"text/vnd.trolltech.linguist":{"source":"iana"},"text/vnd.wap.si":{"source":"iana"},"text/vnd.wap.sl":{"source":"iana"},"text/vnd.wap.wml":{"source":"iana","extensions":["wml"]},"text/vnd.wap.wmlscript":{"source":"iana","extensions":["wmls"]},"text/vtt":{"source":"iana","charset":"UTF-8","compressible":true,"extensions":["vtt"]},"text/x-asm":{"source":"apache","extensions":["s","asm"]},"text/x-c":{"source":"apache","extensions":["c","cc","cxx","cpp","h","hh","dic"]},"text/x-component":{"source":"nginx","extensions":["htc"]},"text/x-fortran":{"source":"apache","extensions":["f","for","f77","f90"]},"text/x-gwt-rpc":{"compressible":true},"text/x-handlebars-template":{"extensions":["hbs"]},"text/x-java-source":{"source":"apache","extensions":["java"]},"text/x-jquery-tmpl":{"compressible":true},"text/x-lua":{"extensions":["lua"]},"text/x-markdown":{"compressible":true,"extensions":["mkd"]},"text/x-nfo":{"source":"apache","extensions":["nfo"]},"text/x-opml":{"source":"apache","extensions":["opml"]},"text/x-org":{"compressible":true,"extensions":["org"]},"text/x-pascal":{"source":"apache","extensions":["p","pas"]},"text/x-processing":{"compressible":true,"extensions":["pde"]},"text/x-sass":{"extensions":["sass"]},"text/x-scss":{"extensions":["scss"]},"text/x-setext":{"source":"apache","extensions":["etx"]},"text/x-sfv":{"source":"apache","extensions":["sfv"]},"text/x-suse-ymp":{"compressible":true,"extensions":["ymp"]},"text/x-uuencode":{"source":"apache","extensions":["uu"]},"text/x-vcalendar":{"source":"apache","extensions":["vcs"]},"text/x-vcard":{"source":"apache","extensions":["vcf"]},"text/xml":{"source":"iana","compressible":true,"extensions":["xml"]},"text/xml-external-parsed-entity":{"source":"iana"},"text/yaml":{"extensions":["yaml","yml"]},"video/1d-interleaved-parityfec":{"source":"iana"},"video/3gpp":{"source":"iana","extensions":["3gp","3gpp"]},"video/3gpp-tt":{"source":"iana"},"video/3gpp2":{"source":"iana","extensions":["3g2"]},"video/bmpeg":{"source":"iana"},"video/bt656":{"source":"iana"},"video/celb":{"source":"iana"},"video/dv":{"source":"iana"},"video/encaprtp":{"source":"iana"},"video/flexfec":{"source":"iana"},"video/h261":{"source":"iana","extensions":["h261"]},"video/h263":{"source":"iana","extensions":["h263"]},"video/h263-1998":{"source":"iana"},"video/h263-2000":{"source":"iana"},"video/h264":{"source":"iana","extensions":["h264"]},"video/h264-rcdo":{"source":"iana"},"video/h264-svc":{"source":"iana"},"video/h265":{"source":"iana"},"video/iso.segment":{"source":"iana"},"video/jpeg":{"source":"iana","extensions":["jpgv"]},"video/jpeg2000":{"source":"iana"},"video/jpm":{"source":"apache","extensions":["jpm","jpgm"]},"video/mj2":{"source":"iana","extensions":["mj2","mjp2"]},"video/mp1s":{"source":"iana"},"video/mp2p":{"source":"iana"},"video/mp2t":{"source":"iana","extensions":["ts"]},"video/mp4":{"source":"iana","compressible":false,"extensions":["mp4","mp4v","mpg4"]},"video/mp4v-es":{"source":"iana"},"video/mpeg":{"source":"iana","compressible":false,"extensions":["mpeg","mpg","mpe","m1v","m2v"]},"video/mpeg4-generic":{"source":"iana"},"video/mpv":{"source":"iana"},"video/nv":{"source":"iana"},"video/ogg":{"source":"iana","compressible":false,"extensions":["ogv"]},"video/parityfec":{"source":"iana"},"video/pointer":{"source":"iana"},"video/quicktime":{"source":"iana","compressible":false,"extensions":["qt","mov"]},"video/raptorfec":{"source":"iana"},"video/raw":{"source":"iana"},"video/rtp-enc-aescm128":{"source":"iana"},"video/rtploopback":{"source":"iana"},"video/rtx":{"source":"iana"},"video/smpte291":{"source":"iana"},"video/smpte292m":{"source":"iana"},"video/ulpfec":{"source":"iana"},"video/vc1":{"source":"iana"},"video/vc2":{"source":"iana"},"video/vnd.cctv":{"source":"iana"},"video/vnd.dece.hd":{"source":"iana","extensions":["uvh","uvvh"]},"video/vnd.dece.mobile":{"source":"iana","extensions":["uvm","uvvm"]},"video/vnd.dece.mp4":{"source":"iana"},"video/vnd.dece.pd":{"source":"iana","extensions":["uvp","uvvp"]},"video/vnd.dece.sd":{"source":"iana","extensions":["uvs","uvvs"]},"video/vnd.dece.video":{"source":"iana","extensions":["uvv","uvvv"]},"video/vnd.directv.mpeg":{"source":"iana"},"video/vnd.directv.mpeg-tts":{"source":"iana"},"video/vnd.dlna.mpeg-tts":{"source":"iana"},"video/vnd.dvb.file":{"source":"iana","extensions":["dvb"]},"video/vnd.fvt":{"source":"iana","extensions":["fvt"]},"video/vnd.hns.video":{"source":"iana"},"video/vnd.iptvforum.1dparityfec-1010":{"source":"iana"},"video/vnd.iptvforum.1dparityfec-2005":{"source":"iana"},"video/vnd.iptvforum.2dparityfec-1010":{"source":"iana"},"video/vnd.iptvforum.2dparityfec-2005":{"source":"iana"},"video/vnd.iptvforum.ttsavc":{"source":"iana"},"video/vnd.iptvforum.ttsmpeg2":{"source":"iana"},"video/vnd.motorola.video":{"source":"iana"},"video/vnd.motorola.videop":{"source":"iana"},"video/vnd.mpegurl":{"source":"iana","extensions":["mxu","m4u"]},"video/vnd.ms-playready.media.pyv":{"source":"iana","extensions":["pyv"]},"video/vnd.nokia.interleaved-multimedia":{"source":"iana"},"video/vnd.nokia.mp4vr":{"source":"iana"},"video/vnd.nokia.videovoip":{"source":"iana"},"video/vnd.objectvideo":{"source":"iana"},"video/vnd.radgamettools.bink":{"source":"iana"},"video/vnd.radgamettools.smacker":{"source":"iana"},"video/vnd.sealed.mpeg1":{"source":"iana"},"video/vnd.sealed.mpeg4":{"source":"iana"},"video/vnd.sealed.swf":{"source":"iana"},"video/vnd.sealedmedia.softseal.mov":{"source":"iana"},"video/vnd.uvvu.mp4":{"source":"iana","extensions":["uvu","uvvu"]},"video/vnd.vivo":{"source":"iana","extensions":["viv"]},"video/vnd.youtube.yt":{"source":"iana"},"video/vp8":{"source":"iana"},"video/webm":{"source":"apache","compressible":false,"extensions":["webm"]},"video/x-f4v":{"source":"apache","extensions":["f4v"]},"video/x-fli":{"source":"apache","extensions":["fli"]},"video/x-flv":{"source":"apache","compressible":false,"extensions":["flv"]},"video/x-m4v":{"source":"apache","extensions":["m4v"]},"video/x-matroska":{"source":"apache","compressible":false,"extensions":["mkv","mk3d","mks"]},"video/x-mng":{"source":"apache","extensions":["mng"]},"video/x-ms-asf":{"source":"apache","extensions":["asf","asx"]},"video/x-ms-vob":{"source":"apache","extensions":["vob"]},"video/x-ms-wm":{"source":"apache","extensions":["wm"]},"video/x-ms-wmv":{"source":"apache","compressible":false,"extensions":["wmv"]},"video/x-ms-wmx":{"source":"apache","extensions":["wmx"]},"video/x-ms-wvx":{"source":"apache","extensions":["wvx"]},"video/x-msvideo":{"source":"apache","extensions":["avi"]},"video/x-sgi-movie":{"source":"apache","extensions":["movie"]},"video/x-smv":{"source":"apache","extensions":["smv"]},"x-conference/x-cooltalk":{"source":"apache","extensions":["ice"]},"x-shader/x-fragment":{"compressible":true},"x-shader/x-vertex":{"compressible":true}}');
+;// CONCATENATED MODULE: ./node_modules/peek-readable/lib/Deferred.js
+class Deferred {
+    constructor() {
+        this.resolve = () => null;
+        this.reject = () => null;
+        this.promise = new Promise((resolve, reject) => {
+            this.reject = reject;
+            this.resolve = resolve;
+        });
+    }
+}
 
-/***/ })
+;// CONCATENATED MODULE: ./node_modules/peek-readable/lib/StreamReader.js
 
-/******/ 	});
-/************************************************************************/
-/******/ 	// The module cache
-/******/ 	var __webpack_module_cache__ = {};
-/******/ 	
-/******/ 	// The require function
-/******/ 	function __nccwpck_require__(moduleId) {
-/******/ 		// Check if module is in cache
-/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
-/******/ 		if (cachedModule !== undefined) {
-/******/ 			return cachedModule.exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = __webpack_module_cache__[moduleId] = {
-/******/ 			// no module.id needed
-/******/ 			// no module.loaded needed
-/******/ 			exports: {}
-/******/ 		};
-/******/ 	
-/******/ 		// Execute the module function
-/******/ 		var threw = true;
-/******/ 		try {
-/******/ 			__webpack_modules__[moduleId].call(module.exports, module, module.exports, __nccwpck_require__);
-/******/ 			threw = false;
-/******/ 		} finally {
-/******/ 			if(threw) delete __webpack_module_cache__[moduleId];
-/******/ 		}
-/******/ 	
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/ 	
-/************************************************************************/
-/******/ 	/* webpack/runtime/create fake namespace object */
-/******/ 	(() => {
-/******/ 		var getProto = Object.getPrototypeOf ? (obj) => (Object.getPrototypeOf(obj)) : (obj) => (obj.__proto__);
-/******/ 		var leafPrototypes;
-/******/ 		// create a fake namespace object
-/******/ 		// mode & 1: value is a module id, require it
-/******/ 		// mode & 2: merge all properties of value into the ns
-/******/ 		// mode & 4: return value when already ns object
-/******/ 		// mode & 16: return value when it's Promise-like
-/******/ 		// mode & 8|1: behave like require
-/******/ 		__nccwpck_require__.t = function(value, mode) {
-/******/ 			if(mode & 1) value = this(value);
-/******/ 			if(mode & 8) return value;
-/******/ 			if(typeof value === 'object' && value) {
-/******/ 				if((mode & 4) && value.__esModule) return value;
-/******/ 				if((mode & 16) && typeof value.then === 'function') return value;
-/******/ 			}
-/******/ 			var ns = Object.create(null);
-/******/ 			__nccwpck_require__.r(ns);
-/******/ 			var def = {};
-/******/ 			leafPrototypes = leafPrototypes || [null, getProto({}), getProto([]), getProto(getProto)];
-/******/ 			for(var current = mode & 2 && value; typeof current == 'object' && !~leafPrototypes.indexOf(current); current = getProto(current)) {
-/******/ 				Object.getOwnPropertyNames(current).forEach((key) => (def[key] = () => (value[key])));
-/******/ 			}
-/******/ 			def['default'] = () => (value);
-/******/ 			__nccwpck_require__.d(ns, def);
-/******/ 			return ns;
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/define property getters */
-/******/ 	(() => {
-/******/ 		// define getter functions for harmony exports
-/******/ 		__nccwpck_require__.d = (exports, definition) => {
-/******/ 			for(var key in definition) {
-/******/ 				if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
-/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 				}
-/******/ 			}
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
-/******/ 	(() => {
-/******/ 		__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/make namespace object */
-/******/ 	(() => {
-/******/ 		// define __esModule on exports
-/******/ 		__nccwpck_require__.r = (exports) => {
-/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
-/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
-/******/ 			}
-/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
-/******/ 	
-/************************************************************************/
-/******/ 	
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(8242);
-/******/ 	module.exports = __webpack_exports__;
-/******/ 	
-/******/ })()
-;
+
+
+const maxStreamReadSize = 1 * 1024 * 1024; // Maximum request length on read-stream operation
+class StreamReader {
+    constructor(s) {
+        this.s = s;
+        /**
+         * Deferred used for postponed read request (as not data is yet available to read)
+         */
+        this.deferred = null;
+        this.endOfStream = false;
+        /**
+         * Store peeked data
+         * @type {Array}
+         */
+        this.peekQueue = [];
+        if (!s.read || !s.once) {
+            throw new Error('Expected an instance of stream.Readable');
+        }
+        this.s.once('end', () => this.reject(new EndOfStreamError()));
+        this.s.once('error', err => this.reject(err));
+        this.s.once('close', () => this.reject(new Error('Stream closed')));
+    }
+    /**
+     * Read ahead (peek) from stream. Subsequent read or peeks will return the same data
+     * @param uint8Array - Uint8Array (or Buffer) to store data read from stream in
+     * @param offset - Offset target
+     * @param length - Number of bytes to read
+     * @returns Number of bytes peeked
+     */
+    async peek(uint8Array, offset, length) {
+        const bytesRead = await this.read(uint8Array, offset, length);
+        this.peekQueue.push(uint8Array.subarray(offset, offset + bytesRead)); // Put read data back to peek buffer
+        return bytesRead;
+    }
+    /**
+     * Read chunk from stream
+     * @param buffer - Target Uint8Array (or Buffer) to store data read from stream in
+     * @param offset - Offset target
+     * @param length - Number of bytes to read
+     * @returns Number of bytes read
+     */
+    async read(buffer, offset, length) {
+        if (length === 0) {
+            return 0;
+        }
+        if (this.peekQueue.length === 0 && this.endOfStream) {
+            throw new EndOfStreamError();
+        }
+        let remaining = length;
+        let bytesRead = 0;
+        // consume peeked data first
+        while (this.peekQueue.length > 0 && remaining > 0) {
+            const peekData = this.peekQueue.pop(); // Front of queue
+            if (!peekData)
+                throw new Error('peekData should be defined');
+            const lenCopy = Math.min(peekData.length, remaining);
+            buffer.set(peekData.subarray(0, lenCopy), offset + bytesRead);
+            bytesRead += lenCopy;
+            remaining -= lenCopy;
+            if (lenCopy < peekData.length) {
+                // remainder back to queue
+                this.peekQueue.push(peekData.subarray(lenCopy));
+            }
+        }
+        // continue reading from stream if required
+        while (remaining > 0 && !this.endOfStream) {
+            const reqLen = Math.min(remaining, maxStreamReadSize);
+            const chunkLen = await this.readFromStream(buffer, offset + bytesRead, reqLen);
+            bytesRead += chunkLen;
+            if (chunkLen < reqLen)
+                break;
+            remaining -= chunkLen;
+        }
+        return bytesRead;
+    }
+    /**
+     * Read chunk from stream
+     * @param buffer Target Uint8Array (or Buffer) to store data read from stream in
+     * @param offset Offset target
+     * @param length Number of bytes to read
+     * @returns Number of bytes read
+     */
+    async readFromStream(buffer, offset, length) {
+        const readBuffer = this.s.read(length);
+        if (readBuffer) {
+            buffer.set(readBuffer, offset);
+            return readBuffer.length;
+        }
+        else {
+            const request = {
+                buffer,
+                offset,
+                length,
+                deferred: new Deferred()
+            };
+            this.deferred = request.deferred;
+            this.s.once('readable', () => {
+                this.readDeferred(request);
+            });
+            return request.deferred.promise;
+        }
+    }
+    /**
+     * Process deferred read request
+     * @param request Deferred read request
+     */
+    readDeferred(request) {
+        const readBuffer = this.s.read(request.length);
+        if (readBuffer) {
+            request.buffer.set(readBuffer, request.offset);
+            request.deferred.resolve(readBuffer.length);
+            this.deferred = null;
+        }
+        else {
+            this.s.once('readable', () => {
+                this.readDeferred(request);
+            });
+        }
+    }
+    reject(err) {
+        this.endOfStream = true;
+        if (this.deferred) {
+            this.deferred.reject(err);
+            this.deferred = null;
+        }
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/peek-readable/lib/index.js
+
+
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/AbstractTokenizer.js
+
+
+/**
+ * Core tokenizer
+ */
+class AbstractTokenizer {
+    constructor(fileInfo) {
+        /**
+         * Tokenizer-stream position
+         */
+        this.position = 0;
+        this.numBuffer = new Uint8Array(8);
+        this.fileInfo = fileInfo ? fileInfo : {};
+    }
+    /**
+     * Read a token from the tokenizer-stream
+     * @param token - The token to read
+     * @param position - If provided, the desired position in the tokenizer-stream
+     * @returns Promise with token data
+     */
+    async readToken(token, position = this.position) {
+        const uint8Array = external_node_buffer_namespaceObject.Buffer.alloc(token.len);
+        const len = await this.readBuffer(uint8Array, { position });
+        if (len < token.len)
+            throw new EndOfStreamError();
+        return token.get(uint8Array, 0);
+    }
+    /**
+     * Peek a token from the tokenizer-stream.
+     * @param token - Token to peek from the tokenizer-stream.
+     * @param position - Offset where to begin reading within the file. If position is null, data will be read from the current file position.
+     * @returns Promise with token data
+     */
+    async peekToken(token, position = this.position) {
+        const uint8Array = external_node_buffer_namespaceObject.Buffer.alloc(token.len);
+        const len = await this.peekBuffer(uint8Array, { position });
+        if (len < token.len)
+            throw new EndOfStreamError();
+        return token.get(uint8Array, 0);
+    }
+    /**
+     * Read a numeric token from the stream
+     * @param token - Numeric token
+     * @returns Promise with number
+     */
+    async readNumber(token) {
+        const len = await this.readBuffer(this.numBuffer, { length: token.len });
+        if (len < token.len)
+            throw new EndOfStreamError();
+        return token.get(this.numBuffer, 0);
+    }
+    /**
+     * Read a numeric token from the stream
+     * @param token - Numeric token
+     * @returns Promise with number
+     */
+    async peekNumber(token) {
+        const len = await this.peekBuffer(this.numBuffer, { length: token.len });
+        if (len < token.len)
+            throw new EndOfStreamError();
+        return token.get(this.numBuffer, 0);
+    }
+    /**
+     * Ignore number of bytes, advances the pointer in under tokenizer-stream.
+     * @param length - Number of bytes to ignore
+     * @return resolves the number of bytes ignored, equals length if this available, otherwise the number of bytes available
+     */
+    async ignore(length) {
+        if (this.fileInfo.size !== undefined) {
+            const bytesLeft = this.fileInfo.size - this.position;
+            if (length > bytesLeft) {
+                this.position += bytesLeft;
+                return bytesLeft;
+            }
+        }
+        this.position += length;
+        return length;
+    }
+    async close() {
+        // empty
+    }
+    normalizeOptions(uint8Array, options) {
+        if (options && options.position !== undefined && options.position < this.position) {
+            throw new Error('`options.position` must be equal or greater than `tokenizer.position`');
+        }
+        if (options) {
+            return {
+                mayBeLess: options.mayBeLess === true,
+                offset: options.offset ? options.offset : 0,
+                length: options.length ? options.length : (uint8Array.length - (options.offset ? options.offset : 0)),
+                position: options.position ? options.position : this.position
+            };
+        }
+        return {
+            mayBeLess: false,
+            offset: 0,
+            length: uint8Array.length,
+            position: this.position
+        };
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/ReadStreamTokenizer.js
+
+
+const maxBufferSize = 256000;
+class ReadStreamTokenizer_ReadStreamTokenizer extends AbstractTokenizer {
+    constructor(stream, fileInfo) {
+        super(fileInfo);
+        this.streamReader = new StreamReader(stream);
+    }
+    /**
+     * Get file information, an HTTP-client may implement this doing a HEAD request
+     * @return Promise with file information
+     */
+    async getFileInfo() {
+        return this.fileInfo;
+    }
+    /**
+     * Read buffer from tokenizer
+     * @param uint8Array - Target Uint8Array to fill with data read from the tokenizer-stream
+     * @param options - Read behaviour options
+     * @returns Promise with number of bytes read
+     */
+    async readBuffer(uint8Array, options) {
+        const normOptions = this.normalizeOptions(uint8Array, options);
+        const skipBytes = normOptions.position - this.position;
+        if (skipBytes > 0) {
+            await this.ignore(skipBytes);
+            return this.readBuffer(uint8Array, options);
+        }
+        else if (skipBytes < 0) {
+            throw new Error('`options.position` must be equal or greater than `tokenizer.position`');
+        }
+        if (normOptions.length === 0) {
+            return 0;
+        }
+        const bytesRead = await this.streamReader.read(uint8Array, normOptions.offset, normOptions.length);
+        this.position += bytesRead;
+        if ((!options || !options.mayBeLess) && bytesRead < normOptions.length) {
+            throw new EndOfStreamError();
+        }
+        return bytesRead;
+    }
+    /**
+     * Peek (read ahead) buffer from tokenizer
+     * @param uint8Array - Uint8Array (or Buffer) to write data to
+     * @param options - Read behaviour options
+     * @returns Promise with number of bytes peeked
+     */
+    async peekBuffer(uint8Array, options) {
+        const normOptions = this.normalizeOptions(uint8Array, options);
+        let bytesRead = 0;
+        if (normOptions.position) {
+            const skipBytes = normOptions.position - this.position;
+            if (skipBytes > 0) {
+                const skipBuffer = new Uint8Array(normOptions.length + skipBytes);
+                bytesRead = await this.peekBuffer(skipBuffer, { mayBeLess: normOptions.mayBeLess });
+                uint8Array.set(skipBuffer.subarray(skipBytes), normOptions.offset);
+                return bytesRead - skipBytes;
+            }
+            else if (skipBytes < 0) {
+                throw new Error('Cannot peek from a negative offset in a stream');
+            }
+        }
+        if (normOptions.length > 0) {
+            try {
+                bytesRead = await this.streamReader.peek(uint8Array, normOptions.offset, normOptions.length);
+            }
+            catch (err) {
+                if (options && options.mayBeLess && err instanceof EndOfStreamError) {
+                    return 0;
+                }
+                throw err;
+            }
+            if ((!normOptions.mayBeLess) && bytesRead < normOptions.length) {
+                throw new EndOfStreamError();
+            }
+        }
+        return bytesRead;
+    }
+    async ignore(length) {
+        // debug(`ignore ${this.position}...${this.position + length - 1}`);
+        const bufSize = Math.min(maxBufferSize, length);
+        const buf = new Uint8Array(bufSize);
+        let totBytesRead = 0;
+        while (totBytesRead < length) {
+            const remaining = length - totBytesRead;
+            const bytesRead = await this.readBuffer(buf, { length: Math.min(bufSize, remaining) });
+            if (bytesRead < 0) {
+                return bytesRead;
+            }
+            totBytesRead += bytesRead;
+        }
+        return totBytesRead;
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/BufferTokenizer.js
+
+
+class BufferTokenizer extends AbstractTokenizer {
+    /**
+     * Construct BufferTokenizer
+     * @param uint8Array - Uint8Array to tokenize
+     * @param fileInfo - Pass additional file information to the tokenizer
+     */
+    constructor(uint8Array, fileInfo) {
+        super(fileInfo);
+        this.uint8Array = uint8Array;
+        this.fileInfo.size = this.fileInfo.size ? this.fileInfo.size : uint8Array.length;
+    }
+    /**
+     * Read buffer from tokenizer
+     * @param uint8Array - Uint8Array to tokenize
+     * @param options - Read behaviour options
+     * @returns {Promise<number>}
+     */
+    async readBuffer(uint8Array, options) {
+        if (options && options.position) {
+            if (options.position < this.position) {
+                throw new Error('`options.position` must be equal or greater than `tokenizer.position`');
+            }
+            this.position = options.position;
+        }
+        const bytesRead = await this.peekBuffer(uint8Array, options);
+        this.position += bytesRead;
+        return bytesRead;
+    }
+    /**
+     * Peek (read ahead) buffer from tokenizer
+     * @param uint8Array
+     * @param options - Read behaviour options
+     * @returns {Promise<number>}
+     */
+    async peekBuffer(uint8Array, options) {
+        const normOptions = this.normalizeOptions(uint8Array, options);
+        const bytes2read = Math.min(this.uint8Array.length - normOptions.position, normOptions.length);
+        if ((!normOptions.mayBeLess) && bytes2read < normOptions.length) {
+            throw new EndOfStreamError();
+        }
+        else {
+            uint8Array.set(this.uint8Array.subarray(normOptions.position, normOptions.position + bytes2read), normOptions.offset);
+            return bytes2read;
+        }
+    }
+    async close() {
+        // empty
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/core.js
+
+
+
+/**
+ * Construct ReadStreamTokenizer from given Stream.
+ * Will set fileSize, if provided given Stream has set the .path property/
+ * @param stream - Read from Node.js Stream.Readable
+ * @param fileInfo - Pass the file information, like size and MIME-type of the corresponding stream.
+ * @returns ReadStreamTokenizer
+ */
+function fromStream(stream, fileInfo) {
+    fileInfo = fileInfo ? fileInfo : {};
+    return new ReadStreamTokenizer(stream, fileInfo);
+}
+/**
+ * Construct ReadStreamTokenizer from given Buffer.
+ * @param uint8Array - Uint8Array to tokenize
+ * @param fileInfo - Pass additional file information to the tokenizer
+ * @returns BufferTokenizer
+ */
+function fromBuffer(uint8Array, fileInfo) {
+    return new BufferTokenizer(uint8Array, fileInfo);
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/FileTokenizer.js
+
+
+
+class FileTokenizer extends AbstractTokenizer {
+    constructor(fd, fileInfo) {
+        super(fileInfo);
+        this.fd = fd;
+    }
+    /**
+     * Read buffer from file
+     * @param uint8Array - Uint8Array to write result to
+     * @param options - Read behaviour options
+     * @returns Promise number of bytes read
+     */
+    async readBuffer(uint8Array, options) {
+        const normOptions = this.normalizeOptions(uint8Array, options);
+        this.position = normOptions.position;
+        const res = await read(this.fd, uint8Array, normOptions.offset, normOptions.length, normOptions.position);
+        this.position += res.bytesRead;
+        if (res.bytesRead < normOptions.length && (!options || !options.mayBeLess)) {
+            throw new EndOfStreamError();
+        }
+        return res.bytesRead;
+    }
+    /**
+     * Peek buffer from file
+     * @param uint8Array - Uint8Array (or Buffer) to write data to
+     * @param options - Read behaviour options
+     * @returns Promise number of bytes read
+     */
+    async peekBuffer(uint8Array, options) {
+        const normOptions = this.normalizeOptions(uint8Array, options);
+        const res = await read(this.fd, uint8Array, normOptions.offset, normOptions.length, normOptions.position);
+        if ((!normOptions.mayBeLess) && res.bytesRead < normOptions.length) {
+            throw new EndOfStreamError();
+        }
+        return res.bytesRead;
+    }
+    async close() {
+        return FsPromise_close(this.fd);
+    }
+}
+async function fromFile(sourceFilePath) {
+    const stat = await fs.stat(sourceFilePath);
+    if (!stat.isFile) {
+        throw new Error(`File not a file: ${sourceFilePath}`);
+    }
+    const fd = await fs.open(sourceFilePath, 'r');
+    return new FileTokenizer(fd, { path: sourceFilePath, size: stat.size });
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/index.js
+
+
+
+
+/**
+ * Construct ReadStreamTokenizer from given Stream.
+ * Will set fileSize, if provided given Stream has set the .path property.
+ * @param stream - Node.js Stream.Readable
+ * @param fileInfo - Pass additional file information to the tokenizer
+ * @returns Tokenizer
+ */
+async function lib_fromStream(stream, fileInfo) {
+    fileInfo = fileInfo ? fileInfo : {};
+    if (stream.path) {
+        const stat = await fs.stat(stream.path);
+        fileInfo.path = stream.path;
+        fileInfo.size = stat.size;
+    }
+    return core.fromStream(stream, fileInfo);
+}
+
+// EXTERNAL MODULE: ./node_modules/ieee754/index.js
+var ieee754 = __nccwpck_require__(7952);
+;// CONCATENATED MODULE: ./node_modules/token-types/lib/index.js
+
+
+// Primitive types
+function dv(array) {
+    return new DataView(array.buffer, array.byteOffset);
+}
+/**
+ * 8-bit unsigned integer
+ */
+const UINT8 = {
+    len: 1,
+    get(array, offset) {
+        return dv(array).getUint8(offset);
+    },
+    put(array, offset, value) {
+        dv(array).setUint8(offset, value);
+        return offset + 1;
+    }
+};
+/**
+ * 16-bit unsigned integer, Little Endian byte order
+ */
+const UINT16_LE = {
+    len: 2,
+    get(array, offset) {
+        return dv(array).getUint16(offset, true);
+    },
+    put(array, offset, value) {
+        dv(array).setUint16(offset, value, true);
+        return offset + 2;
+    }
+};
+/**
+ * 16-bit unsigned integer, Big Endian byte order
+ */
+const UINT16_BE = {
+    len: 2,
+    get(array, offset) {
+        return dv(array).getUint16(offset);
+    },
+    put(array, offset, value) {
+        dv(array).setUint16(offset, value);
+        return offset + 2;
+    }
+};
+/**
+ * 24-bit unsigned integer, Little Endian byte order
+ */
+const UINT24_LE = {
+    len: 3,
+    get(array, offset) {
+        const dataView = dv(array);
+        return dataView.getUint8(offset) + (dataView.getUint16(offset + 1, true) << 8);
+    },
+    put(array, offset, value) {
+        const dataView = dv(array);
+        dataView.setUint8(offset, value & 0xff);
+        dataView.setUint16(offset + 1, value >> 8, true);
+        return offset + 3;
+    }
+};
+/**
+ * 24-bit unsigned integer, Big Endian byte order
+ */
+const UINT24_BE = {
+    len: 3,
+    get(array, offset) {
+        const dataView = dv(array);
+        return (dataView.getUint16(offset) << 8) + dataView.getUint8(offset + 2);
+    },
+    put(array, offset, value) {
+        const dataView = dv(array);
+        dataView.setUint16(offset, value >> 8);
+        dataView.setUint8(offset + 2, value & 0xff);
+        return offset + 3;
+    }
+};
+/**
+ * 32-bit unsigned integer, Little Endian byte order
+ */
+const UINT32_LE = {
+    len: 4,
+    get(array, offset) {
+        return dv(array).getUint32(offset, true);
+    },
+    put(array, offset, value) {
+        dv(array).setUint32(offset, value, true);
+        return offset + 4;
+    }
+};
+/**
+ * 32-bit unsigned integer, Big Endian byte order
+ */
+const UINT32_BE = {
+    len: 4,
+    get(array, offset) {
+        return dv(array).getUint32(offset);
+    },
+    put(array, offset, value) {
+        dv(array).setUint32(offset, value);
+        return offset + 4;
+    }
+};
+/**
+ * 8-bit signed integer
+ */
+const INT8 = {
+    len: 1,
+    get(array, offset) {
+        return dv(array).getInt8(offset);
+    },
+    put(array, offset, value) {
+        dv(array).setInt8(offset, value);
+        return offset + 1;
+    }
+};
+/**
+ * 16-bit signed integer, Big Endian byte order
+ */
+const INT16_BE = {
+    len: 2,
+    get(array, offset) {
+        return dv(array).getInt16(offset);
+    },
+    put(array, offset, value) {
+        dv(array).setInt16(offset, value);
+        return offset + 2;
+    }
+};
+/**
+ * 16-bit signed integer, Little Endian byte order
+ */
+const INT16_LE = {
+    len: 2,
+    get(array, offset) {
+        return dv(array).getInt16(offset, true);
+    },
+    put(array, offset, value) {
+        dv(array).setInt16(offset, value, true);
+        return offset + 2;
+    }
+};
+/**
+ * 24-bit signed integer, Little Endian byte order
+ */
+const INT24_LE = {
+    len: 3,
+    get(array, offset) {
+        const unsigned = UINT24_LE.get(array, offset);
+        return unsigned > 0x7fffff ? unsigned - 0x1000000 : unsigned;
+    },
+    put(array, offset, value) {
+        const dataView = dv(array);
+        dataView.setUint8(offset, value & 0xff);
+        dataView.setUint16(offset + 1, value >> 8, true);
+        return offset + 3;
+    }
+};
+/**
+ * 24-bit signed integer, Big Endian byte order
+ */
+const INT24_BE = {
+    len: 3,
+    get(array, offset) {
+        const unsigned = UINT24_BE.get(array, offset);
+        return unsigned > 0x7fffff ? unsigned - 0x1000000 : unsigned;
+    },
+    put(array, offset, value) {
+        const dataView = dv(array);
+        dataView.setUint16(offset, value >> 8);
+        dataView.setUint8(offset + 2, value & 0xff);
+        return offset + 3;
+    }
+};
+/**
+ * 32-bit signed integer, Big Endian byte order
+ */
+const INT32_BE = {
+    len: 4,
+    get(array, offset) {
+        return dv(array).getInt32(offset);
+    },
+    put(array, offset, value) {
+        dv(array).setInt32(offset, value);
+        return offset + 4;
+    }
+};
+/**
+ * 32-bit signed integer, Big Endian byte order
+ */
+const INT32_LE = {
+    len: 4,
+    get(array, offset) {
+        return dv(array).getInt32(offset, true);
+    },
+    put(array, offset, value) {
+        dv(array).setInt32(offset, value, true);
+        return offset + 4;
+    }
+};
+/**
+ * 64-bit unsigned integer, Little Endian byte order
+ */
+const UINT64_LE = {
+    len: 8,
+    get(array, offset) {
+        return dv(array).getBigUint64(offset, true);
+    },
+    put(array, offset, value) {
+        dv(array).setBigUint64(offset, value, true);
+        return offset + 8;
+    }
+};
+/**
+ * 64-bit signed integer, Little Endian byte order
+ */
+const INT64_LE = {
+    len: 8,
+    get(array, offset) {
+        return dv(array).getBigInt64(offset, true);
+    },
+    put(array, offset, value) {
+        dv(array).setBigInt64(offset, value, true);
+        return offset + 8;
+    }
+};
+/**
+ * 64-bit unsigned integer, Big Endian byte order
+ */
+const UINT64_BE = {
+    len: 8,
+    get(array, offset) {
+        return dv(array).getBigUint64(offset);
+    },
+    put(array, offset, value) {
+        dv(array).setBigUint64(offset, value);
+        return offset + 8;
+    }
+};
+/**
+ * 64-bit signed integer, Big Endian byte order
+ */
+const INT64_BE = {
+    len: 8,
+    get(array, offset) {
+        return dv(array).getBigInt64(offset);
+    },
+    put(array, offset, value) {
+        dv(array).setBigInt64(offset, value);
+        return offset + 8;
+    }
+};
+/**
+ * IEEE 754 16-bit (half precision) float, big endian
+ */
+const Float16_BE = {
+    len: 2,
+    get(dataView, offset) {
+        return ieee754/* read */.L(dataView, offset, false, 10, this.len);
+    },
+    put(dataView, offset, value) {
+        ieee754/* write */.M(dataView, value, offset, false, 10, this.len);
+        return offset + this.len;
+    }
+};
+/**
+ * IEEE 754 16-bit (half precision) float, little endian
+ */
+const Float16_LE = {
+    len: 2,
+    get(array, offset) {
+        return ieee754/* read */.L(array, offset, true, 10, this.len);
+    },
+    put(array, offset, value) {
+        ieee754/* write */.M(array, value, offset, true, 10, this.len);
+        return offset + this.len;
+    }
+};
+/**
+ * IEEE 754 32-bit (single precision) float, big endian
+ */
+const Float32_BE = {
+    len: 4,
+    get(array, offset) {
+        return dv(array).getFloat32(offset);
+    },
+    put(array, offset, value) {
+        dv(array).setFloat32(offset, value);
+        return offset + 4;
+    }
+};
+/**
+ * IEEE 754 32-bit (single precision) float, little endian
+ */
+const Float32_LE = {
+    len: 4,
+    get(array, offset) {
+        return dv(array).getFloat32(offset, true);
+    },
+    put(array, offset, value) {
+        dv(array).setFloat32(offset, value, true);
+        return offset + 4;
+    }
+};
+/**
+ * IEEE 754 64-bit (double precision) float, big endian
+ */
+const Float64_BE = {
+    len: 8,
+    get(array, offset) {
+        return dv(array).getFloat64(offset);
+    },
+    put(array, offset, value) {
+        dv(array).setFloat64(offset, value);
+        return offset + 8;
+    }
+};
+/**
+ * IEEE 754 64-bit (double precision) float, little endian
+ */
+const Float64_LE = {
+    len: 8,
+    get(array, offset) {
+        return dv(array).getFloat64(offset, true);
+    },
+    put(array, offset, value) {
+        dv(array).setFloat64(offset, value, true);
+        return offset + 8;
+    }
+};
+/**
+ * IEEE 754 80-bit (extended precision) float, big endian
+ */
+const Float80_BE = {
+    len: 10,
+    get(array, offset) {
+        return ieee754/* read */.L(array, offset, false, 63, this.len);
+    },
+    put(array, offset, value) {
+        ieee754/* write */.M(array, value, offset, false, 63, this.len);
+        return offset + this.len;
+    }
+};
+/**
+ * IEEE 754 80-bit (extended precision) float, little endian
+ */
+const Float80_LE = {
+    len: 10,
+    get(array, offset) {
+        return ieee754/* read */.L(array, offset, true, 63, this.len);
+    },
+    put(array, offset, value) {
+        ieee754/* write */.M(array, value, offset, true, 63, this.len);
+        return offset + this.len;
+    }
+};
+/**
+ * Ignore a given number of bytes
+ */
+class IgnoreType {
+    /**
+     * @param len number of bytes to ignore
+     */
+    constructor(len) {
+        this.len = len;
+    }
+    // ToDo: don't read, but skip data
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    get(array, off) {
+    }
+}
+class Uint8ArrayType {
+    constructor(len) {
+        this.len = len;
+    }
+    get(array, offset) {
+        return array.subarray(offset, offset + this.len);
+    }
+}
+class BufferType {
+    constructor(len) {
+        this.len = len;
+    }
+    get(uint8Array, off) {
+        return Buffer.from(uint8Array.subarray(off, off + this.len));
+    }
+}
+/**
+ * Consume a fixed number of bytes from the stream and return a string with a specified encoding.
+ */
+class StringType {
+    constructor(len, encoding) {
+        this.len = len;
+        this.encoding = encoding;
+    }
+    get(uint8Array, offset) {
+        return external_node_buffer_namespaceObject.Buffer.from(uint8Array).toString(this.encoding, offset, offset + this.len);
+    }
+}
+/**
+ * ANSI Latin 1 String
+ * Using windows-1252 / ISO 8859-1 decoding
+ */
+class AnsiStringType {
+    constructor(len) {
+        this.len = len;
+    }
+    static decode(buffer, offset, until) {
+        let str = '';
+        for (let i = offset; i < until; ++i) {
+            str += AnsiStringType.codePointToString(AnsiStringType.singleByteDecoder(buffer[i]));
+        }
+        return str;
+    }
+    static inRange(a, min, max) {
+        return min <= a && a <= max;
+    }
+    static codePointToString(cp) {
+        if (cp <= 0xFFFF) {
+            return String.fromCharCode(cp);
+        }
+        else {
+            cp -= 0x10000;
+            return String.fromCharCode((cp >> 10) + 0xD800, (cp & 0x3FF) + 0xDC00);
+        }
+    }
+    static singleByteDecoder(bite) {
+        if (AnsiStringType.inRange(bite, 0x00, 0x7F)) {
+            return bite;
+        }
+        const codePoint = AnsiStringType.windows1252[bite - 0x80];
+        if (codePoint === null) {
+            throw Error('invaliding encoding');
+        }
+        return codePoint;
+    }
+    get(buffer, offset = 0) {
+        return AnsiStringType.decode(buffer, offset, offset + this.len);
+    }
+}
+AnsiStringType.windows1252 = [8364, 129, 8218, 402, 8222, 8230, 8224, 8225, 710, 8240, 352,
+    8249, 338, 141, 381, 143, 144, 8216, 8217, 8220, 8221, 8226, 8211, 8212, 732,
+    8482, 353, 8250, 339, 157, 382, 376, 160, 161, 162, 163, 164, 165, 166, 167, 168,
+    169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184,
+    185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200,
+    201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216,
+    217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232,
+    233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247,
+    248, 249, 250, 251, 252, 253, 254, 255];
+
+;// CONCATENATED MODULE: ./node_modules/file-type/util.js
+function stringToBytes(string) {
+	return [...string].map(character => character.charCodeAt(0)); // eslint-disable-line unicorn/prefer-code-point
+}
+
+/**
+Checks whether the TAR checksum is valid.
+
+@param {Buffer} buffer - The TAR header `[offset ... offset + 512]`.
+@param {number} offset - TAR header offset.
+@returns {boolean} `true` if the TAR checksum is valid, otherwise `false`.
+*/
+function tarHeaderChecksumMatches(buffer, offset = 0) {
+	const readSum = Number.parseInt(buffer.toString('utf8', 148, 154).replace(/\0.*$/, '').trim(), 8); // Read sum in header
+	if (Number.isNaN(readSum)) {
+		return false;
+	}
+
+	let sum = 8 * 0x20; // Initialize signed bit sum
+
+	for (let index = offset; index < offset + 148; index++) {
+		sum += buffer[index];
+	}
+
+	for (let index = offset + 156; index < offset + 512; index++) {
+		sum += buffer[index];
+	}
+
+	return readSum === sum;
+}
+
+/**
+ID3 UINT32 sync-safe tokenizer token.
+28 bits (representing up to 256MB) integer, the msb is 0 to avoid "false syncsignals".
+*/
+const uint32SyncSafeToken = {
+	get: (buffer, offset) => (buffer[offset + 3] & 0x7F) | ((buffer[offset + 2]) << 7) | ((buffer[offset + 1]) << 14) | ((buffer[offset]) << 21),
+	len: 4,
+};
+
+;// CONCATENATED MODULE: ./node_modules/file-type/supported.js
+const extensions = [
+	'jpg',
+	'png',
+	'apng',
+	'gif',
+	'webp',
+	'flif',
+	'xcf',
+	'cr2',
+	'cr3',
+	'orf',
+	'arw',
+	'dng',
+	'nef',
+	'rw2',
+	'raf',
+	'tif',
+	'bmp',
+	'icns',
+	'jxr',
+	'psd',
+	'indd',
+	'zip',
+	'tar',
+	'rar',
+	'gz',
+	'bz2',
+	'7z',
+	'dmg',
+	'mp4',
+	'mid',
+	'mkv',
+	'webm',
+	'mov',
+	'avi',
+	'mpg',
+	'mp2',
+	'mp3',
+	'm4a',
+	'oga',
+	'ogg',
+	'ogv',
+	'opus',
+	'flac',
+	'wav',
+	'spx',
+	'amr',
+	'pdf',
+	'epub',
+	'elf',
+	'exe',
+	'swf',
+	'rtf',
+	'wasm',
+	'woff',
+	'woff2',
+	'eot',
+	'ttf',
+	'otf',
+	'ico',
+	'flv',
+	'ps',
+	'xz',
+	'sqlite',
+	'nes',
+	'crx',
+	'xpi',
+	'cab',
+	'deb',
+	'ar',
+	'rpm',
+	'Z',
+	'lz',
+	'cfb',
+	'mxf',
+	'mts',
+	'blend',
+	'bpg',
+	'docx',
+	'pptx',
+	'xlsx',
+	'3gp',
+	'3g2',
+	'jp2',
+	'jpm',
+	'jpx',
+	'mj2',
+	'aif',
+	'qcp',
+	'odt',
+	'ods',
+	'odp',
+	'xml',
+	'mobi',
+	'heic',
+	'cur',
+	'ktx',
+	'ape',
+	'wv',
+	'dcm',
+	'ics',
+	'glb',
+	'pcap',
+	'dsf',
+	'lnk',
+	'alias',
+	'voc',
+	'ac3',
+	'm4v',
+	'm4p',
+	'm4b',
+	'f4v',
+	'f4p',
+	'f4b',
+	'f4a',
+	'mie',
+	'asf',
+	'ogm',
+	'ogx',
+	'mpc',
+	'arrow',
+	'shp',
+	'aac',
+	'mp1',
+	'it',
+	's3m',
+	'xm',
+	'ai',
+	'skp',
+	'avif',
+	'eps',
+	'lzh',
+	'pgp',
+	'asar',
+	'stl',
+	'chm',
+	'3mf',
+	'zst',
+	'jxl',
+	'vcf',
+];
+
+const supported_mimeTypes = [
+	'image/jpeg',
+	'image/png',
+	'image/gif',
+	'image/webp',
+	'image/flif',
+	'image/x-xcf',
+	'image/x-canon-cr2',
+	'image/x-canon-cr3',
+	'image/tiff',
+	'image/bmp',
+	'image/vnd.ms-photo',
+	'image/vnd.adobe.photoshop',
+	'application/x-indesign',
+	'application/epub+zip',
+	'application/x-xpinstall',
+	'application/vnd.oasis.opendocument.text',
+	'application/vnd.oasis.opendocument.spreadsheet',
+	'application/vnd.oasis.opendocument.presentation',
+	'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+	'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+	'application/zip',
+	'application/x-tar',
+	'application/x-rar-compressed',
+	'application/gzip',
+	'application/x-bzip2',
+	'application/x-7z-compressed',
+	'application/x-apple-diskimage',
+	'application/x-apache-arrow',
+	'video/mp4',
+	'audio/midi',
+	'video/x-matroska',
+	'video/webm',
+	'video/quicktime',
+	'video/vnd.avi',
+	'audio/vnd.wave',
+	'audio/qcelp',
+	'audio/x-ms-asf',
+	'video/x-ms-asf',
+	'application/vnd.ms-asf',
+	'video/mpeg',
+	'video/3gpp',
+	'audio/mpeg',
+	'audio/mp4', // RFC 4337
+	'audio/opus',
+	'video/ogg',
+	'audio/ogg',
+	'application/ogg',
+	'audio/x-flac',
+	'audio/ape',
+	'audio/wavpack',
+	'audio/amr',
+	'application/pdf',
+	'application/x-elf',
+	'application/x-msdownload',
+	'application/x-shockwave-flash',
+	'application/rtf',
+	'application/wasm',
+	'font/woff',
+	'font/woff2',
+	'application/vnd.ms-fontobject',
+	'font/ttf',
+	'font/otf',
+	'image/x-icon',
+	'video/x-flv',
+	'application/postscript',
+	'application/eps',
+	'application/x-xz',
+	'application/x-sqlite3',
+	'application/x-nintendo-nes-rom',
+	'application/x-google-chrome-extension',
+	'application/vnd.ms-cab-compressed',
+	'application/x-deb',
+	'application/x-unix-archive',
+	'application/x-rpm',
+	'application/x-compress',
+	'application/x-lzip',
+	'application/x-cfb',
+	'application/x-mie',
+	'application/mxf',
+	'video/mp2t',
+	'application/x-blender',
+	'image/bpg',
+	'image/jp2',
+	'image/jpx',
+	'image/jpm',
+	'image/mj2',
+	'audio/aiff',
+	'application/xml',
+	'application/x-mobipocket-ebook',
+	'image/heif',
+	'image/heif-sequence',
+	'image/heic',
+	'image/heic-sequence',
+	'image/icns',
+	'image/ktx',
+	'application/dicom',
+	'audio/x-musepack',
+	'text/calendar',
+	'text/vcard',
+	'model/gltf-binary',
+	'application/vnd.tcpdump.pcap',
+	'audio/x-dsf', // Non-standard
+	'application/x.ms.shortcut', // Invented by us
+	'application/x.apple.alias', // Invented by us
+	'audio/x-voc',
+	'audio/vnd.dolby.dd-raw',
+	'audio/x-m4a',
+	'image/apng',
+	'image/x-olympus-orf',
+	'image/x-sony-arw',
+	'image/x-adobe-dng',
+	'image/x-nikon-nef',
+	'image/x-panasonic-rw2',
+	'image/x-fujifilm-raf',
+	'video/x-m4v',
+	'video/3gpp2',
+	'application/x-esri-shape',
+	'audio/aac',
+	'audio/x-it',
+	'audio/x-s3m',
+	'audio/x-xm',
+	'video/MP1S',
+	'video/MP2P',
+	'application/vnd.sketchup.skp',
+	'image/avif',
+	'application/x-lzh-compressed',
+	'application/pgp-encrypted',
+	'application/x-asar',
+	'model/stl',
+	'application/vnd.ms-htmlhelp',
+	'model/3mf',
+	'image/jxl',
+	'application/zstd',
+];
+
+;// CONCATENATED MODULE: ./node_modules/file-type/core.js
+
+
+ // eslint-disable-line n/file-extension-in-import
+
+
+
+const minimumBytes = 4100; // A fair amount of file-types are detectable within this range.
+
+async function fileTypeFromStream(stream) {
+	const tokenizer = await strtok3.fromStream(stream);
+	try {
+		return await core_fileTypeFromTokenizer(tokenizer);
+	} finally {
+		await tokenizer.close();
+	}
+}
+
+async function fileTypeFromBuffer(input) {
+	if (!(input instanceof Uint8Array || input instanceof ArrayBuffer)) {
+		throw new TypeError(`Expected the \`input\` argument to be of type \`Uint8Array\` or \`Buffer\` or \`ArrayBuffer\`, got \`${typeof input}\``);
+	}
+
+	const buffer = input instanceof Uint8Array ? input : new Uint8Array(input);
+
+	if (!(buffer?.length > 1)) {
+		return;
+	}
+
+	return core_fileTypeFromTokenizer(fromBuffer(buffer));
+}
+
+function _check(buffer, headers, options) {
+	options = {
+		offset: 0,
+		...options,
+	};
+
+	for (const [index, header] of headers.entries()) {
+		// If a bitmask is set
+		if (options.mask) {
+			// If header doesn't equal `buf` with bits masked off
+			if (header !== (options.mask[index] & buffer[index + options.offset])) {
+				return false;
+			}
+		} else if (header !== buffer[index + options.offset]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+async function core_fileTypeFromTokenizer(tokenizer) {
+	try {
+		return new FileTypeParser().parse(tokenizer);
+	} catch (error) {
+		if (!(error instanceof EndOfStreamError)) {
+			throw error;
+		}
+	}
+}
+
+class FileTypeParser {
+	check(header, options) {
+		return _check(this.buffer, header, options);
+	}
+
+	checkString(header, options) {
+		return this.check(stringToBytes(header), options);
+	}
+
+	async parse(tokenizer) {
+		this.buffer = external_node_buffer_namespaceObject.Buffer.alloc(minimumBytes);
+
+		// Keep reading until EOF if the file size is unknown.
+		if (tokenizer.fileInfo.size === undefined) {
+			tokenizer.fileInfo.size = Number.MAX_SAFE_INTEGER;
+		}
+
+		this.tokenizer = tokenizer;
+
+		await tokenizer.peekBuffer(this.buffer, {length: 12, mayBeLess: true});
+
+		// -- 2-byte signatures --
+
+		if (this.check([0x42, 0x4D])) {
+			return {
+				ext: 'bmp',
+				mime: 'image/bmp',
+			};
+		}
+
+		if (this.check([0x0B, 0x77])) {
+			return {
+				ext: 'ac3',
+				mime: 'audio/vnd.dolby.dd-raw',
+			};
+		}
+
+		if (this.check([0x78, 0x01])) {
+			return {
+				ext: 'dmg',
+				mime: 'application/x-apple-diskimage',
+			};
+		}
+
+		if (this.check([0x4D, 0x5A])) {
+			return {
+				ext: 'exe',
+				mime: 'application/x-msdownload',
+			};
+		}
+
+		if (this.check([0x25, 0x21])) {
+			await tokenizer.peekBuffer(this.buffer, {length: 24, mayBeLess: true});
+
+			if (
+				this.checkString('PS-Adobe-', {offset: 2})
+				&& this.checkString(' EPSF-', {offset: 14})
+			) {
+				return {
+					ext: 'eps',
+					mime: 'application/eps',
+				};
+			}
+
+			return {
+				ext: 'ps',
+				mime: 'application/postscript',
+			};
+		}
+
+		if (
+			this.check([0x1F, 0xA0])
+			|| this.check([0x1F, 0x9D])
+		) {
+			return {
+				ext: 'Z',
+				mime: 'application/x-compress',
+			};
+		}
+
+		// -- 3-byte signatures --
+
+		if (this.check([0xEF, 0xBB, 0xBF])) { // UTF-8-BOM
+			// Strip off UTF-8-BOM
+			this.tokenizer.ignore(3);
+			return this.parse(tokenizer);
+		}
+
+		if (this.check([0x47, 0x49, 0x46])) {
+			return {
+				ext: 'gif',
+				mime: 'image/gif',
+			};
+		}
+
+		if (this.check([0xFF, 0xD8, 0xFF])) {
+			return {
+				ext: 'jpg',
+				mime: 'image/jpeg',
+			};
+		}
+
+		if (this.check([0x49, 0x49, 0xBC])) {
+			return {
+				ext: 'jxr',
+				mime: 'image/vnd.ms-photo',
+			};
+		}
+
+		if (this.check([0x1F, 0x8B, 0x8])) {
+			return {
+				ext: 'gz',
+				mime: 'application/gzip',
+			};
+		}
+
+		if (this.check([0x42, 0x5A, 0x68])) {
+			return {
+				ext: 'bz2',
+				mime: 'application/x-bzip2',
+			};
+		}
+
+		if (this.checkString('ID3')) {
+			await tokenizer.ignore(6); // Skip ID3 header until the header size
+			const id3HeaderLength = await tokenizer.readToken(uint32SyncSafeToken);
+			if (tokenizer.position + id3HeaderLength > tokenizer.fileInfo.size) {
+				// Guess file type based on ID3 header for backward compatibility
+				return {
+					ext: 'mp3',
+					mime: 'audio/mpeg',
+				};
+			}
+
+			await tokenizer.ignore(id3HeaderLength);
+			return core_fileTypeFromTokenizer(tokenizer); // Skip ID3 header, recursion
+		}
+
+		// Musepack, SV7
+		if (this.checkString('MP+')) {
+			return {
+				ext: 'mpc',
+				mime: 'audio/x-musepack',
+			};
+		}
+
+		if (
+			(this.buffer[0] === 0x43 || this.buffer[0] === 0x46)
+			&& this.check([0x57, 0x53], {offset: 1})
+		) {
+			return {
+				ext: 'swf',
+				mime: 'application/x-shockwave-flash',
+			};
+		}
+
+		// -- 4-byte signatures --
+
+		if (this.checkString('FLIF')) {
+			return {
+				ext: 'flif',
+				mime: 'image/flif',
+			};
+		}
+
+		if (this.checkString('8BPS')) {
+			return {
+				ext: 'psd',
+				mime: 'image/vnd.adobe.photoshop',
+			};
+		}
+
+		if (this.checkString('WEBP', {offset: 8})) {
+			return {
+				ext: 'webp',
+				mime: 'image/webp',
+			};
+		}
+
+		// Musepack, SV8
+		if (this.checkString('MPCK')) {
+			return {
+				ext: 'mpc',
+				mime: 'audio/x-musepack',
+			};
+		}
+
+		if (this.checkString('FORM')) {
+			return {
+				ext: 'aif',
+				mime: 'audio/aiff',
+			};
+		}
+
+		if (this.checkString('icns', {offset: 0})) {
+			return {
+				ext: 'icns',
+				mime: 'image/icns',
+			};
+		}
+
+		// Zip-based file formats
+		// Need to be before the `zip` check
+		if (this.check([0x50, 0x4B, 0x3, 0x4])) { // Local file header signature
+			try {
+				while (tokenizer.position + 30 < tokenizer.fileInfo.size) {
+					await tokenizer.readBuffer(this.buffer, {length: 30});
+
+					// https://en.wikipedia.org/wiki/Zip_(file_format)#File_headers
+					const zipHeader = {
+						compressedSize: this.buffer.readUInt32LE(18),
+						uncompressedSize: this.buffer.readUInt32LE(22),
+						filenameLength: this.buffer.readUInt16LE(26),
+						extraFieldLength: this.buffer.readUInt16LE(28),
+					};
+
+					zipHeader.filename = await tokenizer.readToken(new StringType(zipHeader.filenameLength, 'utf-8'));
+					await tokenizer.ignore(zipHeader.extraFieldLength);
+
+					// Assumes signed `.xpi` from addons.mozilla.org
+					if (zipHeader.filename === 'META-INF/mozilla.rsa') {
+						return {
+							ext: 'xpi',
+							mime: 'application/x-xpinstall',
+						};
+					}
+
+					if (zipHeader.filename.endsWith('.rels') || zipHeader.filename.endsWith('.xml')) {
+						const type = zipHeader.filename.split('/')[0];
+						switch (type) {
+							case '_rels':
+								break;
+							case 'word':
+								return {
+									ext: 'docx',
+									mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+								};
+							case 'ppt':
+								return {
+									ext: 'pptx',
+									mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+								};
+							case 'xl':
+								return {
+									ext: 'xlsx',
+									mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+								};
+							default:
+								break;
+						}
+					}
+
+					if (zipHeader.filename.startsWith('xl/')) {
+						return {
+							ext: 'xlsx',
+							mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+						};
+					}
+
+					if (zipHeader.filename.startsWith('3D/') && zipHeader.filename.endsWith('.model')) {
+						return {
+							ext: '3mf',
+							mime: 'model/3mf',
+						};
+					}
+
+					// The docx, xlsx and pptx file types extend the Office Open XML file format:
+					// https://en.wikipedia.org/wiki/Office_Open_XML_file_formats
+					// We look for:
+					// - one entry named '[Content_Types].xml' or '_rels/.rels',
+					// - one entry indicating specific type of file.
+					// MS Office, OpenOffice and LibreOffice may put the parts in different order, so the check should not rely on it.
+					if (zipHeader.filename === 'mimetype' && zipHeader.compressedSize === zipHeader.uncompressedSize) {
+						let mimeType = await tokenizer.readToken(new StringType(zipHeader.compressedSize, 'utf-8'));
+						mimeType = mimeType.trim();
+
+						switch (mimeType) {
+							case 'application/epub+zip':
+								return {
+									ext: 'epub',
+									mime: 'application/epub+zip',
+								};
+							case 'application/vnd.oasis.opendocument.text':
+								return {
+									ext: 'odt',
+									mime: 'application/vnd.oasis.opendocument.text',
+								};
+							case 'application/vnd.oasis.opendocument.spreadsheet':
+								return {
+									ext: 'ods',
+									mime: 'application/vnd.oasis.opendocument.spreadsheet',
+								};
+							case 'application/vnd.oasis.opendocument.presentation':
+								return {
+									ext: 'odp',
+									mime: 'application/vnd.oasis.opendocument.presentation',
+								};
+							default:
+						}
+					}
+
+					// Try to find next header manually when current one is corrupted
+					if (zipHeader.compressedSize === 0) {
+						let nextHeaderIndex = -1;
+
+						while (nextHeaderIndex < 0 && (tokenizer.position < tokenizer.fileInfo.size)) {
+							await tokenizer.peekBuffer(this.buffer, {mayBeLess: true});
+
+							nextHeaderIndex = this.buffer.indexOf('504B0304', 0, 'hex');
+							// Move position to the next header if found, skip the whole buffer otherwise
+							await tokenizer.ignore(nextHeaderIndex >= 0 ? nextHeaderIndex : this.buffer.length);
+						}
+					} else {
+						await tokenizer.ignore(zipHeader.compressedSize);
+					}
+				}
+			} catch (error) {
+				if (!(error instanceof EndOfStreamError)) {
+					throw error;
+				}
+			}
+
+			return {
+				ext: 'zip',
+				mime: 'application/zip',
+			};
+		}
+
+		if (this.checkString('OggS')) {
+			// This is an OGG container
+			await tokenizer.ignore(28);
+			const type = external_node_buffer_namespaceObject.Buffer.alloc(8);
+			await tokenizer.readBuffer(type);
+
+			// Needs to be before `ogg` check
+			if (_check(type, [0x4F, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64])) {
+				return {
+					ext: 'opus',
+					mime: 'audio/opus',
+				};
+			}
+
+			// If ' theora' in header.
+			if (_check(type, [0x80, 0x74, 0x68, 0x65, 0x6F, 0x72, 0x61])) {
+				return {
+					ext: 'ogv',
+					mime: 'video/ogg',
+				};
+			}
+
+			// If '\x01video' in header.
+			if (_check(type, [0x01, 0x76, 0x69, 0x64, 0x65, 0x6F, 0x00])) {
+				return {
+					ext: 'ogm',
+					mime: 'video/ogg',
+				};
+			}
+
+			// If ' FLAC' in header  https://xiph.org/flac/faq.html
+			if (_check(type, [0x7F, 0x46, 0x4C, 0x41, 0x43])) {
+				return {
+					ext: 'oga',
+					mime: 'audio/ogg',
+				};
+			}
+
+			// 'Speex  ' in header https://en.wikipedia.org/wiki/Speex
+			if (_check(type, [0x53, 0x70, 0x65, 0x65, 0x78, 0x20, 0x20])) {
+				return {
+					ext: 'spx',
+					mime: 'audio/ogg',
+				};
+			}
+
+			// If '\x01vorbis' in header
+			if (_check(type, [0x01, 0x76, 0x6F, 0x72, 0x62, 0x69, 0x73])) {
+				return {
+					ext: 'ogg',
+					mime: 'audio/ogg',
+				};
+			}
+
+			// Default OGG container https://www.iana.org/assignments/media-types/application/ogg
+			return {
+				ext: 'ogx',
+				mime: 'application/ogg',
+			};
+		}
+
+		if (
+			this.check([0x50, 0x4B])
+			&& (this.buffer[2] === 0x3 || this.buffer[2] === 0x5 || this.buffer[2] === 0x7)
+			&& (this.buffer[3] === 0x4 || this.buffer[3] === 0x6 || this.buffer[3] === 0x8)
+		) {
+			return {
+				ext: 'zip',
+				mime: 'application/zip',
+			};
+		}
+
+		//
+
+		// File Type Box (https://en.wikipedia.org/wiki/ISO_base_media_file_format)
+		// It's not required to be first, but it's recommended to be. Almost all ISO base media files start with `ftyp` box.
+		// `ftyp` box must contain a brand major identifier, which must consist of ISO 8859-1 printable characters.
+		// Here we check for 8859-1 printable characters (for simplicity, it's a mask which also catches one non-printable character).
+		if (
+			this.checkString('ftyp', {offset: 4})
+			&& (this.buffer[8] & 0x60) !== 0x00 // Brand major, first character ASCII?
+		) {
+			// They all can have MIME `video/mp4` except `application/mp4` special-case which is hard to detect.
+			// For some cases, we're specific, everything else falls to `video/mp4` with `mp4` extension.
+			const brandMajor = this.buffer.toString('binary', 8, 12).replace('\0', ' ').trim();
+			switch (brandMajor) {
+				case 'avif':
+				case 'avis':
+					return {ext: 'avif', mime: 'image/avif'};
+				case 'mif1':
+					return {ext: 'heic', mime: 'image/heif'};
+				case 'msf1':
+					return {ext: 'heic', mime: 'image/heif-sequence'};
+				case 'heic':
+				case 'heix':
+					return {ext: 'heic', mime: 'image/heic'};
+				case 'hevc':
+				case 'hevx':
+					return {ext: 'heic', mime: 'image/heic-sequence'};
+				case 'qt':
+					return {ext: 'mov', mime: 'video/quicktime'};
+				case 'M4V':
+				case 'M4VH':
+				case 'M4VP':
+					return {ext: 'm4v', mime: 'video/x-m4v'};
+				case 'M4P':
+					return {ext: 'm4p', mime: 'video/mp4'};
+				case 'M4B':
+					return {ext: 'm4b', mime: 'audio/mp4'};
+				case 'M4A':
+					return {ext: 'm4a', mime: 'audio/x-m4a'};
+				case 'F4V':
+					return {ext: 'f4v', mime: 'video/mp4'};
+				case 'F4P':
+					return {ext: 'f4p', mime: 'video/mp4'};
+				case 'F4A':
+					return {ext: 'f4a', mime: 'audio/mp4'};
+				case 'F4B':
+					return {ext: 'f4b', mime: 'audio/mp4'};
+				case 'crx':
+					return {ext: 'cr3', mime: 'image/x-canon-cr3'};
+				default:
+					if (brandMajor.startsWith('3g')) {
+						if (brandMajor.startsWith('3g2')) {
+							return {ext: '3g2', mime: 'video/3gpp2'};
+						}
+
+						return {ext: '3gp', mime: 'video/3gpp'};
+					}
+
+					return {ext: 'mp4', mime: 'video/mp4'};
+			}
+		}
+
+		if (this.checkString('MThd')) {
+			return {
+				ext: 'mid',
+				mime: 'audio/midi',
+			};
+		}
+
+		if (
+			this.checkString('wOFF')
+			&& (
+				this.check([0x00, 0x01, 0x00, 0x00], {offset: 4})
+				|| this.checkString('OTTO', {offset: 4})
+			)
+		) {
+			return {
+				ext: 'woff',
+				mime: 'font/woff',
+			};
+		}
+
+		if (
+			this.checkString('wOF2')
+			&& (
+				this.check([0x00, 0x01, 0x00, 0x00], {offset: 4})
+				|| this.checkString('OTTO', {offset: 4})
+			)
+		) {
+			return {
+				ext: 'woff2',
+				mime: 'font/woff2',
+			};
+		}
+
+		if (this.check([0xD4, 0xC3, 0xB2, 0xA1]) || this.check([0xA1, 0xB2, 0xC3, 0xD4])) {
+			return {
+				ext: 'pcap',
+				mime: 'application/vnd.tcpdump.pcap',
+			};
+		}
+
+		// Sony DSD Stream File (DSF)
+		if (this.checkString('DSD ')) {
+			return {
+				ext: 'dsf',
+				mime: 'audio/x-dsf', // Non-standard
+			};
+		}
+
+		if (this.checkString('LZIP')) {
+			return {
+				ext: 'lz',
+				mime: 'application/x-lzip',
+			};
+		}
+
+		if (this.checkString('fLaC')) {
+			return {
+				ext: 'flac',
+				mime: 'audio/x-flac',
+			};
+		}
+
+		if (this.check([0x42, 0x50, 0x47, 0xFB])) {
+			return {
+				ext: 'bpg',
+				mime: 'image/bpg',
+			};
+		}
+
+		if (this.checkString('wvpk')) {
+			return {
+				ext: 'wv',
+				mime: 'audio/wavpack',
+			};
+		}
+
+		if (this.checkString('%PDF')) {
+			await tokenizer.ignore(1350);
+			const maxBufferSize = 10 * 1024 * 1024;
+			const buffer = external_node_buffer_namespaceObject.Buffer.alloc(Math.min(maxBufferSize, tokenizer.fileInfo.size));
+			await tokenizer.readBuffer(buffer, {mayBeLess: true});
+
+			// Check if this is an Adobe Illustrator file
+			if (buffer.includes(external_node_buffer_namespaceObject.Buffer.from('AIPrivateData'))) {
+				return {
+					ext: 'ai',
+					mime: 'application/postscript',
+				};
+			}
+
+			// Assume this is just a normal PDF
+			return {
+				ext: 'pdf',
+				mime: 'application/pdf',
+			};
+		}
+
+		if (this.check([0x00, 0x61, 0x73, 0x6D])) {
+			return {
+				ext: 'wasm',
+				mime: 'application/wasm',
+			};
+		}
+
+		// TIFF, little-endian type
+		if (this.check([0x49, 0x49])) {
+			const fileType = await this.readTiffHeader(false);
+			if (fileType) {
+				return fileType;
+			}
+		}
+
+		// TIFF, big-endian type
+		if (this.check([0x4D, 0x4D])) {
+			const fileType = await this.readTiffHeader(true);
+			if (fileType) {
+				return fileType;
+			}
+		}
+
+		if (this.checkString('MAC ')) {
+			return {
+				ext: 'ape',
+				mime: 'audio/ape',
+			};
+		}
+
+		// https://github.com/threatstack/libmagic/blob/master/magic/Magdir/matroska
+		if (this.check([0x1A, 0x45, 0xDF, 0xA3])) { // Root element: EBML
+			async function readField() {
+				const msb = await tokenizer.peekNumber(UINT8);
+				let mask = 0x80;
+				let ic = 0; // 0 = A, 1 = B, 2 = C, 3
+				// = D
+
+				while ((msb & mask) === 0 && mask !== 0) {
+					++ic;
+					mask >>= 1;
+				}
+
+				const id = external_node_buffer_namespaceObject.Buffer.alloc(ic + 1);
+				await tokenizer.readBuffer(id);
+				return id;
+			}
+
+			async function readElement() {
+				const id = await readField();
+				const lengthField = await readField();
+				lengthField[0] ^= 0x80 >> (lengthField.length - 1);
+				const nrLength = Math.min(6, lengthField.length); // JavaScript can max read 6 bytes integer
+				return {
+					id: id.readUIntBE(0, id.length),
+					len: lengthField.readUIntBE(lengthField.length - nrLength, nrLength),
+				};
+			}
+
+			async function readChildren(children) {
+				while (children > 0) {
+					const element = await readElement();
+					if (element.id === 0x42_82) {
+						const rawValue = await tokenizer.readToken(new StringType(element.len, 'utf-8'));
+						return rawValue.replace(/\00.*$/g, ''); // Return DocType
+					}
+
+					await tokenizer.ignore(element.len); // ignore payload
+					--children;
+				}
+			}
+
+			const re = await readElement();
+			const docType = await readChildren(re.len);
+
+			switch (docType) {
+				case 'webm':
+					return {
+						ext: 'webm',
+						mime: 'video/webm',
+					};
+
+				case 'matroska':
+					return {
+						ext: 'mkv',
+						mime: 'video/x-matroska',
+					};
+
+				default:
+					return;
+			}
+		}
+
+		// RIFF file format which might be AVI, WAV, QCP, etc
+		if (this.check([0x52, 0x49, 0x46, 0x46])) {
+			if (this.check([0x41, 0x56, 0x49], {offset: 8})) {
+				return {
+					ext: 'avi',
+					mime: 'video/vnd.avi',
+				};
+			}
+
+			if (this.check([0x57, 0x41, 0x56, 0x45], {offset: 8})) {
+				return {
+					ext: 'wav',
+					mime: 'audio/vnd.wave',
+				};
+			}
+
+			// QLCM, QCP file
+			if (this.check([0x51, 0x4C, 0x43, 0x4D], {offset: 8})) {
+				return {
+					ext: 'qcp',
+					mime: 'audio/qcelp',
+				};
+			}
+		}
+
+		if (this.checkString('SQLi')) {
+			return {
+				ext: 'sqlite',
+				mime: 'application/x-sqlite3',
+			};
+		}
+
+		if (this.check([0x4E, 0x45, 0x53, 0x1A])) {
+			return {
+				ext: 'nes',
+				mime: 'application/x-nintendo-nes-rom',
+			};
+		}
+
+		if (this.checkString('Cr24')) {
+			return {
+				ext: 'crx',
+				mime: 'application/x-google-chrome-extension',
+			};
+		}
+
+		if (
+			this.checkString('MSCF')
+			|| this.checkString('ISc(')
+		) {
+			return {
+				ext: 'cab',
+				mime: 'application/vnd.ms-cab-compressed',
+			};
+		}
+
+		if (this.check([0xED, 0xAB, 0xEE, 0xDB])) {
+			return {
+				ext: 'rpm',
+				mime: 'application/x-rpm',
+			};
+		}
+
+		if (this.check([0xC5, 0xD0, 0xD3, 0xC6])) {
+			return {
+				ext: 'eps',
+				mime: 'application/eps',
+			};
+		}
+
+		if (this.check([0x28, 0xB5, 0x2F, 0xFD])) {
+			return {
+				ext: 'zst',
+				mime: 'application/zstd',
+			};
+		}
+
+		if (this.check([0x7F, 0x45, 0x4C, 0x46])) {
+			return {
+				ext: 'elf',
+				mime: 'application/x-elf',
+			};
+		}
+
+		// -- 5-byte signatures --
+
+		if (this.check([0x4F, 0x54, 0x54, 0x4F, 0x00])) {
+			return {
+				ext: 'otf',
+				mime: 'font/otf',
+			};
+		}
+
+		if (this.checkString('#!AMR')) {
+			return {
+				ext: 'amr',
+				mime: 'audio/amr',
+			};
+		}
+
+		if (this.checkString('{\\rtf')) {
+			return {
+				ext: 'rtf',
+				mime: 'application/rtf',
+			};
+		}
+
+		if (this.check([0x46, 0x4C, 0x56, 0x01])) {
+			return {
+				ext: 'flv',
+				mime: 'video/x-flv',
+			};
+		}
+
+		if (this.checkString('IMPM')) {
+			return {
+				ext: 'it',
+				mime: 'audio/x-it',
+			};
+		}
+
+		if (
+			this.checkString('-lh0-', {offset: 2})
+			|| this.checkString('-lh1-', {offset: 2})
+			|| this.checkString('-lh2-', {offset: 2})
+			|| this.checkString('-lh3-', {offset: 2})
+			|| this.checkString('-lh4-', {offset: 2})
+			|| this.checkString('-lh5-', {offset: 2})
+			|| this.checkString('-lh6-', {offset: 2})
+			|| this.checkString('-lh7-', {offset: 2})
+			|| this.checkString('-lzs-', {offset: 2})
+			|| this.checkString('-lz4-', {offset: 2})
+			|| this.checkString('-lz5-', {offset: 2})
+			|| this.checkString('-lhd-', {offset: 2})
+		) {
+			return {
+				ext: 'lzh',
+				mime: 'application/x-lzh-compressed',
+			};
+		}
+
+		// MPEG program stream (PS or MPEG-PS)
+		if (this.check([0x00, 0x00, 0x01, 0xBA])) {
+			//  MPEG-PS, MPEG-1 Part 1
+			if (this.check([0x21], {offset: 4, mask: [0xF1]})) {
+				return {
+					ext: 'mpg', // May also be .ps, .mpeg
+					mime: 'video/MP1S',
+				};
+			}
+
+			// MPEG-PS, MPEG-2 Part 1
+			if (this.check([0x44], {offset: 4, mask: [0xC4]})) {
+				return {
+					ext: 'mpg', // May also be .mpg, .m2p, .vob or .sub
+					mime: 'video/MP2P',
+				};
+			}
+		}
+
+		if (this.checkString('ITSF')) {
+			return {
+				ext: 'chm',
+				mime: 'application/vnd.ms-htmlhelp',
+			};
+		}
+
+		// -- 6-byte signatures --
+
+		if (this.check([0xFD, 0x37, 0x7A, 0x58, 0x5A, 0x00])) {
+			return {
+				ext: 'xz',
+				mime: 'application/x-xz',
+			};
+		}
+
+		if (this.checkString('<?xml ')) {
+			return {
+				ext: 'xml',
+				mime: 'application/xml',
+			};
+		}
+
+		if (this.check([0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C])) {
+			return {
+				ext: '7z',
+				mime: 'application/x-7z-compressed',
+			};
+		}
+
+		if (
+			this.check([0x52, 0x61, 0x72, 0x21, 0x1A, 0x7])
+			&& (this.buffer[6] === 0x0 || this.buffer[6] === 0x1)
+		) {
+			return {
+				ext: 'rar',
+				mime: 'application/x-rar-compressed',
+			};
+		}
+
+		if (this.checkString('solid ')) {
+			return {
+				ext: 'stl',
+				mime: 'model/stl',
+			};
+		}
+
+		// -- 7-byte signatures --
+
+		if (this.checkString('BLENDER')) {
+			return {
+				ext: 'blend',
+				mime: 'application/x-blender',
+			};
+		}
+
+		if (this.checkString('!<arch>')) {
+			await tokenizer.ignore(8);
+			const string = await tokenizer.readToken(new StringType(13, 'ascii'));
+			if (string === 'debian-binary') {
+				return {
+					ext: 'deb',
+					mime: 'application/x-deb',
+				};
+			}
+
+			return {
+				ext: 'ar',
+				mime: 'application/x-unix-archive',
+			};
+		}
+
+		// -- 8-byte signatures --
+
+		if (this.check([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])) {
+			// APNG format (https://wiki.mozilla.org/APNG_Specification)
+			// 1. Find the first IDAT (image data) chunk (49 44 41 54)
+			// 2. Check if there is an "acTL" chunk before the IDAT one (61 63 54 4C)
+
+			// Offset calculated as follows:
+			// - 8 bytes: PNG signature
+			// - 4 (length) + 4 (chunk type) + 13 (chunk data) + 4 (CRC): IHDR chunk
+
+			await tokenizer.ignore(8); // ignore PNG signature
+
+			async function readChunkHeader() {
+				return {
+					length: await tokenizer.readToken(INT32_BE),
+					type: await tokenizer.readToken(new StringType(4, 'binary')),
+				};
+			}
+
+			do {
+				const chunk = await readChunkHeader();
+				if (chunk.length < 0) {
+					return; // Invalid chunk length
+				}
+
+				switch (chunk.type) {
+					case 'IDAT':
+						return {
+							ext: 'png',
+							mime: 'image/png',
+						};
+					case 'acTL':
+						return {
+							ext: 'apng',
+							mime: 'image/apng',
+						};
+					default:
+						await tokenizer.ignore(chunk.length + 4); // Ignore chunk-data + CRC
+				}
+			} while (tokenizer.position + 8 < tokenizer.fileInfo.size);
+
+			return {
+				ext: 'png',
+				mime: 'image/png',
+			};
+		}
+
+		if (this.check([0x41, 0x52, 0x52, 0x4F, 0x57, 0x31, 0x00, 0x00])) {
+			return {
+				ext: 'arrow',
+				mime: 'application/x-apache-arrow',
+			};
+		}
+
+		if (this.check([0x67, 0x6C, 0x54, 0x46, 0x02, 0x00, 0x00, 0x00])) {
+			return {
+				ext: 'glb',
+				mime: 'model/gltf-binary',
+			};
+		}
+
+		// `mov` format variants
+		if (
+			this.check([0x66, 0x72, 0x65, 0x65], {offset: 4}) // `free`
+			|| this.check([0x6D, 0x64, 0x61, 0x74], {offset: 4}) // `mdat` MJPEG
+			|| this.check([0x6D, 0x6F, 0x6F, 0x76], {offset: 4}) // `moov`
+			|| this.check([0x77, 0x69, 0x64, 0x65], {offset: 4}) // `wide`
+		) {
+			return {
+				ext: 'mov',
+				mime: 'video/quicktime',
+			};
+		}
+
+		// -- 9-byte signatures --
+
+		if (this.check([0x49, 0x49, 0x52, 0x4F, 0x08, 0x00, 0x00, 0x00, 0x18])) {
+			return {
+				ext: 'orf',
+				mime: 'image/x-olympus-orf',
+			};
+		}
+
+		if (this.checkString('gimp xcf ')) {
+			return {
+				ext: 'xcf',
+				mime: 'image/x-xcf',
+			};
+		}
+
+		// -- 12-byte signatures --
+
+		if (this.check([0x49, 0x49, 0x55, 0x00, 0x18, 0x00, 0x00, 0x00, 0x88, 0xE7, 0x74, 0xD8])) {
+			return {
+				ext: 'rw2',
+				mime: 'image/x-panasonic-rw2',
+			};
+		}
+
+		// ASF_Header_Object first 80 bytes
+		if (this.check([0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9])) {
+			async function readHeader() {
+				const guid = external_node_buffer_namespaceObject.Buffer.alloc(16);
+				await tokenizer.readBuffer(guid);
+				return {
+					id: guid,
+					size: Number(await tokenizer.readToken(UINT64_LE)),
+				};
+			}
+
+			await tokenizer.ignore(30);
+			// Search for header should be in first 1KB of file.
+			while (tokenizer.position + 24 < tokenizer.fileInfo.size) {
+				const header = await readHeader();
+				let payload = header.size - 24;
+				if (_check(header.id, [0x91, 0x07, 0xDC, 0xB7, 0xB7, 0xA9, 0xCF, 0x11, 0x8E, 0xE6, 0x00, 0xC0, 0x0C, 0x20, 0x53, 0x65])) {
+					// Sync on Stream-Properties-Object (B7DC0791-A9B7-11CF-8EE6-00C00C205365)
+					const typeId = external_node_buffer_namespaceObject.Buffer.alloc(16);
+					payload -= await tokenizer.readBuffer(typeId);
+
+					if (_check(typeId, [0x40, 0x9E, 0x69, 0xF8, 0x4D, 0x5B, 0xCF, 0x11, 0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44, 0x2B])) {
+						// Found audio:
+						return {
+							ext: 'asf',
+							mime: 'audio/x-ms-asf',
+						};
+					}
+
+					if (_check(typeId, [0xC0, 0xEF, 0x19, 0xBC, 0x4D, 0x5B, 0xCF, 0x11, 0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44, 0x2B])) {
+						// Found video:
+						return {
+							ext: 'asf',
+							mime: 'video/x-ms-asf',
+						};
+					}
+
+					break;
+				}
+
+				await tokenizer.ignore(payload);
+			}
+
+			// Default to ASF generic extension
+			return {
+				ext: 'asf',
+				mime: 'application/vnd.ms-asf',
+			};
+		}
+
+		if (this.check([0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A])) {
+			return {
+				ext: 'ktx',
+				mime: 'image/ktx',
+			};
+		}
+
+		if ((this.check([0x7E, 0x10, 0x04]) || this.check([0x7E, 0x18, 0x04])) && this.check([0x30, 0x4D, 0x49, 0x45], {offset: 4})) {
+			return {
+				ext: 'mie',
+				mime: 'application/x-mie',
+			};
+		}
+
+		if (this.check([0x27, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], {offset: 2})) {
+			return {
+				ext: 'shp',
+				mime: 'application/x-esri-shape',
+			};
+		}
+
+		if (this.check([0x00, 0x00, 0x00, 0x0C, 0x6A, 0x50, 0x20, 0x20, 0x0D, 0x0A, 0x87, 0x0A])) {
+			// JPEG-2000 family
+
+			await tokenizer.ignore(20);
+			const type = await tokenizer.readToken(new StringType(4, 'ascii'));
+			switch (type) {
+				case 'jp2 ':
+					return {
+						ext: 'jp2',
+						mime: 'image/jp2',
+					};
+				case 'jpx ':
+					return {
+						ext: 'jpx',
+						mime: 'image/jpx',
+					};
+				case 'jpm ':
+					return {
+						ext: 'jpm',
+						mime: 'image/jpm',
+					};
+				case 'mjp2':
+					return {
+						ext: 'mj2',
+						mime: 'image/mj2',
+					};
+				default:
+					return;
+			}
+		}
+
+		if (
+			this.check([0xFF, 0x0A])
+			|| this.check([0x00, 0x00, 0x00, 0x0C, 0x4A, 0x58, 0x4C, 0x20, 0x0D, 0x0A, 0x87, 0x0A])
+		) {
+			return {
+				ext: 'jxl',
+				mime: 'image/jxl',
+			};
+		}
+
+		if (this.check([0xFE, 0xFF])) { // UTF-16-BOM-LE
+			if (this.check([0, 60, 0, 63, 0, 120, 0, 109, 0, 108], {offset: 2})) {
+				return {
+					ext: 'xml',
+					mime: 'application/xml',
+				};
+			}
+
+			return undefined; // Some unknown text based format
+		}
+
+		// -- Unsafe signatures --
+
+		if (
+			this.check([0x0, 0x0, 0x1, 0xBA])
+			|| this.check([0x0, 0x0, 0x1, 0xB3])
+		) {
+			return {
+				ext: 'mpg',
+				mime: 'video/mpeg',
+			};
+		}
+
+		if (this.check([0x00, 0x01, 0x00, 0x00, 0x00])) {
+			return {
+				ext: 'ttf',
+				mime: 'font/ttf',
+			};
+		}
+
+		if (this.check([0x00, 0x00, 0x01, 0x00])) {
+			return {
+				ext: 'ico',
+				mime: 'image/x-icon',
+			};
+		}
+
+		if (this.check([0x00, 0x00, 0x02, 0x00])) {
+			return {
+				ext: 'cur',
+				mime: 'image/x-icon',
+			};
+		}
+
+		if (this.check([0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1])) {
+			// Detected Microsoft Compound File Binary File (MS-CFB) Format.
+			return {
+				ext: 'cfb',
+				mime: 'application/x-cfb',
+			};
+		}
+
+		// Increase sample size from 12 to 256.
+		await tokenizer.peekBuffer(this.buffer, {length: Math.min(256, tokenizer.fileInfo.size), mayBeLess: true});
+
+		// -- 15-byte signatures --
+
+		if (this.checkString('BEGIN:')) {
+			if (this.checkString('VCARD', {offset: 6})) {
+				return {
+					ext: 'vcf',
+					mime: 'text/vcard',
+				};
+			}
+
+			if (this.checkString('VCALENDAR', {offset: 6})) {
+				return {
+					ext: 'ics',
+					mime: 'text/calendar',
+				};
+			}
+		}
+
+		// `raf` is here just to keep all the raw image detectors together.
+		if (this.checkString('FUJIFILMCCD-RAW')) {
+			return {
+				ext: 'raf',
+				mime: 'image/x-fujifilm-raf',
+			};
+		}
+
+		if (this.checkString('Extended Module:')) {
+			return {
+				ext: 'xm',
+				mime: 'audio/x-xm',
+			};
+		}
+
+		if (this.checkString('Creative Voice File')) {
+			return {
+				ext: 'voc',
+				mime: 'audio/x-voc',
+			};
+		}
+
+		if (this.check([0x04, 0x00, 0x00, 0x00]) && this.buffer.length >= 16) { // Rough & quick check Pickle/ASAR
+			const jsonSize = this.buffer.readUInt32LE(12);
+			if (jsonSize > 12 && this.buffer.length >= jsonSize + 16) {
+				try {
+					const header = this.buffer.slice(16, jsonSize + 16).toString();
+					const json = JSON.parse(header);
+					// Check if Pickle is ASAR
+					if (json.files) { // Final check, assuring Pickle/ASAR format
+						return {
+							ext: 'asar',
+							mime: 'application/x-asar',
+						};
+					}
+				} catch {}
+			}
+		}
+
+		if (this.check([0x06, 0x0E, 0x2B, 0x34, 0x02, 0x05, 0x01, 0x01, 0x0D, 0x01, 0x02, 0x01, 0x01, 0x02])) {
+			return {
+				ext: 'mxf',
+				mime: 'application/mxf',
+			};
+		}
+
+		if (this.checkString('SCRM', {offset: 44})) {
+			return {
+				ext: 's3m',
+				mime: 'audio/x-s3m',
+			};
+		}
+
+		// Raw MPEG-2 transport stream (188-byte packets)
+		if (this.check([0x47]) && this.check([0x47], {offset: 188})) {
+			return {
+				ext: 'mts',
+				mime: 'video/mp2t',
+			};
+		}
+
+		// Blu-ray Disc Audio-Video (BDAV) MPEG-2 transport stream has 4-byte TP_extra_header before each 188-byte packet
+		if (this.check([0x47], {offset: 4}) && this.check([0x47], {offset: 196})) {
+			return {
+				ext: 'mts',
+				mime: 'video/mp2t',
+			};
+		}
+
+		if (this.check([0x42, 0x4F, 0x4F, 0x4B, 0x4D, 0x4F, 0x42, 0x49], {offset: 60})) {
+			return {
+				ext: 'mobi',
+				mime: 'application/x-mobipocket-ebook',
+			};
+		}
+
+		if (this.check([0x44, 0x49, 0x43, 0x4D], {offset: 128})) {
+			return {
+				ext: 'dcm',
+				mime: 'application/dicom',
+			};
+		}
+
+		if (this.check([0x4C, 0x00, 0x00, 0x00, 0x01, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46])) {
+			return {
+				ext: 'lnk',
+				mime: 'application/x.ms.shortcut', // Invented by us
+			};
+		}
+
+		if (this.check([0x62, 0x6F, 0x6F, 0x6B, 0x00, 0x00, 0x00, 0x00, 0x6D, 0x61, 0x72, 0x6B, 0x00, 0x00, 0x00, 0x00])) {
+			return {
+				ext: 'alias',
+				mime: 'application/x.apple.alias', // Invented by us
+			};
+		}
+
+		if (
+			this.check([0x4C, 0x50], {offset: 34})
+			&& (
+				this.check([0x00, 0x00, 0x01], {offset: 8})
+				|| this.check([0x01, 0x00, 0x02], {offset: 8})
+				|| this.check([0x02, 0x00, 0x02], {offset: 8})
+			)
+		) {
+			return {
+				ext: 'eot',
+				mime: 'application/vnd.ms-fontobject',
+			};
+		}
+
+		if (this.check([0x06, 0x06, 0xED, 0xF5, 0xD8, 0x1D, 0x46, 0xE5, 0xBD, 0x31, 0xEF, 0xE7, 0xFE, 0x74, 0xB7, 0x1D])) {
+			return {
+				ext: 'indd',
+				mime: 'application/x-indesign',
+			};
+		}
+
+		// Increase sample size from 256 to 512
+		await tokenizer.peekBuffer(this.buffer, {length: Math.min(512, tokenizer.fileInfo.size), mayBeLess: true});
+
+		// Requires a buffer size of 512 bytes
+		if (tarHeaderChecksumMatches(this.buffer)) {
+			return {
+				ext: 'tar',
+				mime: 'application/x-tar',
+			};
+		}
+
+		if (this.check([0xFF, 0xFE])) { // UTF-16-BOM-BE
+			if (this.check([60, 0, 63, 0, 120, 0, 109, 0, 108, 0], {offset: 2})) {
+				return {
+					ext: 'xml',
+					mime: 'application/xml',
+				};
+			}
+
+			if (this.check([0xFF, 0x0E, 0x53, 0x00, 0x6B, 0x00, 0x65, 0x00, 0x74, 0x00, 0x63, 0x00, 0x68, 0x00, 0x55, 0x00, 0x70, 0x00, 0x20, 0x00, 0x4D, 0x00, 0x6F, 0x00, 0x64, 0x00, 0x65, 0x00, 0x6C, 0x00], {offset: 2})) {
+				return {
+					ext: 'skp',
+					mime: 'application/vnd.sketchup.skp',
+				};
+			}
+
+			return undefined; // Some text based format
+		}
+
+		if (this.checkString('-----BEGIN PGP MESSAGE-----')) {
+			return {
+				ext: 'pgp',
+				mime: 'application/pgp-encrypted',
+			};
+		}
+
+		// Check MPEG 1 or 2 Layer 3 header, or 'layer 0' for ADTS (MPEG sync-word 0xFFE)
+		if (this.buffer.length >= 2 && this.check([0xFF, 0xE0], {offset: 0, mask: [0xFF, 0xE0]})) {
+			if (this.check([0x10], {offset: 1, mask: [0x16]})) {
+				// Check for (ADTS) MPEG-2
+				if (this.check([0x08], {offset: 1, mask: [0x08]})) {
+					return {
+						ext: 'aac',
+						mime: 'audio/aac',
+					};
+				}
+
+				// Must be (ADTS) MPEG-4
+				return {
+					ext: 'aac',
+					mime: 'audio/aac',
+				};
+			}
+
+			// MPEG 1 or 2 Layer 3 header
+			// Check for MPEG layer 3
+			if (this.check([0x02], {offset: 1, mask: [0x06]})) {
+				return {
+					ext: 'mp3',
+					mime: 'audio/mpeg',
+				};
+			}
+
+			// Check for MPEG layer 2
+			if (this.check([0x04], {offset: 1, mask: [0x06]})) {
+				return {
+					ext: 'mp2',
+					mime: 'audio/mpeg',
+				};
+			}
+
+			// Check for MPEG layer 1
+			if (this.check([0x06], {offset: 1, mask: [0x06]})) {
+				return {
+					ext: 'mp1',
+					mime: 'audio/mpeg',
+				};
+			}
+		}
+	}
+
+	async readTiffTag(bigEndian) {
+		const tagId = await this.tokenizer.readToken(bigEndian ? UINT16_BE : UINT16_LE);
+		this.tokenizer.ignore(10);
+		switch (tagId) {
+			case 50_341:
+				return {
+					ext: 'arw',
+					mime: 'image/x-sony-arw',
+				};
+			case 50_706:
+				return {
+					ext: 'dng',
+					mime: 'image/x-adobe-dng',
+				};
+			default:
+		}
+	}
+
+	async readTiffIFD(bigEndian) {
+		const numberOfTags = await this.tokenizer.readToken(bigEndian ? UINT16_BE : UINT16_LE);
+		for (let n = 0; n < numberOfTags; ++n) {
+			const fileType = await this.readTiffTag(bigEndian);
+			if (fileType) {
+				return fileType;
+			}
+		}
+	}
+
+	async readTiffHeader(bigEndian) {
+		const version = (bigEndian ? UINT16_BE : UINT16_LE).get(this.buffer, 2);
+		const ifdOffset = (bigEndian ? UINT32_BE : UINT32_LE).get(this.buffer, 4);
+
+		if (version === 42) {
+			// TIFF file header
+			if (ifdOffset >= 6) {
+				if (this.checkString('CR', {offset: 8})) {
+					return {
+						ext: 'cr2',
+						mime: 'image/x-canon-cr2',
+					};
+				}
+
+				if (ifdOffset >= 8 && (this.check([0x1C, 0x00, 0xFE, 0x00], {offset: 8}) || this.check([0x1F, 0x00, 0x0B, 0x00], {offset: 8}))) {
+					return {
+						ext: 'nef',
+						mime: 'image/x-nikon-nef',
+					};
+				}
+			}
+
+			await this.tokenizer.ignore(ifdOffset);
+			const fileType = await this.readTiffIFD(false);
+			return fileType ? fileType : {
+				ext: 'tif',
+				mime: 'image/tiff',
+			};
+		}
+
+		if (version === 43) {	// Big TIFF file header
+			return {
+				ext: 'tif',
+				mime: 'image/tiff',
+			};
+		}
+	}
+}
+
+async function fileTypeStream(readableStream, {sampleSize = minimumBytes} = {}) {
+	const {default: stream} = await Promise.resolve(/* import() */).then(__nccwpck_require__.t.bind(__nccwpck_require__, 7075, 19));
+
+	return new Promise((resolve, reject) => {
+		readableStream.on('error', reject);
+
+		readableStream.once('readable', () => {
+			(async () => {
+				try {
+					// Set up output stream
+					const pass = new stream.PassThrough();
+					const outputStream = stream.pipeline ? stream.pipeline(readableStream, pass, () => {}) : readableStream.pipe(pass);
+
+					// Read the input stream and detect the filetype
+					const chunk = readableStream.read(sampleSize) ?? readableStream.read() ?? Buffer.alloc(0);
+					try {
+						const fileType = await fileTypeFromBuffer(chunk);
+						pass.fileType = fileType;
+					} catch (error) {
+						if (error instanceof strtok3.EndOfStreamError) {
+							pass.fileType = undefined;
+						} else {
+							reject(error);
+						}
+					}
+
+					resolve(outputStream);
+				} catch (error) {
+					reject(error);
+				}
+			})();
+		});
+	});
+}
+
+const supportedExtensions = new Set(extensions);
+const supportedMimeTypes = new Set(supported_mimeTypes);
+
+;// CONCATENATED MODULE: ./node_modules/file-type/index.js
+
+
+
+async function fileTypeFromFile(path) {
+	const tokenizer = await strtok3.fromFile(path);
+	try {
+		return await fileTypeFromTokenizer(tokenizer);
+	} finally {
+		await tokenizer.close();
+	}
+}
+
+
+
+// EXTERNAL MODULE: ./node_modules/ext-name/index.js
+var ext_name = __nccwpck_require__(7125);
+;// CONCATENATED MODULE: ./build/src/download-mod.js
+/*
+ * This file was originally the main source code for the nodejs download lib:
+ * https://github.com/kevva/download commit a16ba04b30dafbe7d9246db93f1534320d8e0dd3
+ *
+ * It has been modified:
+ * - Set the path as a required argument
+ * - Removed decompressing functionality
+ * - Return the file path instead of the file data
+ * - Updated `got` import to use named export (`{ got }`) for compatibility with got v12+
+ * - Replaced `encoding: null` option with `responseType: 'buffer'` for got v12+ compatibility
+ * - Replaced `rejectUnauthorized` option with `https: { rejectUnauthorized }` for got v12+
+ * - Extracted `filename` from opts before passing to `got` to avoid unexpected option error
+ * - Converted to TypeScript with top-level ESM imports
+ * - Replaced sync `fileType()` call with async `fileTypeFromBuffer()` for file-type v18+
+ *
+ * Original license can be found below:
+ *
+ * MIT License
+ *
+ * Copyright (c) Kevin Mårtensson <kevinmartensson@gmail.com> (github.com/kevva)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ */
+
+
+
+
+
+
+
+
+
+
+const getExtFromMime = (res) => {
+    const header = res.headers['content-type'];
+    if (!header) {
+        return null;
+    }
+    const exts = ext_name.mime(header);
+    if (exts.length !== 1) {
+        return null;
+    }
+    return exts[0].ext;
+};
+const getFilename = async (res, data) => {
+    const header = res.headers['content-disposition'];
+    if (header) {
+        const parsed = content_disposition.parse(header);
+        if (parsed.parameters && parsed.parameters.filename) {
+            return parsed.parameters.filename;
+        }
+    }
+    let filename = external_path_.basename(res.requestUrl.pathname);
+    if (!external_path_.extname(filename)) {
+        const detected = await fileTypeFromBuffer(data);
+        const ext = (detected ?? {}).ext ?? getExtFromMime(res);
+        if (ext) {
+            filename = `${filename}.${ext}`;
+        }
+    }
+    return filename;
+};
+async function download(uri, output_, opts_) {
+    const output = output_ ?? process.cwd();
+    const { filename: filenameOpt, ...gotOpts } = opts_ ?? {};
+    const opts = {
+        responseType: 'buffer',
+        https: { rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false' },
+        ...gotOpts,
+    };
+    const stream = got.stream(uri, opts);
+    const res = await p_event(stream, 'response');
+    const data = await get_stream.buffer(stream);
+    const filename = filenameOpt ?? filenamify(await getFilename(res, data));
+    const outputFilepath = external_path_.join(output, filename);
+    await make_dir(external_path_.dirname(outputFilepath));
+    await external_fs_.promises.writeFile(outputFilepath, data);
+    return outputFilepath;
+}
+
+;// CONCATENATED MODULE: ./build/src/index.js
+
+
+
+
+
+
+async function main() {
+    try {
+        const fileURL = lib_core.getInput('file-url', { required: true });
+        const fileName = lib_core.getInput('file-name') || undefined;
+        const fileLocation = lib_core.getInput('location') || process.cwd();
+        const fileMd5 = lib_core.getInput('md5').toLowerCase();
+        const fileSha256 = lib_core.getInput('sha256').toLowerCase();
+        lib_core.info('Downloading file:');
+        lib_core.info(`\turl: ${fileURL}`);
+        lib_core.info(`\tname: ${fileName || 'Not set'}`);
+        lib_core.info(`\tlocation: ${fileLocation}`);
+        lib_core.info(`\tMD5: ${fileMd5 || 'Not set'}`);
+        lib_core.info(`\tSHA256: ${fileSha256 || 'Not set'}`);
+        let filePath = await download(fileURL, fileLocation, {
+            filename: fileName,
+        });
+        filePath = external_path_.resolve(filePath);
+        lib_core.info(`Downloaded: ${filePath}`);
+        if (fileMd5) {
+            lib_core.info('Verifying MD5...');
+            let downloadMd5 = await md5_file(filePath);
+            downloadMd5 = downloadMd5.toLowerCase();
+            lib_core.info(`Downloaded file MD5: ${downloadMd5}`);
+            if (downloadMd5 !== fileMd5) {
+                throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadMd5} != ${fileMd5}`);
+            }
+            else {
+                lib_core.info('Provided MD5 hash matches.');
+            }
+        }
+        if (fileSha256) {
+            lib_core.info('Verifying SHA256...');
+            const fileBuffer = external_fs_.readFileSync(filePath);
+            const hashSum = external_crypto_.createHash('sha256');
+            hashSum.update(fileBuffer);
+            const downloadSha256 = hashSum.digest('hex').toLowerCase();
+            lib_core.info(`Downloaded file SHA256: ${downloadSha256}`);
+            if (downloadSha256 !== fileSha256) {
+                throw new Error(`File SHA256 (left) doesn't match expected value (right): ${downloadSha256} != ${fileSha256}`);
+            }
+            else {
+                lib_core.info('Provided SHA256 hash matches.');
+            }
+        }
+        lib_core.info('File successfully downloaded.');
+        lib_core.setOutput('file-path', filePath);
+    }
+    catch (error) {
+        if (error instanceof Error)
+            lib_core.setFailed(error.message);
+    }
+}
+main();
+

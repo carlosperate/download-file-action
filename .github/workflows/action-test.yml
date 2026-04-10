@@ -4,13 +4,12 @@ on: [push, pull_request]
 
 jobs:
   lint-build:
-    name: Lint, build & run
+    name: Build, test & run
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: npm install
-      - run: npm run lint
-      - run: npm run package
+      - run: npm run all
       - name: Simple test to check built output does not throw errors
         uses: ./
         id: download-file-example
@@ -185,3 +184,13 @@ jobs:
         if: steps.download-tar-sha256-bad.outcome == 'success'
         run: exit 1
       - run: rm download-file-action-1.0.3.tar.gz
+
+      - name: 130 - Test to download an extensionless file
+        uses: ./
+        id: download-extensionless
+        with:
+          file-url: 'https://github.com/carlosperate/download-file-action/releases/download/v1.0.0/download-file-action-1'
+      - run: echo "The file was downloaded to ${{ steps.download-extensionless.outputs.file-path }}"
+      - name: 130 - Test file exists at output path
+        run: python -c "import os; exit(not os.path.isfile(r'${{ steps.download-extensionless.outputs.file-path }}'))"
+      - run: rm ${{ steps.download-extensionless.outputs.file-path }}

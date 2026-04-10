@@ -8,8 +8,10 @@
  * - Return the file path instead of the file data
  * - Updated `got` import to use named export (`{ got }`) for compatibility with got v12+
  * - Replaced `encoding: null` option with `responseType: 'buffer'` for got v12+ compatibility
- * - Replaced `rejectUnauthorized` option with `https: { rejectUnauthorized }` for got v12+ compatibility
+ * - Replaced `rejectUnauthorized` option with `https: { rejectUnauthorized }` for got v12+
  * - Extracted `filename` from opts before passing to `got` to avoid unexpected option error
+ * - Converted to TypeScript with top-level ESM imports
+ * - Replaced sync `fileType()` call with async `fileTypeFromBuffer()` for file-type v18+
  *
  * Original license can be found below:
  *
@@ -36,23 +38,23 @@
  * IN THE SOFTWARE.
  */
 
-const fs = require('fs');
-const path = require('path');
-const { URL } = require('url');
-const contentDisposition = require('content-disposition');
-const filenamify = require('filenamify');
-const getStream = require('get-stream');
-const { got } = require('got');
-const makeDir = require('make-dir');
-const pify = require('pify');
-const pEvent = require('p-event');
-const fileType = require('file-type');
-const extName = require('ext-name');
+import fs from 'fs';
+import path from 'path';
+import contentDisposition from 'content-disposition';
+import filenamify from 'filenamify';
+import { got, type PlainResponse } from 'got';
+import makeDir from 'make-dir';
+import pEvent from 'p-event';
+import { fileTypeFromBuffer } from 'file-type';
+import extName from 'ext-name';
+import getStream from 'get-stream';
 
-const fsP = pify(fs);
-const filenameFromPath = (res) => path.basename(new URL(res.requestUrl).pathname);
+interface DownloadOptions {
+  filename?: string;
+  [key: string]: unknown;
+}
 
-const getExtFromMime = (res) => {
+const getExtFromMime = (res: PlainResponse): string | null => {
   const header = res.headers['content-type'];
 
   if (!header) {
@@ -68,7 +70,7 @@ const getExtFromMime = (res) => {
   return exts[0].ext;
 };
 
-const getFilename = (res, data) => {
+const getFilename = async (res: PlainResponse, data: Buffer): Promise<string> => {
   const header = res.headers['content-disposition'];
 
   if (header) {
@@ -79,10 +81,11 @@ const getFilename = (res, data) => {
     }
   }
 
-  let filename = filenameFromPath(res);
+  let filename = path.basename(res.requestUrl.pathname);
 
   if (!path.extname(filename)) {
-    const ext = (fileType(data) || {}).ext || getExtFromMime(res);
+    const detected = await fileTypeFromBuffer(data);
+    const ext = (detected ?? {}).ext ?? getExtFromMime(res);
 
     if (ext) {
       filename = `${filename}.${ext}`;
@@ -92,32 +95,27 @@ const getFilename = (res, data) => {
   return filename;
 };
 
-module.exports = (uri, output_, opts_) => {
-  const output = output_ || process.cwd();
-  const { filename: filenameOpt, ...opts_2 } = opts_ || {};
+export default async function download(
+  uri: string,
+  output_?: string,
+  opts_?: DownloadOptions,
+): Promise<string> {
+  const output = output_ ?? process.cwd();
+  const { filename: filenameOpt, ...gotOpts } = opts_ ?? {};
   const opts = {
-    responseType: 'buffer',
+    responseType: 'buffer' as const,
     https: { rejectUnauthorized: process.env.npm_config_strict_ssl !== 'false' },
-    ...opts_2,
+    ...gotOpts,
   };
 
   const stream = got.stream(uri, opts);
+  const res = await pEvent(stream, 'response') as PlainResponse;
+  const data = await getStream.buffer(stream);
 
-  const promise = pEvent(stream, 'response').then((res) => {
-    const encoding = opts.responseType === 'buffer' ? 'buffer' : opts.encoding;
-    return Promise.all([getStream(stream, { encoding }), res]);
-  }).then((result) => {
-    const [data, res] = result;
-    const filename = filenameOpt || filenamify(getFilename(res, data));
-    const outputFilepath = path.join(output, filename);
+  const filename = filenameOpt ?? filenamify(await getFilename(res, data));
+  const outputFilepath = path.join(output, filename);
 
-    return makeDir(path.dirname(outputFilepath))
-      .then(() => fsP.writeFile(outputFilepath, data))
-      .then(() => outputFilepath);
-  });
-
-  stream.then = promise.then.bind(promise);
-  stream.catch = promise.catch.bind(promise);
-
-  return stream;
-};
+  await makeDir(path.dirname(outputFilepath));
+  await fs.promises.writeFile(outputFilepath, data);
+  return outputFilepath;
+}
