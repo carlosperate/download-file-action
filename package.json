@@ -8,8 +8,8 @@
     "build": "tsc",
     "package": "npm run build && ncc build ./build/src -o ./dist",
     "lint": "eslint src/**/*.ts",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "all": "npm run package && npm run lint && npm test"
+    "test": "npm run package && NODE_OPTIONS=--experimental-vm-modules jest",
+    "all": "npm run lint && npm test"
   },
   "repository": {
     "type": "git",
