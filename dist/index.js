@@ -2289,6 +2289,871 @@ SafeBuffer.allocUnsafeSlow = function (size) {
 
 /***/ }),
 
+/***/ 6110:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+/* eslint-env browser */
+
+/**
+ * This is the web browser implementation of `debug()`.
+ */
+
+exports.formatArgs = formatArgs;
+exports.save = save;
+exports.load = load;
+exports.useColors = useColors;
+exports.storage = localstorage();
+exports.destroy = (() => {
+	let warned = false;
+
+	return () => {
+		if (!warned) {
+			warned = true;
+			console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
+		}
+	};
+})();
+
+/**
+ * Colors.
+ */
+
+exports.colors = [
+	'#0000CC',
+	'#0000FF',
+	'#0033CC',
+	'#0033FF',
+	'#0066CC',
+	'#0066FF',
+	'#0099CC',
+	'#0099FF',
+	'#00CC00',
+	'#00CC33',
+	'#00CC66',
+	'#00CC99',
+	'#00CCCC',
+	'#00CCFF',
+	'#3300CC',
+	'#3300FF',
+	'#3333CC',
+	'#3333FF',
+	'#3366CC',
+	'#3366FF',
+	'#3399CC',
+	'#3399FF',
+	'#33CC00',
+	'#33CC33',
+	'#33CC66',
+	'#33CC99',
+	'#33CCCC',
+	'#33CCFF',
+	'#6600CC',
+	'#6600FF',
+	'#6633CC',
+	'#6633FF',
+	'#66CC00',
+	'#66CC33',
+	'#9900CC',
+	'#9900FF',
+	'#9933CC',
+	'#9933FF',
+	'#99CC00',
+	'#99CC33',
+	'#CC0000',
+	'#CC0033',
+	'#CC0066',
+	'#CC0099',
+	'#CC00CC',
+	'#CC00FF',
+	'#CC3300',
+	'#CC3333',
+	'#CC3366',
+	'#CC3399',
+	'#CC33CC',
+	'#CC33FF',
+	'#CC6600',
+	'#CC6633',
+	'#CC9900',
+	'#CC9933',
+	'#CCCC00',
+	'#CCCC33',
+	'#FF0000',
+	'#FF0033',
+	'#FF0066',
+	'#FF0099',
+	'#FF00CC',
+	'#FF00FF',
+	'#FF3300',
+	'#FF3333',
+	'#FF3366',
+	'#FF3399',
+	'#FF33CC',
+	'#FF33FF',
+	'#FF6600',
+	'#FF6633',
+	'#FF9900',
+	'#FF9933',
+	'#FFCC00',
+	'#FFCC33'
+];
+
+/**
+ * Currently only WebKit-based Web Inspectors, Firefox >= v31,
+ * and the Firebug extension (any Firefox version) are known
+ * to support "%c" CSS customizations.
+ *
+ * TODO: add a `localStorage` variable to explicitly enable/disable colors
+ */
+
+// eslint-disable-next-line complexity
+function useColors() {
+	// NB: In an Electron preload script, document will be defined but not fully
+	// initialized. Since we know we're in Chrome, we'll just detect this case
+	// explicitly
+	if (typeof window !== 'undefined' && window.process && (window.process.type === 'renderer' || window.process.__nwjs)) {
+		return true;
+	}
+
+	// Internet Explorer and Edge do not support colors.
+	if (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
+		return false;
+	}
+
+	let m;
+
+	// Is webkit? http://stackoverflow.com/a/16459606/376773
+	// document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
+	// eslint-disable-next-line no-return-assign
+	return (typeof document !== 'undefined' && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance) ||
+		// Is firebug? http://stackoverflow.com/a/398120/376773
+		(typeof window !== 'undefined' && window.console && (window.console.firebug || (window.console.exception && window.console.table))) ||
+		// Is firefox >= v31?
+		// https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
+		(typeof navigator !== 'undefined' && navigator.userAgent && (m = navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/)) && parseInt(m[1], 10) >= 31) ||
+		// Double check webkit in userAgent just in case we are in a worker
+		(typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/));
+}
+
+/**
+ * Colorize log arguments if enabled.
+ *
+ * @api public
+ */
+
+function formatArgs(args) {
+	args[0] = (this.useColors ? '%c' : '') +
+		this.namespace +
+		(this.useColors ? ' %c' : ' ') +
+		args[0] +
+		(this.useColors ? '%c ' : ' ') +
+		'+' + module.exports.humanize(this.diff);
+
+	if (!this.useColors) {
+		return;
+	}
+
+	const c = 'color: ' + this.color;
+	args.splice(1, 0, c, 'color: inherit');
+
+	// The final "%c" is somewhat tricky, because there could be other
+	// arguments passed either before or after the %c, so we need to
+	// figure out the correct index to insert the CSS into
+	let index = 0;
+	let lastC = 0;
+	args[0].replace(/%[a-zA-Z%]/g, match => {
+		if (match === '%%') {
+			return;
+		}
+		index++;
+		if (match === '%c') {
+			// We only are interested in the *last* %c
+			// (the user may have provided their own)
+			lastC = index;
+		}
+	});
+
+	args.splice(lastC, 0, c);
+}
+
+/**
+ * Invokes `console.debug()` when available.
+ * No-op when `console.debug` is not a "function".
+ * If `console.debug` is not available, falls back
+ * to `console.log`.
+ *
+ * @api public
+ */
+exports.log = console.debug || console.log || (() => {});
+
+/**
+ * Save `namespaces`.
+ *
+ * @param {String} namespaces
+ * @api private
+ */
+function save(namespaces) {
+	try {
+		if (namespaces) {
+			exports.storage.setItem('debug', namespaces);
+		} else {
+			exports.storage.removeItem('debug');
+		}
+	} catch (error) {
+		// Swallow
+		// XXX (@Qix-) should we be logging these?
+	}
+}
+
+/**
+ * Load `namespaces`.
+ *
+ * @return {String} returns the previously persisted debug modes
+ * @api private
+ */
+function load() {
+	let r;
+	try {
+		r = exports.storage.getItem('debug') || exports.storage.getItem('DEBUG') ;
+	} catch (error) {
+		// Swallow
+		// XXX (@Qix-) should we be logging these?
+	}
+
+	// If debug isn't set in LS, and we're in Electron, try to load $DEBUG
+	if (!r && typeof process !== 'undefined' && 'env' in process) {
+		r = process.env.DEBUG;
+	}
+
+	return r;
+}
+
+/**
+ * Localstorage attempts to return the localstorage.
+ *
+ * This is necessary because safari throws
+ * when a user disables cookies/localstorage
+ * and you attempt to access it.
+ *
+ * @return {LocalStorage}
+ * @api private
+ */
+
+function localstorage() {
+	try {
+		// TVMLKit (Apple TV JS Runtime) does not have a window object, just localStorage in the global context
+		// The Browser also has localStorage in the global context.
+		return localStorage;
+	} catch (error) {
+		// Swallow
+		// XXX (@Qix-) should we be logging these?
+	}
+}
+
+module.exports = __nccwpck_require__(897)(exports);
+
+const {formatters} = module.exports;
+
+/**
+ * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
+ */
+
+formatters.j = function (v) {
+	try {
+		return JSON.stringify(v);
+	} catch (error) {
+		return '[UnexpectedJSONParseError]: ' + error.message;
+	}
+};
+
+
+/***/ }),
+
+/***/ 897:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+
+/**
+ * This is the common logic for both the Node.js and web browser
+ * implementations of `debug()`.
+ */
+
+function setup(env) {
+	createDebug.debug = createDebug;
+	createDebug.default = createDebug;
+	createDebug.coerce = coerce;
+	createDebug.disable = disable;
+	createDebug.enable = enable;
+	createDebug.enabled = enabled;
+	createDebug.humanize = __nccwpck_require__(744);
+	createDebug.destroy = destroy;
+
+	Object.keys(env).forEach(key => {
+		createDebug[key] = env[key];
+	});
+
+	/**
+	* The currently active debug mode names, and names to skip.
+	*/
+
+	createDebug.names = [];
+	createDebug.skips = [];
+
+	/**
+	* Map of special "%n" handling functions, for the debug "format" argument.
+	*
+	* Valid key names are a single, lower or upper-case letter, i.e. "n" and "N".
+	*/
+	createDebug.formatters = {};
+
+	/**
+	* Selects a color for a debug namespace
+	* @param {String} namespace The namespace string for the debug instance to be colored
+	* @return {Number|String} An ANSI color code for the given namespace
+	* @api private
+	*/
+	function selectColor(namespace) {
+		let hash = 0;
+
+		for (let i = 0; i < namespace.length; i++) {
+			hash = ((hash << 5) - hash) + namespace.charCodeAt(i);
+			hash |= 0; // Convert to 32bit integer
+		}
+
+		return createDebug.colors[Math.abs(hash) % createDebug.colors.length];
+	}
+	createDebug.selectColor = selectColor;
+
+	/**
+	* Create a debugger with the given `namespace`.
+	*
+	* @param {String} namespace
+	* @return {Function}
+	* @api public
+	*/
+	function createDebug(namespace) {
+		let prevTime;
+		let enableOverride = null;
+		let namespacesCache;
+		let enabledCache;
+
+		function debug(...args) {
+			// Disabled?
+			if (!debug.enabled) {
+				return;
+			}
+
+			const self = debug;
+
+			// Set `diff` timestamp
+			const curr = Number(new Date());
+			const ms = curr - (prevTime || curr);
+			self.diff = ms;
+			self.prev = prevTime;
+			self.curr = curr;
+			prevTime = curr;
+
+			args[0] = createDebug.coerce(args[0]);
+
+			if (typeof args[0] !== 'string') {
+				// Anything else let's inspect with %O
+				args.unshift('%O');
+			}
+
+			// Apply any `formatters` transformations
+			let index = 0;
+			args[0] = args[0].replace(/%([a-zA-Z%])/g, (match, format) => {
+				// If we encounter an escaped % then don't increase the array index
+				if (match === '%%') {
+					return '%';
+				}
+				index++;
+				const formatter = createDebug.formatters[format];
+				if (typeof formatter === 'function') {
+					const val = args[index];
+					match = formatter.call(self, val);
+
+					// Now we need to remove `args[index]` since it's inlined in the `format`
+					args.splice(index, 1);
+					index--;
+				}
+				return match;
+			});
+
+			// Apply env-specific formatting (colors, etc.)
+			createDebug.formatArgs.call(self, args);
+
+			const logFn = self.log || createDebug.log;
+			logFn.apply(self, args);
+		}
+
+		debug.namespace = namespace;
+		debug.useColors = createDebug.useColors();
+		debug.color = createDebug.selectColor(namespace);
+		debug.extend = extend;
+		debug.destroy = createDebug.destroy; // XXX Temporary. Will be removed in the next major release.
+
+		Object.defineProperty(debug, 'enabled', {
+			enumerable: true,
+			configurable: false,
+			get: () => {
+				if (enableOverride !== null) {
+					return enableOverride;
+				}
+				if (namespacesCache !== createDebug.namespaces) {
+					namespacesCache = createDebug.namespaces;
+					enabledCache = createDebug.enabled(namespace);
+				}
+
+				return enabledCache;
+			},
+			set: v => {
+				enableOverride = v;
+			}
+		});
+
+		// Env-specific initialization logic for debug instances
+		if (typeof createDebug.init === 'function') {
+			createDebug.init(debug);
+		}
+
+		return debug;
+	}
+
+	function extend(namespace, delimiter) {
+		const newDebug = createDebug(this.namespace + (typeof delimiter === 'undefined' ? ':' : delimiter) + namespace);
+		newDebug.log = this.log;
+		return newDebug;
+	}
+
+	/**
+	* Enables a debug mode by namespaces. This can include modes
+	* separated by a colon and wildcards.
+	*
+	* @param {String} namespaces
+	* @api public
+	*/
+	function enable(namespaces) {
+		createDebug.save(namespaces);
+		createDebug.namespaces = namespaces;
+
+		createDebug.names = [];
+		createDebug.skips = [];
+
+		const split = (typeof namespaces === 'string' ? namespaces : '')
+			.trim()
+			.replace(/\s+/g, ',')
+			.split(',')
+			.filter(Boolean);
+
+		for (const ns of split) {
+			if (ns[0] === '-') {
+				createDebug.skips.push(ns.slice(1));
+			} else {
+				createDebug.names.push(ns);
+			}
+		}
+	}
+
+	/**
+	 * Checks if the given string matches a namespace template, honoring
+	 * asterisks as wildcards.
+	 *
+	 * @param {String} search
+	 * @param {String} template
+	 * @return {Boolean}
+	 */
+	function matchesTemplate(search, template) {
+		let searchIndex = 0;
+		let templateIndex = 0;
+		let starIndex = -1;
+		let matchIndex = 0;
+
+		while (searchIndex < search.length) {
+			if (templateIndex < template.length && (template[templateIndex] === search[searchIndex] || template[templateIndex] === '*')) {
+				// Match character or proceed with wildcard
+				if (template[templateIndex] === '*') {
+					starIndex = templateIndex;
+					matchIndex = searchIndex;
+					templateIndex++; // Skip the '*'
+				} else {
+					searchIndex++;
+					templateIndex++;
+				}
+			} else if (starIndex !== -1) { // eslint-disable-line no-negated-condition
+				// Backtrack to the last '*' and try to match more characters
+				templateIndex = starIndex + 1;
+				matchIndex++;
+				searchIndex = matchIndex;
+			} else {
+				return false; // No match
+			}
+		}
+
+		// Handle trailing '*' in template
+		while (templateIndex < template.length && template[templateIndex] === '*') {
+			templateIndex++;
+		}
+
+		return templateIndex === template.length;
+	}
+
+	/**
+	* Disable debug output.
+	*
+	* @return {String} namespaces
+	* @api public
+	*/
+	function disable() {
+		const namespaces = [
+			...createDebug.names,
+			...createDebug.skips.map(namespace => '-' + namespace)
+		].join(',');
+		createDebug.enable('');
+		return namespaces;
+	}
+
+	/**
+	* Returns true if the given mode name is enabled, false otherwise.
+	*
+	* @param {String} name
+	* @return {Boolean}
+	* @api public
+	*/
+	function enabled(name) {
+		for (const skip of createDebug.skips) {
+			if (matchesTemplate(name, skip)) {
+				return false;
+			}
+		}
+
+		for (const ns of createDebug.names) {
+			if (matchesTemplate(name, ns)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	* Coerce `val`.
+	*
+	* @param {Mixed} val
+	* @return {Mixed}
+	* @api private
+	*/
+	function coerce(val) {
+		if (val instanceof Error) {
+			return val.stack || val.message;
+		}
+		return val;
+	}
+
+	/**
+	* XXX DO NOT USE. This is a temporary stub function.
+	* XXX It WILL be removed in the next major release.
+	*/
+	function destroy() {
+		console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
+	}
+
+	createDebug.enable(createDebug.load());
+
+	return createDebug;
+}
+
+module.exports = setup;
+
+
+/***/ }),
+
+/***/ 2830:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+/**
+ * Detect Electron renderer / nwjs process, which is node, but we should
+ * treat as a browser.
+ */
+
+if (typeof process === 'undefined' || process.type === 'renderer' || process.browser === true || process.__nwjs) {
+	module.exports = __nccwpck_require__(6110);
+} else {
+	module.exports = __nccwpck_require__(5108);
+}
+
+
+/***/ }),
+
+/***/ 5108:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+/**
+ * Module dependencies.
+ */
+
+const tty = __nccwpck_require__(2018);
+const util = __nccwpck_require__(9023);
+
+/**
+ * This is the Node.js implementation of `debug()`.
+ */
+
+exports.init = init;
+exports.log = log;
+exports.formatArgs = formatArgs;
+exports.save = save;
+exports.load = load;
+exports.useColors = useColors;
+exports.destroy = util.deprecate(
+	() => {},
+	'Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.'
+);
+
+/**
+ * Colors.
+ */
+
+exports.colors = [6, 2, 3, 4, 5, 1];
+
+try {
+	// Optional dependency (as in, doesn't need to be installed, NOT like optionalDependencies in package.json)
+	// eslint-disable-next-line import/no-extraneous-dependencies
+	const supportsColor = __nccwpck_require__(1450);
+
+	if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
+		exports.colors = [
+			20,
+			21,
+			26,
+			27,
+			32,
+			33,
+			38,
+			39,
+			40,
+			41,
+			42,
+			43,
+			44,
+			45,
+			56,
+			57,
+			62,
+			63,
+			68,
+			69,
+			74,
+			75,
+			76,
+			77,
+			78,
+			79,
+			80,
+			81,
+			92,
+			93,
+			98,
+			99,
+			112,
+			113,
+			128,
+			129,
+			134,
+			135,
+			148,
+			149,
+			160,
+			161,
+			162,
+			163,
+			164,
+			165,
+			166,
+			167,
+			168,
+			169,
+			170,
+			171,
+			172,
+			173,
+			178,
+			179,
+			184,
+			185,
+			196,
+			197,
+			198,
+			199,
+			200,
+			201,
+			202,
+			203,
+			204,
+			205,
+			206,
+			207,
+			208,
+			209,
+			214,
+			215,
+			220,
+			221
+		];
+	}
+} catch (error) {
+	// Swallow - we only care if `supports-color` is available; it doesn't have to be.
+}
+
+/**
+ * Build up the default `inspectOpts` object from the environment variables.
+ *
+ *   $ DEBUG_COLORS=no DEBUG_DEPTH=10 DEBUG_SHOW_HIDDEN=enabled node script.js
+ */
+
+exports.inspectOpts = Object.keys(process.env).filter(key => {
+	return /^debug_/i.test(key);
+}).reduce((obj, key) => {
+	// Camel-case
+	const prop = key
+		.substring(6)
+		.toLowerCase()
+		.replace(/_([a-z])/g, (_, k) => {
+			return k.toUpperCase();
+		});
+
+	// Coerce string value into JS value
+	let val = process.env[key];
+	if (/^(yes|on|true|enabled)$/i.test(val)) {
+		val = true;
+	} else if (/^(no|off|false|disabled)$/i.test(val)) {
+		val = false;
+	} else if (val === 'null') {
+		val = null;
+	} else {
+		val = Number(val);
+	}
+
+	obj[prop] = val;
+	return obj;
+}, {});
+
+/**
+ * Is stdout a TTY? Colored output is enabled when `true`.
+ */
+
+function useColors() {
+	return 'colors' in exports.inspectOpts ?
+		Boolean(exports.inspectOpts.colors) :
+		tty.isatty(process.stderr.fd);
+}
+
+/**
+ * Adds ANSI color escape codes if enabled.
+ *
+ * @api public
+ */
+
+function formatArgs(args) {
+	const {namespace: name, useColors} = this;
+
+	if (useColors) {
+		const c = this.color;
+		const colorCode = '\u001B[3' + (c < 8 ? c : '8;5;' + c);
+		const prefix = `  ${colorCode};1m${name} \u001B[0m`;
+
+		args[0] = prefix + args[0].split('\n').join('\n' + prefix);
+		args.push(colorCode + 'm+' + module.exports.humanize(this.diff) + '\u001B[0m');
+	} else {
+		args[0] = getDate() + name + ' ' + args[0];
+	}
+}
+
+function getDate() {
+	if (exports.inspectOpts.hideDate) {
+		return '';
+	}
+	return new Date().toISOString() + ' ';
+}
+
+/**
+ * Invokes `util.formatWithOptions()` with the specified arguments and writes to stderr.
+ */
+
+function log(...args) {
+	return process.stderr.write(util.formatWithOptions(exports.inspectOpts, ...args) + '\n');
+}
+
+/**
+ * Save `namespaces`.
+ *
+ * @param {String} namespaces
+ * @api private
+ */
+function save(namespaces) {
+	if (namespaces) {
+		process.env.DEBUG = namespaces;
+	} else {
+		// If you set a process.env field to null or undefined, it gets cast to the
+		// string 'null' or 'undefined'. Just delete instead.
+		delete process.env.DEBUG;
+	}
+}
+
+/**
+ * Load `namespaces`.
+ *
+ * @return {String} returns the previously persisted debug modes
+ * @api private
+ */
+
+function load() {
+	return process.env.DEBUG;
+}
+
+/**
+ * Init logic for `debug` instances.
+ *
+ * Create a new `inspectOpts` object in case `useColors` is set
+ * differently for a particular `debug` instance.
+ */
+
+function init(debug) {
+	debug.inspectOpts = {};
+
+	const keys = Object.keys(exports.inspectOpts);
+	for (let i = 0; i < keys.length; i++) {
+		debug.inspectOpts[keys[i]] = exports.inspectOpts[keys[i]];
+	}
+}
+
+module.exports = __nccwpck_require__(897)(exports);
+
+const {formatters} = module.exports;
+
+/**
+ * Map %o to `util.inspect()`, all on a single line.
+ */
+
+formatters.o = function (v) {
+	this.inspectOpts.colors = this.useColors;
+	return util.inspect(v, this.inspectOpts)
+		.split('\n')
+		.map(str => str.trim())
+		.join(' ');
+};
+
+/**
+ * Map %O to `util.inspect()`, allowing multiple lines if needed.
+ */
+
+formatters.O = function (v) {
+	this.inspectOpts.colors = this.useColors;
+	return util.inspect(v, this.inspectOpts);
+};
+
+
+/***/ }),
+
 /***/ 1373:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -2787,6 +3652,21 @@ module.exports = getStream;
 module.exports.buffer = (stream, options) => getStream(stream, {...options, encoding: 'buffer'});
 module.exports.array = (stream, options) => getStream(stream, {...options, array: true});
 module.exports.MaxBufferError = MaxBufferError;
+
+
+/***/ }),
+
+/***/ 3813:
+/***/ ((module) => {
+
+
+
+module.exports = (flag, argv = process.argv) => {
+	const prefix = flag.startsWith('-') ? '' : (flag.length === 1 ? '-' : '--');
+	const position = argv.indexOf(prefix + flag);
+	const terminatorPosition = argv.indexOf('--');
+	return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
+};
 
 
 /***/ }),
@@ -6537,6 +7417,175 @@ module.exports = __nccwpck_require__(1813)
 
 /***/ }),
 
+/***/ 744:
+/***/ ((module) => {
+
+/**
+ * Helpers.
+ */
+
+var s = 1000;
+var m = s * 60;
+var h = m * 60;
+var d = h * 24;
+var w = d * 7;
+var y = d * 365.25;
+
+/**
+ * Parse or format the given `val`.
+ *
+ * Options:
+ *
+ *  - `long` verbose formatting [false]
+ *
+ * @param {String|Number} val
+ * @param {Object} [options]
+ * @throws {Error} throw an error if val is not a non-empty string or a number
+ * @return {String|Number}
+ * @api public
+ */
+
+module.exports = function (val, options) {
+  options = options || {};
+  var type = typeof val;
+  if (type === 'string' && val.length > 0) {
+    return parse(val);
+  } else if (type === 'number' && isFinite(val)) {
+    return options.long ? fmtLong(val) : fmtShort(val);
+  }
+  throw new Error(
+    'val is not a non-empty string or a valid number. val=' +
+      JSON.stringify(val)
+  );
+};
+
+/**
+ * Parse the given `str` and return milliseconds.
+ *
+ * @param {String} str
+ * @return {Number}
+ * @api private
+ */
+
+function parse(str) {
+  str = String(str);
+  if (str.length > 100) {
+    return;
+  }
+  var match = /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(
+    str
+  );
+  if (!match) {
+    return;
+  }
+  var n = parseFloat(match[1]);
+  var type = (match[2] || 'ms').toLowerCase();
+  switch (type) {
+    case 'years':
+    case 'year':
+    case 'yrs':
+    case 'yr':
+    case 'y':
+      return n * y;
+    case 'weeks':
+    case 'week':
+    case 'w':
+      return n * w;
+    case 'days':
+    case 'day':
+    case 'd':
+      return n * d;
+    case 'hours':
+    case 'hour':
+    case 'hrs':
+    case 'hr':
+    case 'h':
+      return n * h;
+    case 'minutes':
+    case 'minute':
+    case 'mins':
+    case 'min':
+    case 'm':
+      return n * m;
+    case 'seconds':
+    case 'second':
+    case 'secs':
+    case 'sec':
+    case 's':
+      return n * s;
+    case 'milliseconds':
+    case 'millisecond':
+    case 'msecs':
+    case 'msec':
+    case 'ms':
+      return n;
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Short format for `ms`.
+ *
+ * @param {Number} ms
+ * @return {String}
+ * @api private
+ */
+
+function fmtShort(ms) {
+  var msAbs = Math.abs(ms);
+  if (msAbs >= d) {
+    return Math.round(ms / d) + 'd';
+  }
+  if (msAbs >= h) {
+    return Math.round(ms / h) + 'h';
+  }
+  if (msAbs >= m) {
+    return Math.round(ms / m) + 'm';
+  }
+  if (msAbs >= s) {
+    return Math.round(ms / s) + 's';
+  }
+  return ms + 'ms';
+}
+
+/**
+ * Long format for `ms`.
+ *
+ * @param {Number} ms
+ * @return {String}
+ * @api private
+ */
+
+function fmtLong(ms) {
+  var msAbs = Math.abs(ms);
+  if (msAbs >= d) {
+    return plural(ms, msAbs, d, 'day');
+  }
+  if (msAbs >= h) {
+    return plural(ms, msAbs, h, 'hour');
+  }
+  if (msAbs >= m) {
+    return plural(ms, msAbs, m, 'minute');
+  }
+  if (msAbs >= s) {
+    return plural(ms, msAbs, s, 'second');
+  }
+  return ms + ' ms';
+}
+
+/**
+ * Pluralization helper.
+ */
+
+function plural(ms, msAbs, n, name) {
+  var isPlural = msAbs >= n * 1.5;
+  return Math.round(ms / n) + ' ' + name + (isPlural ? 's' : '');
+}
+
+
+/***/ }),
+
 /***/ 5089:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -8849,6 +9898,148 @@ module.exports = function (str, sub) {
 
 /***/ }),
 
+/***/ 1450:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+
+const os = __nccwpck_require__(857);
+const tty = __nccwpck_require__(2018);
+const hasFlag = __nccwpck_require__(3813);
+
+const {env} = process;
+
+let forceColor;
+if (hasFlag('no-color') ||
+	hasFlag('no-colors') ||
+	hasFlag('color=false') ||
+	hasFlag('color=never')) {
+	forceColor = 0;
+} else if (hasFlag('color') ||
+	hasFlag('colors') ||
+	hasFlag('color=true') ||
+	hasFlag('color=always')) {
+	forceColor = 1;
+}
+
+if ('FORCE_COLOR' in env) {
+	if (env.FORCE_COLOR === 'true') {
+		forceColor = 1;
+	} else if (env.FORCE_COLOR === 'false') {
+		forceColor = 0;
+	} else {
+		forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
+	}
+}
+
+function translateLevel(level) {
+	if (level === 0) {
+		return false;
+	}
+
+	return {
+		level,
+		hasBasic: true,
+		has256: level >= 2,
+		has16m: level >= 3
+	};
+}
+
+function supportsColor(haveStream, streamIsTTY) {
+	if (forceColor === 0) {
+		return 0;
+	}
+
+	if (hasFlag('color=16m') ||
+		hasFlag('color=full') ||
+		hasFlag('color=truecolor')) {
+		return 3;
+	}
+
+	if (hasFlag('color=256')) {
+		return 2;
+	}
+
+	if (haveStream && !streamIsTTY && forceColor === undefined) {
+		return 0;
+	}
+
+	const min = forceColor || 0;
+
+	if (env.TERM === 'dumb') {
+		return min;
+	}
+
+	if (process.platform === 'win32') {
+		// Windows 10 build 10586 is the first Windows release that supports 256 colors.
+		// Windows 10 build 14931 is the first release that supports 16m/TrueColor.
+		const osRelease = os.release().split('.');
+		if (
+			Number(osRelease[0]) >= 10 &&
+			Number(osRelease[2]) >= 10586
+		) {
+			return Number(osRelease[2]) >= 14931 ? 3 : 2;
+		}
+
+		return 1;
+	}
+
+	if ('CI' in env) {
+		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI', 'GITHUB_ACTIONS', 'BUILDKITE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
+			return 1;
+		}
+
+		return min;
+	}
+
+	if ('TEAMCITY_VERSION' in env) {
+		return /^(9\.(0*[1-9]\d*)\.|\d{2,}\.)/.test(env.TEAMCITY_VERSION) ? 1 : 0;
+	}
+
+	if (env.COLORTERM === 'truecolor') {
+		return 3;
+	}
+
+	if ('TERM_PROGRAM' in env) {
+		const version = parseInt((env.TERM_PROGRAM_VERSION || '').split('.')[0], 10);
+
+		switch (env.TERM_PROGRAM) {
+			case 'iTerm.app':
+				return version >= 3 ? 3 : 2;
+			case 'Apple_Terminal':
+				return 2;
+			// No default
+		}
+	}
+
+	if (/-256(color)?$/i.test(env.TERM)) {
+		return 2;
+	}
+
+	if (/^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/i.test(env.TERM)) {
+		return 1;
+	}
+
+	if ('COLORTERM' in env) {
+		return 1;
+	}
+
+	return min;
+}
+
+function getSupportLevel(stream) {
+	const level = supportsColor(stream, stream && stream.isTTY);
+	return translateLevel(level);
+}
+
+module.exports = {
+	supportsColor: getSupportLevel,
+	stdout: translateLevel(supportsColor(true, tty.isatty(1))),
+	stderr: translateLevel(supportsColor(true, tty.isatty(2)))
+};
+
+
+/***/ }),
+
 /***/ 5201:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -9839,13 +11030,6 @@ module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("net");
 
 /***/ }),
 
-/***/ 7075:
-/***/ ((module) => {
-
-module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:stream");
-
-/***/ }),
-
 /***/ 857:
 /***/ ((module) => {
 
@@ -9871,6 +11055,13 @@ module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("stream");
 /***/ ((module) => {
 
 module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("tls");
+
+/***/ }),
+
+/***/ 2018:
+/***/ ((module) => {
+
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("tty");
 
 /***/ }),
 
@@ -9935,64 +11126,6 @@ module.exports = /*#__PURE__*/JSON.parse('{"application/1d-interleaved-parityfec
 /******/ }
 /******/ 
 /************************************************************************/
-/******/ /* webpack/runtime/create fake namespace object */
-/******/ (() => {
-/******/ 	var getProto = Object.getPrototypeOf ? (obj) => (Object.getPrototypeOf(obj)) : (obj) => (obj.__proto__);
-/******/ 	var leafPrototypes;
-/******/ 	// create a fake namespace object
-/******/ 	// mode & 1: value is a module id, require it
-/******/ 	// mode & 2: merge all properties of value into the ns
-/******/ 	// mode & 4: return value when already ns object
-/******/ 	// mode & 16: return value when it's Promise-like
-/******/ 	// mode & 8|1: behave like require
-/******/ 	__nccwpck_require__.t = function(value, mode) {
-/******/ 		if(mode & 1) value = this(value);
-/******/ 		if(mode & 8) return value;
-/******/ 		if(typeof value === 'object' && value) {
-/******/ 			if((mode & 4) && value.__esModule) return value;
-/******/ 			if((mode & 16) && typeof value.then === 'function') return value;
-/******/ 		}
-/******/ 		var ns = Object.create(null);
-/******/ 		__nccwpck_require__.r(ns);
-/******/ 		var def = {};
-/******/ 		leafPrototypes = leafPrototypes || [null, getProto({}), getProto([]), getProto(getProto)];
-/******/ 		for(var current = mode & 2 && value; typeof current == 'object' && !~leafPrototypes.indexOf(current); current = getProto(current)) {
-/******/ 			Object.getOwnPropertyNames(current).forEach((key) => (def[key] = () => (value[key])));
-/******/ 		}
-/******/ 		def['default'] = () => (value);
-/******/ 		__nccwpck_require__.d(ns, def);
-/******/ 		return ns;
-/******/ 	};
-/******/ })();
-/******/ 
-/******/ /* webpack/runtime/define property getters */
-/******/ (() => {
-/******/ 	// define getter functions for harmony exports
-/******/ 	__nccwpck_require__.d = (exports, definition) => {
-/******/ 		for(var key in definition) {
-/******/ 			if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
-/******/ 				Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 			}
-/******/ 		}
-/******/ 	};
-/******/ })();
-/******/ 
-/******/ /* webpack/runtime/hasOwnProperty shorthand */
-/******/ (() => {
-/******/ 	__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
-/******/ })();
-/******/ 
-/******/ /* webpack/runtime/make namespace object */
-/******/ (() => {
-/******/ 	// define __esModule on exports
-/******/ 	__nccwpck_require__.r = (exports) => {
-/******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
-/******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
-/******/ 		}
-/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
-/******/ 	};
-/******/ })();
-/******/ 
 /******/ /* webpack/runtime/compat */
 /******/ 
 /******/ if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";
@@ -10007,7 +11140,7 @@ var external_fs_ = __nccwpck_require__(9896);
 // EXTERNAL MODULE: external "path"
 var external_path_ = __nccwpck_require__(6928);
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
-var lib_core = __nccwpck_require__(7484);
+var core = __nccwpck_require__(7484);
 // EXTERNAL MODULE: ./node_modules/md5-file/index.js
 var md5_file = __nccwpck_require__(6513);
 // EXTERNAL MODULE: ./node_modules/content-disposition/index.js
@@ -10757,8 +11890,8 @@ class AbortError extends RequestError {
 const external_node_process_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:process");
 ;// CONCATENATED MODULE: external "node:buffer"
 const external_node_buffer_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:buffer");
-// EXTERNAL MODULE: external "node:stream"
-var external_node_stream_ = __nccwpck_require__(7075);
+;// CONCATENATED MODULE: external "node:stream"
+const external_node_stream_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:stream");
 ;// CONCATENATED MODULE: external "node:http"
 const external_node_http_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:http");
 // EXTERNAL MODULE: external "events"
@@ -11176,7 +12309,7 @@ function lowercaseKeys(object) {
 
 
 
-class Response extends external_node_stream_.Readable {
+class responselike_Response extends external_node_stream_namespaceObject.Readable {
 	statusCode;
 	headers;
 	body;
@@ -11365,7 +12498,7 @@ class CacheableRequest {
             // cache-control headers. As a result, the body of the request should be
             // added to the cache key in order to avoid collisions.
             if (options.body && options.method !== undefined && ['POST', 'PATCH', 'PUT'].includes(options.method)) {
-                if (options.body instanceof external_node_stream_.Readable) {
+                if (options.body instanceof external_node_stream_namespaceObject.Readable) {
                     // Streamed bodies should completely skip the cache because they may
                     // or may not be hashable and in either case the stream would need to
                     // close before the cache key could be generated.
@@ -11401,7 +12534,7 @@ class CacheableRequest {
                                     .once('end', resolve);
                             });
                             const headers = convertHeaders(revalidatedPolicy.policy.responseHeaders());
-                            response = new Response({ statusCode: revalidate.statusCode, headers, body: revalidate.body, url: revalidate.url });
+                            response = new responselike_Response({ statusCode: revalidate.statusCode, headers, body: revalidate.body, url: revalidate.url });
                             response.cachePolicy = revalidatedPolicy.policy;
                             response.fromCache = true;
                         }
@@ -11483,7 +12616,7 @@ class CacheableRequest {
                     const policy = http_cache_semantics.fromObject(cacheEntry.cachePolicy);
                     if (policy.satisfiesWithoutRevalidation(options_) && !options_.forceRefresh) {
                         const headers = convertHeaders(policy.responseHeaders());
-                        const response = new Response({ statusCode: cacheEntry.statusCode, headers, body: cacheEntry.body, url: cacheEntry.url });
+                        const response = new responselike_Response({ statusCode: cacheEntry.statusCode, headers, body: cacheEntry.body, url: cacheEntry.url });
                         response.cachePolicy = policy;
                         response.fromCache = true;
                         ee.emit('response', response);
@@ -11550,7 +12683,7 @@ class CacheableRequest {
 }
 const entries = Object.entries;
 const cloneResponse = (response) => {
-    const clone = new external_node_stream_.PassThrough({ autoDestroy: false });
+    const clone = new external_node_stream_namespaceObject.PassThrough({ autoDestroy: false });
     mimicResponse(response, clone);
     return response.pipe(clone);
 };
@@ -14374,7 +15507,7 @@ const proxiedRequestEvents = [
     'upgrade',
 ];
 const core_noop = () => { };
-class Request extends external_node_stream_.Duplex {
+class Request extends external_node_stream_namespaceObject.Duplex {
     constructor(url, options, defaults) {
         super({
             // Don't destroy immediately, as the error may be emitted on unsuccessful retry
@@ -15860,590 +16993,390 @@ const got = source_create(defaults);
 var make_dir = __nccwpck_require__(6512);
 // EXTERNAL MODULE: ./node_modules/p-event/index.js
 var p_event = __nccwpck_require__(5089);
-;// CONCATENATED MODULE: external "node:fs"
-const external_node_fs_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs");
-;// CONCATENATED MODULE: ./node_modules/strtok3/lib/FsPromise.js
-/**
- * Module convert fs functions to promise based functions
- */
-
-const pathExists = external_node_fs_namespaceObject.existsSync;
-const createReadStream = external_node_fs_namespaceObject.createReadStream;
-async function stat(path) {
-    return new Promise((resolve, reject) => {
-        fs.stat(path, (err, stats) => {
-            if (err)
-                reject(err);
-            else
-                resolve(stats);
-        });
-    });
-}
-async function FsPromise_close(fd) {
-    return new Promise((resolve, reject) => {
-        external_node_fs_namespaceObject.close(fd, err => {
-            if (err)
-                reject(err);
-            else
-                resolve();
-        });
-    });
-}
-async function FsPromise_open(path, mode) {
-    return new Promise((resolve, reject) => {
-        fs.open(path, mode, (err, fd) => {
-            if (err)
-                reject(err);
-            else
-                resolve(fd);
-        });
-    });
-}
-async function read(fd, buffer, offset, length, position) {
-    return new Promise((resolve, reject) => {
-        external_node_fs_namespaceObject.read(fd, buffer, offset, length, position, (err, bytesRead, _buffer) => {
-            if (err)
-                reject(err);
-            else
-                resolve({ bytesRead, buffer: _buffer });
-        });
-    });
-}
-async function writeFile(path, data) {
-    return new Promise((resolve, reject) => {
-        fs.writeFile(path, data, err => {
-            if (err)
-                reject(err);
-            else
-                resolve();
-        });
-    });
-}
-function writeFileSync(path, data) {
-    fs.writeFileSync(path, data);
-}
-async function readFile(path) {
-    return new Promise((resolve, reject) => {
-        fs.readFile(path, (err, buffer) => {
-            if (err)
-                reject(err);
-            else
-                resolve(buffer);
-        });
-    });
-}
-
-;// CONCATENATED MODULE: ./node_modules/peek-readable/lib/EndOfFileStream.js
-const defaultMessages = 'End-Of-Stream';
-/**
- * Thrown on read operation of the end of file or stream has been reached
- */
-class EndOfStreamError extends Error {
-    constructor() {
-        super(defaultMessages);
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/peek-readable/lib/Deferred.js
-class Deferred {
-    constructor() {
-        this.resolve = () => null;
-        this.reject = () => null;
-        this.promise = new Promise((resolve, reject) => {
-            this.reject = reject;
-            this.resolve = resolve;
-        });
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/peek-readable/lib/StreamReader.js
-
-
-
-const maxStreamReadSize = 1 * 1024 * 1024; // Maximum request length on read-stream operation
-class StreamReader {
-    constructor(s) {
-        this.s = s;
-        /**
-         * Deferred used for postponed read request (as not data is yet available to read)
-         */
-        this.deferred = null;
-        this.endOfStream = false;
-        /**
-         * Store peeked data
-         * @type {Array}
-         */
-        this.peekQueue = [];
-        if (!s.read || !s.once) {
-            throw new Error('Expected an instance of stream.Readable');
-        }
-        this.s.once('end', () => this.reject(new EndOfStreamError()));
-        this.s.once('error', err => this.reject(err));
-        this.s.once('close', () => this.reject(new Error('Stream closed')));
-    }
-    /**
-     * Read ahead (peek) from stream. Subsequent read or peeks will return the same data
-     * @param uint8Array - Uint8Array (or Buffer) to store data read from stream in
-     * @param offset - Offset target
-     * @param length - Number of bytes to read
-     * @returns Number of bytes peeked
-     */
-    async peek(uint8Array, offset, length) {
-        const bytesRead = await this.read(uint8Array, offset, length);
-        this.peekQueue.push(uint8Array.subarray(offset, offset + bytesRead)); // Put read data back to peek buffer
-        return bytesRead;
-    }
-    /**
-     * Read chunk from stream
-     * @param buffer - Target Uint8Array (or Buffer) to store data read from stream in
-     * @param offset - Offset target
-     * @param length - Number of bytes to read
-     * @returns Number of bytes read
-     */
-    async read(buffer, offset, length) {
-        if (length === 0) {
-            return 0;
-        }
-        if (this.peekQueue.length === 0 && this.endOfStream) {
-            throw new EndOfStreamError();
-        }
-        let remaining = length;
-        let bytesRead = 0;
-        // consume peeked data first
-        while (this.peekQueue.length > 0 && remaining > 0) {
-            const peekData = this.peekQueue.pop(); // Front of queue
-            if (!peekData)
-                throw new Error('peekData should be defined');
-            const lenCopy = Math.min(peekData.length, remaining);
-            buffer.set(peekData.subarray(0, lenCopy), offset + bytesRead);
-            bytesRead += lenCopy;
-            remaining -= lenCopy;
-            if (lenCopy < peekData.length) {
-                // remainder back to queue
-                this.peekQueue.push(peekData.subarray(lenCopy));
-            }
-        }
-        // continue reading from stream if required
-        while (remaining > 0 && !this.endOfStream) {
-            const reqLen = Math.min(remaining, maxStreamReadSize);
-            const chunkLen = await this.readFromStream(buffer, offset + bytesRead, reqLen);
-            bytesRead += chunkLen;
-            if (chunkLen < reqLen)
-                break;
-            remaining -= chunkLen;
-        }
-        return bytesRead;
-    }
-    /**
-     * Read chunk from stream
-     * @param buffer Target Uint8Array (or Buffer) to store data read from stream in
-     * @param offset Offset target
-     * @param length Number of bytes to read
-     * @returns Number of bytes read
-     */
-    async readFromStream(buffer, offset, length) {
-        const readBuffer = this.s.read(length);
-        if (readBuffer) {
-            buffer.set(readBuffer, offset);
-            return readBuffer.length;
-        }
-        else {
-            const request = {
-                buffer,
-                offset,
-                length,
-                deferred: new Deferred()
-            };
-            this.deferred = request.deferred;
-            this.s.once('readable', () => {
-                this.readDeferred(request);
-            });
-            return request.deferred.promise;
-        }
-    }
-    /**
-     * Process deferred read request
-     * @param request Deferred read request
-     */
-    readDeferred(request) {
-        const readBuffer = this.s.read(request.length);
-        if (readBuffer) {
-            request.buffer.set(readBuffer, request.offset);
-            request.deferred.resolve(readBuffer.length);
-            this.deferred = null;
-        }
-        else {
-            this.s.once('readable', () => {
-                this.readDeferred(request);
-            });
-        }
-    }
-    reject(err) {
-        this.endOfStream = true;
-        if (this.deferred) {
-            this.deferred.reject(err);
-            this.deferred = null;
-        }
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/peek-readable/lib/index.js
-
-
-
-;// CONCATENATED MODULE: ./node_modules/strtok3/lib/AbstractTokenizer.js
-
-
-/**
- * Core tokenizer
- */
-class AbstractTokenizer {
-    constructor(fileInfo) {
-        /**
-         * Tokenizer-stream position
-         */
-        this.position = 0;
-        this.numBuffer = new Uint8Array(8);
-        this.fileInfo = fileInfo ? fileInfo : {};
-    }
-    /**
-     * Read a token from the tokenizer-stream
-     * @param token - The token to read
-     * @param position - If provided, the desired position in the tokenizer-stream
-     * @returns Promise with token data
-     */
-    async readToken(token, position = this.position) {
-        const uint8Array = external_node_buffer_namespaceObject.Buffer.alloc(token.len);
-        const len = await this.readBuffer(uint8Array, { position });
-        if (len < token.len)
-            throw new EndOfStreamError();
-        return token.get(uint8Array, 0);
-    }
-    /**
-     * Peek a token from the tokenizer-stream.
-     * @param token - Token to peek from the tokenizer-stream.
-     * @param position - Offset where to begin reading within the file. If position is null, data will be read from the current file position.
-     * @returns Promise with token data
-     */
-    async peekToken(token, position = this.position) {
-        const uint8Array = external_node_buffer_namespaceObject.Buffer.alloc(token.len);
-        const len = await this.peekBuffer(uint8Array, { position });
-        if (len < token.len)
-            throw new EndOfStreamError();
-        return token.get(uint8Array, 0);
-    }
-    /**
-     * Read a numeric token from the stream
-     * @param token - Numeric token
-     * @returns Promise with number
-     */
-    async readNumber(token) {
-        const len = await this.readBuffer(this.numBuffer, { length: token.len });
-        if (len < token.len)
-            throw new EndOfStreamError();
-        return token.get(this.numBuffer, 0);
-    }
-    /**
-     * Read a numeric token from the stream
-     * @param token - Numeric token
-     * @returns Promise with number
-     */
-    async peekNumber(token) {
-        const len = await this.peekBuffer(this.numBuffer, { length: token.len });
-        if (len < token.len)
-            throw new EndOfStreamError();
-        return token.get(this.numBuffer, 0);
-    }
-    /**
-     * Ignore number of bytes, advances the pointer in under tokenizer-stream.
-     * @param length - Number of bytes to ignore
-     * @return resolves the number of bytes ignored, equals length if this available, otherwise the number of bytes available
-     */
-    async ignore(length) {
-        if (this.fileInfo.size !== undefined) {
-            const bytesLeft = this.fileInfo.size - this.position;
-            if (length > bytesLeft) {
-                this.position += bytesLeft;
-                return bytesLeft;
-            }
-        }
-        this.position += length;
-        return length;
-    }
-    async close() {
-        // empty
-    }
-    normalizeOptions(uint8Array, options) {
-        if (options && options.position !== undefined && options.position < this.position) {
-            throw new Error('`options.position` must be equal or greater than `tokenizer.position`');
-        }
-        if (options) {
-            return {
-                mayBeLess: options.mayBeLess === true,
-                offset: options.offset ? options.offset : 0,
-                length: options.length ? options.length : (uint8Array.length - (options.offset ? options.offset : 0)),
-                position: options.position ? options.position : this.position
-            };
-        }
-        return {
-            mayBeLess: false,
-            offset: 0,
-            length: uint8Array.length,
-            position: this.position
-        };
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/strtok3/lib/ReadStreamTokenizer.js
-
-
-const maxBufferSize = 256000;
-class ReadStreamTokenizer_ReadStreamTokenizer extends AbstractTokenizer {
-    constructor(stream, fileInfo) {
-        super(fileInfo);
-        this.streamReader = new StreamReader(stream);
-    }
-    /**
-     * Get file information, an HTTP-client may implement this doing a HEAD request
-     * @return Promise with file information
-     */
-    async getFileInfo() {
-        return this.fileInfo;
-    }
-    /**
-     * Read buffer from tokenizer
-     * @param uint8Array - Target Uint8Array to fill with data read from the tokenizer-stream
-     * @param options - Read behaviour options
-     * @returns Promise with number of bytes read
-     */
-    async readBuffer(uint8Array, options) {
-        const normOptions = this.normalizeOptions(uint8Array, options);
-        const skipBytes = normOptions.position - this.position;
-        if (skipBytes > 0) {
-            await this.ignore(skipBytes);
-            return this.readBuffer(uint8Array, options);
-        }
-        else if (skipBytes < 0) {
-            throw new Error('`options.position` must be equal or greater than `tokenizer.position`');
-        }
-        if (normOptions.length === 0) {
-            return 0;
-        }
-        const bytesRead = await this.streamReader.read(uint8Array, normOptions.offset, normOptions.length);
-        this.position += bytesRead;
-        if ((!options || !options.mayBeLess) && bytesRead < normOptions.length) {
-            throw new EndOfStreamError();
-        }
-        return bytesRead;
-    }
-    /**
-     * Peek (read ahead) buffer from tokenizer
-     * @param uint8Array - Uint8Array (or Buffer) to write data to
-     * @param options - Read behaviour options
-     * @returns Promise with number of bytes peeked
-     */
-    async peekBuffer(uint8Array, options) {
-        const normOptions = this.normalizeOptions(uint8Array, options);
-        let bytesRead = 0;
-        if (normOptions.position) {
-            const skipBytes = normOptions.position - this.position;
-            if (skipBytes > 0) {
-                const skipBuffer = new Uint8Array(normOptions.length + skipBytes);
-                bytesRead = await this.peekBuffer(skipBuffer, { mayBeLess: normOptions.mayBeLess });
-                uint8Array.set(skipBuffer.subarray(skipBytes), normOptions.offset);
-                return bytesRead - skipBytes;
-            }
-            else if (skipBytes < 0) {
-                throw new Error('Cannot peek from a negative offset in a stream');
-            }
-        }
-        if (normOptions.length > 0) {
-            try {
-                bytesRead = await this.streamReader.peek(uint8Array, normOptions.offset, normOptions.length);
-            }
-            catch (err) {
-                if (options && options.mayBeLess && err instanceof EndOfStreamError) {
-                    return 0;
-                }
-                throw err;
-            }
-            if ((!normOptions.mayBeLess) && bytesRead < normOptions.length) {
-                throw new EndOfStreamError();
-            }
-        }
-        return bytesRead;
-    }
-    async ignore(length) {
-        // debug(`ignore ${this.position}...${this.position + length - 1}`);
-        const bufSize = Math.min(maxBufferSize, length);
-        const buf = new Uint8Array(bufSize);
-        let totBytesRead = 0;
-        while (totBytesRead < length) {
-            const remaining = length - totBytesRead;
-            const bytesRead = await this.readBuffer(buf, { length: Math.min(bufSize, remaining) });
-            if (bytesRead < 0) {
-                return bytesRead;
-            }
-            totBytesRead += bytesRead;
-        }
-        return totBytesRead;
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/strtok3/lib/BufferTokenizer.js
-
-
-class BufferTokenizer extends AbstractTokenizer {
-    /**
-     * Construct BufferTokenizer
-     * @param uint8Array - Uint8Array to tokenize
-     * @param fileInfo - Pass additional file information to the tokenizer
-     */
-    constructor(uint8Array, fileInfo) {
-        super(fileInfo);
-        this.uint8Array = uint8Array;
-        this.fileInfo.size = this.fileInfo.size ? this.fileInfo.size : uint8Array.length;
-    }
-    /**
-     * Read buffer from tokenizer
-     * @param uint8Array - Uint8Array to tokenize
-     * @param options - Read behaviour options
-     * @returns {Promise<number>}
-     */
-    async readBuffer(uint8Array, options) {
-        if (options && options.position) {
-            if (options.position < this.position) {
-                throw new Error('`options.position` must be equal or greater than `tokenizer.position`');
-            }
-            this.position = options.position;
-        }
-        const bytesRead = await this.peekBuffer(uint8Array, options);
-        this.position += bytesRead;
-        return bytesRead;
-    }
-    /**
-     * Peek (read ahead) buffer from tokenizer
-     * @param uint8Array
-     * @param options - Read behaviour options
-     * @returns {Promise<number>}
-     */
-    async peekBuffer(uint8Array, options) {
-        const normOptions = this.normalizeOptions(uint8Array, options);
-        const bytes2read = Math.min(this.uint8Array.length - normOptions.position, normOptions.length);
-        if ((!normOptions.mayBeLess) && bytes2read < normOptions.length) {
-            throw new EndOfStreamError();
-        }
-        else {
-            uint8Array.set(this.uint8Array.subarray(normOptions.position, normOptions.position + bytes2read), normOptions.offset);
-            return bytes2read;
-        }
-    }
-    async close() {
-        // empty
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/strtok3/lib/core.js
-
-
-
-/**
- * Construct ReadStreamTokenizer from given Stream.
- * Will set fileSize, if provided given Stream has set the .path property/
- * @param stream - Read from Node.js Stream.Readable
- * @param fileInfo - Pass the file information, like size and MIME-type of the corresponding stream.
- * @returns ReadStreamTokenizer
- */
-function fromStream(stream, fileInfo) {
-    fileInfo = fileInfo ? fileInfo : {};
-    return new ReadStreamTokenizer(stream, fileInfo);
-}
-/**
- * Construct ReadStreamTokenizer from given Buffer.
- * @param uint8Array - Uint8Array to tokenize
- * @param fileInfo - Pass additional file information to the tokenizer
- * @returns BufferTokenizer
- */
-function fromBuffer(uint8Array, fileInfo) {
-    return new BufferTokenizer(uint8Array, fileInfo);
-}
-
-;// CONCATENATED MODULE: ./node_modules/strtok3/lib/FileTokenizer.js
-
-
-
-class FileTokenizer extends AbstractTokenizer {
-    constructor(fd, fileInfo) {
-        super(fileInfo);
-        this.fd = fd;
-    }
-    /**
-     * Read buffer from file
-     * @param uint8Array - Uint8Array to write result to
-     * @param options - Read behaviour options
-     * @returns Promise number of bytes read
-     */
-    async readBuffer(uint8Array, options) {
-        const normOptions = this.normalizeOptions(uint8Array, options);
-        this.position = normOptions.position;
-        const res = await read(this.fd, uint8Array, normOptions.offset, normOptions.length, normOptions.position);
-        this.position += res.bytesRead;
-        if (res.bytesRead < normOptions.length && (!options || !options.mayBeLess)) {
-            throw new EndOfStreamError();
-        }
-        return res.bytesRead;
-    }
-    /**
-     * Peek buffer from file
-     * @param uint8Array - Uint8Array (or Buffer) to write data to
-     * @param options - Read behaviour options
-     * @returns Promise number of bytes read
-     */
-    async peekBuffer(uint8Array, options) {
-        const normOptions = this.normalizeOptions(uint8Array, options);
-        const res = await read(this.fd, uint8Array, normOptions.offset, normOptions.length, normOptions.position);
-        if ((!normOptions.mayBeLess) && res.bytesRead < normOptions.length) {
-            throw new EndOfStreamError();
-        }
-        return res.bytesRead;
-    }
-    async close() {
-        return FsPromise_close(this.fd);
-    }
-}
-async function fromFile(sourceFilePath) {
-    const stat = await fs.stat(sourceFilePath);
-    if (!stat.isFile) {
-        throw new Error(`File not a file: ${sourceFilePath}`);
-    }
-    const fd = await fs.open(sourceFilePath, 'r');
-    return new FileTokenizer(fd, { path: sourceFilePath, size: stat.size });
-}
-
-;// CONCATENATED MODULE: ./node_modules/strtok3/lib/index.js
-
-
-
-
-/**
- * Construct ReadStreamTokenizer from given Stream.
- * Will set fileSize, if provided given Stream has set the .path property.
- * @param stream - Node.js Stream.Readable
- * @param fileInfo - Pass additional file information to the tokenizer
- * @returns Tokenizer
- */
-async function lib_fromStream(stream, fileInfo) {
-    fileInfo = fileInfo ? fileInfo : {};
-    if (stream.path) {
-        const stat = await fs.stat(stream.path);
-        fileInfo.path = stream.path;
-        fileInfo.size = stat.size;
-    }
-    return core.fromStream(stream, fileInfo);
-}
-
 // EXTERNAL MODULE: ./node_modules/ieee754/index.js
 var ieee754 = __nccwpck_require__(7952);
+;// CONCATENATED MODULE: ./node_modules/@borewit/text-codec/lib/index.js
+const WINDOWS_1252_EXTRA = {
+    0x80: "€", 0x82: "‚", 0x83: "ƒ", 0x84: "„", 0x85: "…", 0x86: "†",
+    0x87: "‡", 0x88: "ˆ", 0x89: "‰", 0x8a: "Š", 0x8b: "‹", 0x8c: "Œ",
+    0x8e: "Ž", 0x91: "‘", 0x92: "’", 0x93: "“", 0x94: "”", 0x95: "•",
+    0x96: "–", 0x97: "—", 0x98: "˜", 0x99: "™", 0x9a: "š", 0x9b: "›",
+    0x9c: "œ", 0x9e: "ž", 0x9f: "Ÿ",
+};
+const WINDOWS_1252_REVERSE = {};
+for (const [code, char] of Object.entries(WINDOWS_1252_EXTRA)) {
+    WINDOWS_1252_REVERSE[char] = Number.parseInt(code, 10);
+}
+let _utf8Decoder;
+let _utf8Encoder;
+function utf8Decoder() {
+    if (typeof globalThis.TextDecoder === "undefined")
+        return undefined;
+    return (_utf8Decoder !== null && _utf8Decoder !== void 0 ? _utf8Decoder : (_utf8Decoder = new globalThis.TextDecoder("utf-8")));
+}
+function utf8Encoder() {
+    if (typeof globalThis.TextEncoder === "undefined")
+        return undefined;
+    return (_utf8Encoder !== null && _utf8Encoder !== void 0 ? _utf8Encoder : (_utf8Encoder = new globalThis.TextEncoder()));
+}
+const CHUNK = 32 * 1024;
+const REPLACEMENT = 0xfffd;
+/**
+ * Decode text from binary data
+ */
+function textDecode(bytes, encoding = "utf-8") {
+    switch (encoding.toLowerCase()) {
+        case "utf-8":
+        case "utf8": {
+            const dec = utf8Decoder();
+            return dec ? dec.decode(bytes) : decodeUTF8(bytes);
+        }
+        case "utf-16le":
+            return decodeUTF16LE(bytes);
+        case "us-ascii":
+        case "ascii":
+            return decodeASCII(bytes);
+        case "latin1":
+        case "iso-8859-1":
+            return decodeLatin1(bytes);
+        case "windows-1252":
+            return decodeWindows1252(bytes);
+        default:
+            throw new RangeError(`Encoding '${encoding}' not supported`);
+    }
+}
+function textEncode(input = "", encoding = "utf-8") {
+    switch (encoding.toLowerCase()) {
+        case "utf-8":
+        case "utf8": {
+            const enc = utf8Encoder();
+            return enc ? enc.encode(input) : encodeUTF8(input);
+        }
+        case "utf-16le":
+            return encodeUTF16LE(input);
+        case "us-ascii":
+        case "ascii":
+            return encodeASCII(input);
+        case "latin1":
+        case "iso-8859-1":
+            return encodeLatin1(input);
+        case "windows-1252":
+            return encodeWindows1252(input);
+        default:
+            throw new RangeError(`Encoding '${encoding}' not supported`);
+    }
+}
+function appendCodePoint(out, cp) {
+    if (cp <= 0xffff) {
+        out.push(String.fromCharCode(cp));
+        return;
+    }
+    cp -= 0x10000;
+    out.push(String.fromCharCode(0xd800 + (cp >> 10), 0xdc00 + (cp & 0x3ff)));
+}
+function flushChunk(parts, chunk) {
+    if (chunk.length === 0)
+        return;
+    parts.push(String.fromCharCode.apply(null, chunk));
+    chunk.length = 0;
+}
+function pushCodeUnit(parts, chunk, codeUnit) {
+    chunk.push(codeUnit);
+    if (chunk.length >= CHUNK)
+        flushChunk(parts, chunk);
+}
+function pushCodePoint(parts, chunk, cp) {
+    if (cp <= 0xffff) {
+        pushCodeUnit(parts, chunk, cp);
+        return;
+    }
+    cp -= 0x10000;
+    pushCodeUnit(parts, chunk, 0xd800 + (cp >> 10));
+    pushCodeUnit(parts, chunk, 0xdc00 + (cp & 0x3ff));
+}
+function decodeUTF8(bytes) {
+    const parts = [];
+    const chunk = [];
+    let i = 0;
+    // Match TextDecoder("utf-8") default BOM handling
+    if (bytes.length >= 3 &&
+        bytes[0] === 0xef &&
+        bytes[1] === 0xbb &&
+        bytes[2] === 0xbf) {
+        i = 3;
+    }
+    while (i < bytes.length) {
+        const b1 = bytes[i];
+        if (b1 <= 0x7f) {
+            pushCodeUnit(parts, chunk, b1);
+            i++;
+            continue;
+        }
+        // Invalid leading bytes: continuation byte or impossible prefixes
+        if (b1 < 0xc2 || b1 > 0xf4) {
+            pushCodeUnit(parts, chunk, REPLACEMENT);
+            i++;
+            continue;
+        }
+        // 2-byte sequence
+        if (b1 <= 0xdf) {
+            if (i + 1 >= bytes.length) {
+                pushCodeUnit(parts, chunk, REPLACEMENT);
+                i++;
+                continue;
+            }
+            const b2 = bytes[i + 1];
+            if ((b2 & 0xc0) !== 0x80) {
+                pushCodeUnit(parts, chunk, REPLACEMENT);
+                i++;
+                continue;
+            }
+            const cp = ((b1 & 0x1f) << 6) | (b2 & 0x3f);
+            pushCodeUnit(parts, chunk, cp);
+            i += 2;
+            continue;
+        }
+        // 3-byte sequence
+        if (b1 <= 0xef) {
+            if (i + 2 >= bytes.length) {
+                pushCodeUnit(parts, chunk, REPLACEMENT);
+                i++;
+                continue;
+            }
+            const b2 = bytes[i + 1];
+            const b3 = bytes[i + 2];
+            const valid = (b2 & 0xc0) === 0x80 &&
+                (b3 & 0xc0) === 0x80 &&
+                !(b1 === 0xe0 && b2 < 0xa0) && // overlong
+                !(b1 === 0xed && b2 >= 0xa0); // surrogate range
+            if (!valid) {
+                pushCodeUnit(parts, chunk, REPLACEMENT);
+                i++;
+                continue;
+            }
+            const cp = ((b1 & 0x0f) << 12) |
+                ((b2 & 0x3f) << 6) |
+                (b3 & 0x3f);
+            pushCodeUnit(parts, chunk, cp);
+            i += 3;
+            continue;
+        }
+        // 4-byte sequence
+        if (i + 3 >= bytes.length) {
+            pushCodeUnit(parts, chunk, REPLACEMENT);
+            i++;
+            continue;
+        }
+        const b2 = bytes[i + 1];
+        const b3 = bytes[i + 2];
+        const b4 = bytes[i + 3];
+        const valid = (b2 & 0xc0) === 0x80 &&
+            (b3 & 0xc0) === 0x80 &&
+            (b4 & 0xc0) === 0x80 &&
+            !(b1 === 0xf0 && b2 < 0x90) && // overlong
+            !(b1 === 0xf4 && b2 > 0x8f); // > U+10FFFF
+        if (!valid) {
+            pushCodeUnit(parts, chunk, REPLACEMENT);
+            i++;
+            continue;
+        }
+        const cp = ((b1 & 0x07) << 18) |
+            ((b2 & 0x3f) << 12) |
+            ((b3 & 0x3f) << 6) |
+            (b4 & 0x3f);
+        pushCodePoint(parts, chunk, cp);
+        i += 4;
+    }
+    flushChunk(parts, chunk);
+    return parts.join("");
+}
+function decodeUTF16LE(bytes) {
+    const parts = [];
+    const chunk = [];
+    const len = bytes.length;
+    let i = 0;
+    while (i + 1 < len) {
+        const u1 = bytes[i] | (bytes[i + 1] << 8);
+        i += 2;
+        // High surrogate
+        if (u1 >= 0xd800 && u1 <= 0xdbff) {
+            if (i + 1 < len) {
+                const u2 = bytes[i] | (bytes[i + 1] << 8);
+                if (u2 >= 0xdc00 && u2 <= 0xdfff) {
+                    pushCodeUnit(parts, chunk, u1);
+                    pushCodeUnit(parts, chunk, u2);
+                    i += 2;
+                }
+                else {
+                    pushCodeUnit(parts, chunk, REPLACEMENT);
+                }
+            }
+            else {
+                pushCodeUnit(parts, chunk, REPLACEMENT);
+            }
+            continue;
+        }
+        // Lone low surrogate
+        if (u1 >= 0xdc00 && u1 <= 0xdfff) {
+            pushCodeUnit(parts, chunk, REPLACEMENT);
+            continue;
+        }
+        pushCodeUnit(parts, chunk, u1);
+    }
+    // Odd trailing byte
+    if (i < len) {
+        pushCodeUnit(parts, chunk, REPLACEMENT);
+    }
+    flushChunk(parts, chunk);
+    return parts.join("");
+}
+function decodeASCII(bytes) {
+    const parts = [];
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+        const end = Math.min(bytes.length, i + CHUNK);
+        const codes = new Array(end - i);
+        for (let j = i, k = 0; j < end; j++, k++) {
+            codes[k] = bytes[j] & 0x7f;
+        }
+        parts.push(String.fromCharCode.apply(null, codes));
+    }
+    return parts.join("");
+}
+function decodeLatin1(bytes) {
+    const parts = [];
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+        const end = Math.min(bytes.length, i + CHUNK);
+        const codes = new Array(end - i);
+        for (let j = i, k = 0; j < end; j++, k++) {
+            codes[k] = bytes[j];
+        }
+        parts.push(String.fromCharCode.apply(null, codes));
+    }
+    return parts.join("");
+}
+function decodeWindows1252(bytes) {
+    const parts = [];
+    let out = "";
+    for (let i = 0; i < bytes.length; i++) {
+        const b = bytes[i];
+        const extra = b >= 0x80 && b <= 0x9f ? WINDOWS_1252_EXTRA[b] : undefined;
+        out += extra !== null && extra !== void 0 ? extra : String.fromCharCode(b);
+        if (out.length >= CHUNK) {
+            parts.push(out);
+            out = "";
+        }
+    }
+    if (out)
+        parts.push(out);
+    return parts.join("");
+}
+function encodeUTF8(str) {
+    const out = [];
+    for (let i = 0; i < str.length; i++) {
+        let cp = str.charCodeAt(i);
+        // Valid surrogate pair
+        if (cp >= 0xd800 && cp <= 0xdbff) {
+            if (i + 1 < str.length) {
+                const lo = str.charCodeAt(i + 1);
+                if (lo >= 0xdc00 && lo <= 0xdfff) {
+                    cp = 0x10000 + ((cp - 0xd800) << 10) + (lo - 0xdc00);
+                    i++;
+                }
+                else {
+                    cp = REPLACEMENT;
+                }
+            }
+            else {
+                cp = REPLACEMENT;
+            }
+        }
+        else if (cp >= 0xdc00 && cp <= 0xdfff) {
+            // Lone low surrogate
+            cp = REPLACEMENT;
+        }
+        if (cp < 0x80) {
+            out.push(cp);
+        }
+        else if (cp < 0x800) {
+            out.push(0xc0 | (cp >> 6), 0x80 | (cp & 0x3f));
+        }
+        else if (cp < 0x10000) {
+            out.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));
+        }
+        else {
+            out.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3f), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));
+        }
+    }
+    return new Uint8Array(out);
+}
+function encodeUTF16LE(str) {
+    // Preserve JS string code units, but do not emit non-well-formed UTF-16.
+    // Replace lone surrogates with U+FFFD.
+    const units = [];
+    for (let i = 0; i < str.length; i++) {
+        const u = str.charCodeAt(i);
+        if (u >= 0xd800 && u <= 0xdbff) {
+            if (i + 1 < str.length) {
+                const lo = str.charCodeAt(i + 1);
+                if (lo >= 0xdc00 && lo <= 0xdfff) {
+                    units.push(u, lo);
+                    i++;
+                }
+                else {
+                    units.push(REPLACEMENT);
+                }
+            }
+            else {
+                units.push(REPLACEMENT);
+            }
+            continue;
+        }
+        if (u >= 0xdc00 && u <= 0xdfff) {
+            units.push(REPLACEMENT);
+            continue;
+        }
+        units.push(u);
+    }
+    const out = new Uint8Array(units.length * 2);
+    for (let i = 0; i < units.length; i++) {
+        const code = units[i];
+        const o = i * 2;
+        out[o] = code & 0xff;
+        out[o + 1] = code >>> 8;
+    }
+    return out;
+}
+function encodeASCII(str) {
+    const out = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++)
+        out[i] = str.charCodeAt(i) & 0x7f;
+    return out;
+}
+function encodeLatin1(str) {
+    const out = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++)
+        out[i] = str.charCodeAt(i) & 0xff;
+    return out;
+}
+function encodeWindows1252(str) {
+    const out = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++) {
+        const ch = str[i];
+        const code = ch.charCodeAt(0);
+        if (WINDOWS_1252_REVERSE[ch] !== undefined) {
+            out[i] = WINDOWS_1252_REVERSE[ch];
+            continue;
+        }
+        if ((code >= 0x00 && code <= 0x7f) ||
+            (code >= 0xa0 && code <= 0xff)) {
+            out[i] = code;
+            continue;
+        }
+        out[i] = 0x3f; // '?'
+    }
+    return out;
+}
+
 ;// CONCATENATED MODULE: ./node_modules/token-types/lib/index.js
 
 
@@ -16451,7 +17384,7 @@ var ieee754 = __nccwpck_require__(7952);
 function dv(array) {
     return new DataView(array.buffer, array.byteOffset);
 }
-/**
+/*
  * 8-bit unsigned integer
  */
 const UINT8 = {
@@ -16812,8 +17745,7 @@ class IgnoreType {
         this.len = len;
     }
     // ToDo: don't read, but skip data
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    get(array, off) {
+    get(_array, _off) {
     }
 }
 class Uint8ArrayType {
@@ -16824,91 +17756,1486 @@ class Uint8ArrayType {
         return array.subarray(offset, offset + this.len);
     }
 }
-class BufferType {
-    constructor(len) {
-        this.len = len;
-    }
-    get(uint8Array, off) {
-        return Buffer.from(uint8Array.subarray(off, off + this.len));
-    }
-}
 /**
  * Consume a fixed number of bytes from the stream and return a string with a specified encoding.
+ * Supports all encodings supported by TextDecoder, plus 'windows-1252'.
  */
 class StringType {
     constructor(len, encoding) {
         this.len = len;
         this.encoding = encoding;
     }
-    get(uint8Array, offset) {
-        return external_node_buffer_namespaceObject.Buffer.from(uint8Array).toString(this.encoding, offset, offset + this.len);
+    get(data, offset = 0) {
+        const bytes = data.subarray(offset, offset + this.len);
+        return textDecode(bytes, this.encoding);
     }
 }
 /**
- * ANSI Latin 1 String
- * Using windows-1252 / ISO 8859-1 decoding
+ * ANSI Latin 1 String using Windows-1252 (Code Page 1252)
+ * Windows-1252 is a superset of ISO 8859-1 / Latin-1.
  */
-class AnsiStringType {
+class AnsiStringType extends StringType {
     constructor(len) {
-        this.len = len;
-    }
-    static decode(buffer, offset, until) {
-        let str = '';
-        for (let i = offset; i < until; ++i) {
-            str += AnsiStringType.codePointToString(AnsiStringType.singleByteDecoder(buffer[i]));
-        }
-        return str;
-    }
-    static inRange(a, min, max) {
-        return min <= a && a <= max;
-    }
-    static codePointToString(cp) {
-        if (cp <= 0xFFFF) {
-            return String.fromCharCode(cp);
-        }
-        else {
-            cp -= 0x10000;
-            return String.fromCharCode((cp >> 10) + 0xD800, (cp & 0x3FF) + 0xDC00);
-        }
-    }
-    static singleByteDecoder(bite) {
-        if (AnsiStringType.inRange(bite, 0x00, 0x7F)) {
-            return bite;
-        }
-        const codePoint = AnsiStringType.windows1252[bite - 0x80];
-        if (codePoint === null) {
-            throw Error('invaliding encoding');
-        }
-        return codePoint;
-    }
-    get(buffer, offset = 0) {
-        return AnsiStringType.decode(buffer, offset, offset + this.len);
+        super(len, 'windows-1252');
     }
 }
-AnsiStringType.windows1252 = [8364, 129, 8218, 402, 8222, 8230, 8224, 8225, 710, 8240, 352,
-    8249, 338, 141, 381, 143, 144, 8216, 8217, 8220, 8221, 8226, 8211, 8212, 732,
-    8482, 353, 8250, 339, 157, 382, 376, 160, 161, 162, 163, 164, 165, 166, 167, 168,
-    169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184,
-    185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200,
-    201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216,
-    217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232,
-    233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247,
-    248, 249, 250, 251, 252, 253, 254, 255];
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/stream/Errors.js
+const defaultMessages = 'End-Of-Stream';
+/**
+ * Thrown on read operation of the end of file or stream has been reached
+ */
+class EndOfStreamError extends Error {
+    constructor() {
+        super(defaultMessages);
+        this.name = "EndOfStreamError";
+    }
+}
+class Errors_AbortError extends Error {
+    constructor(message = "The operation was aborted") {
+        super(message);
+        this.name = "AbortError";
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/stream/Deferred.js
+class Deferred {
+    constructor() {
+        this.resolve = () => null;
+        this.reject = () => null;
+        this.promise = new Promise((resolve, reject) => {
+            this.reject = reject;
+            this.resolve = resolve;
+        });
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/stream/AbstractStreamReader.js
+
+class AbstractStreamReader {
+    constructor() {
+        this.endOfStream = false;
+        this.interrupted = false;
+        /**
+         * Store peeked data
+         * @type {Array}
+         */
+        this.peekQueue = [];
+    }
+    async peek(uint8Array, mayBeLess = false) {
+        const bytesRead = await this.read(uint8Array, mayBeLess);
+        this.peekQueue.push(uint8Array.subarray(0, bytesRead)); // Put read data back to peek buffer
+        return bytesRead;
+    }
+    async read(buffer, mayBeLess = false) {
+        if (buffer.length === 0) {
+            return 0;
+        }
+        let bytesRead = this.readFromPeekBuffer(buffer);
+        if (!this.endOfStream) {
+            bytesRead += await this.readRemainderFromStream(buffer.subarray(bytesRead), mayBeLess);
+        }
+        if (bytesRead === 0 && !mayBeLess) {
+            throw new EndOfStreamError();
+        }
+        return bytesRead;
+    }
+    /**
+     * Read chunk from stream
+     * @param buffer - Target Uint8Array (or Buffer) to store data read from stream in
+     * @returns Number of bytes read
+     */
+    readFromPeekBuffer(buffer) {
+        let remaining = buffer.length;
+        let bytesRead = 0;
+        // consume peeked data first
+        while (this.peekQueue.length > 0 && remaining > 0) {
+            const peekData = this.peekQueue.pop(); // Front of queue
+            if (!peekData)
+                throw new Error('peekData should be defined');
+            const lenCopy = Math.min(peekData.length, remaining);
+            buffer.set(peekData.subarray(0, lenCopy), bytesRead);
+            bytesRead += lenCopy;
+            remaining -= lenCopy;
+            if (lenCopy < peekData.length) {
+                // remainder back to queue
+                this.peekQueue.push(peekData.subarray(lenCopy));
+            }
+        }
+        return bytesRead;
+    }
+    async readRemainderFromStream(buffer, mayBeLess) {
+        let bytesRead = 0;
+        // Continue reading from stream if required
+        while (bytesRead < buffer.length && !this.endOfStream) {
+            if (this.interrupted) {
+                throw new Errors_AbortError();
+            }
+            const chunkLen = await this.readFromStream(buffer.subarray(bytesRead), mayBeLess);
+            if (chunkLen === 0)
+                break;
+            bytesRead += chunkLen;
+        }
+        if (!mayBeLess && bytesRead < buffer.length) {
+            throw new EndOfStreamError();
+        }
+        return bytesRead;
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/stream/StreamReader.js
+
+
+
+/**
+ * Node.js Readable Stream Reader
+ * Ref: https://nodejs.org/api/stream.html#readable-streams
+ */
+class StreamReader_StreamReader extends AbstractStreamReader {
+    constructor(s) {
+        super();
+        this.s = s;
+        /**
+         * Deferred used for postponed read request (as not data is yet available to read)
+         */
+        this.deferred = null;
+        if (!s.read || !s.once) {
+            throw new Error('Expected an instance of stream.Readable');
+        }
+        this.s.once('end', () => {
+            this.endOfStream = true;
+            if (this.deferred) {
+                this.deferred.resolve(0);
+            }
+        });
+        this.s.once('error', err => this.reject(err));
+        this.s.once('close', () => this.abort());
+    }
+    /**
+     * Read chunk from stream
+     * @param buffer Target Uint8Array (or Buffer) to store data read from stream in
+     * @param mayBeLess - If true, may fill the buffer partially
+     * @returns Number of bytes read
+     */
+    async readFromStream(buffer, mayBeLess) {
+        if (buffer.length === 0)
+            return 0;
+        const readBuffer = this.s.read(buffer.length);
+        if (readBuffer) {
+            buffer.set(readBuffer);
+            return readBuffer.length;
+        }
+        const request = {
+            buffer,
+            mayBeLess,
+            deferred: new Deferred()
+        };
+        this.deferred = request.deferred;
+        this.s.once('readable', () => {
+            this.readDeferred(request);
+        });
+        return request.deferred.promise;
+    }
+    /**
+     * Process deferred read request
+     * @param request Deferred read request
+     */
+    readDeferred(request) {
+        const readBuffer = this.s.read(request.buffer.length);
+        if (readBuffer) {
+            request.buffer.set(readBuffer);
+            request.deferred.resolve(readBuffer.length);
+            this.deferred = null;
+        }
+        else {
+            this.s.once('readable', () => {
+                this.readDeferred(request);
+            });
+        }
+    }
+    reject(err) {
+        this.interrupted = true;
+        if (this.deferred) {
+            this.deferred.reject(err);
+            this.deferred = null;
+        }
+    }
+    async abort() {
+        this.reject(new Errors_AbortError());
+    }
+    async close() {
+        return this.abort();
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/stream/WebStreamReader.js
+
+class WebStreamReader extends AbstractStreamReader {
+    constructor(reader) {
+        super();
+        this.reader = reader;
+    }
+    async abort() {
+        return this.close();
+    }
+    async close() {
+        this.reader.releaseLock();
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/stream/WebStreamByobReader.js
+
+/**
+ * Read from a WebStream using a BYOB reader
+ * Reference: https://nodejs.org/api/webstreams.html#class-readablestreambyobreader
+ */
+class WebStreamByobReader extends WebStreamReader {
+    /**
+     * Read from stream
+     * @param buffer - Target Uint8Array (or Buffer) to store data read from stream in
+     * @param mayBeLess - If true, may fill the buffer partially
+     * @protected Bytes read
+     */
+    async readFromStream(buffer, mayBeLess) {
+        if (buffer.length === 0)
+            return 0;
+        // @ts-expect-error
+        const result = await this.reader.read(new Uint8Array(buffer.length), { min: mayBeLess ? undefined : buffer.length });
+        if (result.done) {
+            this.endOfStream = result.done;
+        }
+        if (result.value) {
+            buffer.set(result.value);
+            return result.value.length;
+        }
+        return 0;
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/stream/WebStreamDefaultReader.js
+
+
+class WebStreamDefaultReader extends AbstractStreamReader {
+    constructor(reader) {
+        super();
+        this.reader = reader;
+        this.buffer = null; // Internal buffer to store excess data
+    }
+    /**
+     * Copy chunk to target, and store the remainder in this.buffer
+     */
+    writeChunk(target, chunk) {
+        const written = Math.min(chunk.length, target.length);
+        target.set(chunk.subarray(0, written));
+        // Adjust the remainder of the buffer
+        if (written < chunk.length) {
+            this.buffer = chunk.subarray(written);
+        }
+        else {
+            this.buffer = null;
+        }
+        return written;
+    }
+    /**
+     * Read from stream
+     * @param buffer - Target Uint8Array (or Buffer) to store data read from stream in
+     * @param mayBeLess - If true, may fill the buffer partially
+     * @protected Bytes read
+     */
+    async readFromStream(buffer, mayBeLess) {
+        if (buffer.length === 0)
+            return 0;
+        let totalBytesRead = 0;
+        // Serve from the internal buffer first
+        if (this.buffer) {
+            totalBytesRead += this.writeChunk(buffer, this.buffer);
+        }
+        // Continue reading from the stream if more data is needed
+        while (totalBytesRead < buffer.length && !this.endOfStream) {
+            const result = await this.reader.read();
+            if (result.done) {
+                this.endOfStream = true;
+                break;
+            }
+            if (result.value) {
+                totalBytesRead += this.writeChunk(buffer.subarray(totalBytesRead), result.value);
+            }
+        }
+        if (!mayBeLess && totalBytesRead === 0 && this.endOfStream) {
+            throw new EndOfStreamError();
+        }
+        return totalBytesRead;
+    }
+    abort() {
+        this.interrupted = true;
+        return this.reader.cancel();
+    }
+    async close() {
+        await this.abort();
+        this.reader.releaseLock();
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/stream/WebStreamReaderFactory.js
+
+
+function makeWebStreamReader(stream) {
+    try {
+        const reader = stream.getReader({ mode: "byob" });
+        if (reader instanceof ReadableStreamDefaultReader) {
+            // Fallback to default reader in case `mode: byob` is ignored
+            return new WebStreamDefaultReader(reader);
+        }
+        return new WebStreamByobReader(reader);
+    }
+    catch (error) {
+        if (error instanceof TypeError) {
+            // Fallback to default reader in case `mode: byob` rejected by a `TypeError`
+            return new WebStreamDefaultReader(stream.getReader());
+        }
+        throw error;
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/stream/index.js
+
+
+
+
+
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/AbstractTokenizer.js
+
+/**
+ * Core tokenizer
+ */
+class AbstractTokenizer {
+    /**
+     * Constructor
+     * @param options Tokenizer options
+     * @protected
+     */
+    constructor(options) {
+        this.numBuffer = new Uint8Array(8);
+        /**
+         * Tokenizer-stream position
+         */
+        this.position = 0;
+        this.onClose = options?.onClose;
+        if (options?.abortSignal) {
+            options.abortSignal.addEventListener('abort', () => {
+                this.abort();
+            });
+        }
+    }
+    /**
+     * Read a token from the tokenizer-stream
+     * @param token - The token to read
+     * @param position - If provided, the desired position in the tokenizer-stream
+     * @returns Promise with token data
+     */
+    async readToken(token, position = this.position) {
+        const uint8Array = new Uint8Array(token.len);
+        const len = await this.readBuffer(uint8Array, { position });
+        if (len < token.len)
+            throw new EndOfStreamError();
+        return token.get(uint8Array, 0);
+    }
+    /**
+     * Peek a token from the tokenizer-stream.
+     * @param token - Token to peek from the tokenizer-stream.
+     * @param position - Offset where to begin reading within the file. If position is null, data will be read from the current file position.
+     * @returns Promise with token data
+     */
+    async peekToken(token, position = this.position) {
+        const uint8Array = new Uint8Array(token.len);
+        const len = await this.peekBuffer(uint8Array, { position });
+        if (len < token.len)
+            throw new EndOfStreamError();
+        return token.get(uint8Array, 0);
+    }
+    /**
+     * Read a numeric token from the stream
+     * @param token - Numeric token
+     * @returns Promise with number
+     */
+    async readNumber(token) {
+        const len = await this.readBuffer(this.numBuffer, { length: token.len });
+        if (len < token.len)
+            throw new EndOfStreamError();
+        return token.get(this.numBuffer, 0);
+    }
+    /**
+     * Read a numeric token from the stream
+     * @param token - Numeric token
+     * @returns Promise with number
+     */
+    async peekNumber(token) {
+        const len = await this.peekBuffer(this.numBuffer, { length: token.len });
+        if (len < token.len)
+            throw new EndOfStreamError();
+        return token.get(this.numBuffer, 0);
+    }
+    /**
+     * Ignore number of bytes, advances the pointer in under tokenizer-stream.
+     * @param length - Number of bytes to ignore.  Must be ≥ 0.
+     * @return resolves the number of bytes ignored, equals length if this available, otherwise the number of bytes available
+     */
+    async ignore(length) {
+        if (length < 0) {
+            throw new RangeError('ignore length must be ≥ 0 bytes');
+        }
+        if (this.fileInfo.size !== undefined) {
+            const bytesLeft = this.fileInfo.size - this.position;
+            if (length > bytesLeft) {
+                this.position += bytesLeft;
+                return bytesLeft;
+            }
+        }
+        this.position += length;
+        return length;
+    }
+    async close() {
+        await this.abort();
+        await this.onClose?.();
+    }
+    normalizeOptions(uint8Array, options) {
+        if (!this.supportsRandomAccess() && options && options.position !== undefined && options.position < this.position) {
+            throw new Error('`options.position` must be equal or greater than `tokenizer.position`');
+        }
+        return {
+            ...{
+                mayBeLess: false,
+                offset: 0,
+                length: uint8Array.length,
+                position: this.position
+            }, ...options
+        };
+    }
+    abort() {
+        return Promise.resolve(); // Ignore abort signal
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/ReadStreamTokenizer.js
+
+
+const maxBufferSize = 256000;
+class ReadStreamTokenizer_ReadStreamTokenizer extends AbstractTokenizer {
+    /**
+     * Constructor
+     * @param streamReader stream-reader to read from
+     * @param options Tokenizer options
+     */
+    constructor(streamReader, options) {
+        super(options);
+        this.streamReader = streamReader;
+        this.fileInfo = options?.fileInfo ?? {};
+    }
+    /**
+     * Read buffer from tokenizer
+     * @param uint8Array - Target Uint8Array to fill with data read from the tokenizer-stream
+     * @param options - Read behaviour options
+     * @returns Promise with number of bytes read
+     */
+    async readBuffer(uint8Array, options) {
+        const normOptions = this.normalizeOptions(uint8Array, options);
+        const skipBytes = normOptions.position - this.position;
+        if (skipBytes > 0) {
+            await this.ignore(skipBytes);
+            return this.readBuffer(uint8Array, options);
+        }
+        if (skipBytes < 0) {
+            throw new Error('`options.position` must be equal or greater than `tokenizer.position`');
+        }
+        if (normOptions.length === 0) {
+            return 0;
+        }
+        const bytesRead = await this.streamReader.read(uint8Array.subarray(0, normOptions.length), normOptions.mayBeLess);
+        this.position += bytesRead;
+        if ((!options || !options.mayBeLess) && bytesRead < normOptions.length) {
+            throw new EndOfStreamError();
+        }
+        return bytesRead;
+    }
+    /**
+     * Peek (read ahead) buffer from tokenizer
+     * @param uint8Array - Uint8Array (or Buffer) to write data to
+     * @param options - Read behaviour options
+     * @returns Promise with number of bytes peeked
+     */
+    async peekBuffer(uint8Array, options) {
+        const normOptions = this.normalizeOptions(uint8Array, options);
+        let bytesRead = 0;
+        if (normOptions.position) {
+            const skipBytes = normOptions.position - this.position;
+            if (skipBytes > 0) {
+                const skipBuffer = new Uint8Array(normOptions.length + skipBytes);
+                bytesRead = await this.peekBuffer(skipBuffer, { mayBeLess: normOptions.mayBeLess });
+                uint8Array.set(skipBuffer.subarray(skipBytes));
+                return bytesRead - skipBytes;
+            }
+            if (skipBytes < 0) {
+                throw new Error('Cannot peek from a negative offset in a stream');
+            }
+        }
+        if (normOptions.length > 0) {
+            try {
+                bytesRead = await this.streamReader.peek(uint8Array.subarray(0, normOptions.length), normOptions.mayBeLess);
+            }
+            catch (err) {
+                if (options?.mayBeLess && err instanceof EndOfStreamError) {
+                    return 0;
+                }
+                throw err;
+            }
+            if ((!normOptions.mayBeLess) && bytesRead < normOptions.length) {
+                throw new EndOfStreamError();
+            }
+        }
+        return bytesRead;
+    }
+    /**
+     * @param length Number of bytes to ignore. Must be ≥ 0.
+     */
+    async ignore(length) {
+        if (length < 0) {
+            throw new RangeError('ignore length must be ≥ 0 bytes');
+        }
+        const bufSize = Math.min(maxBufferSize, length);
+        const buf = new Uint8Array(bufSize);
+        let totBytesRead = 0;
+        while (totBytesRead < length) {
+            const remaining = length - totBytesRead;
+            const bytesRead = await this.readBuffer(buf, { length: Math.min(bufSize, remaining) });
+            if (bytesRead < 0) {
+                return bytesRead;
+            }
+            totBytesRead += bytesRead;
+        }
+        return totBytesRead;
+    }
+    abort() {
+        return this.streamReader.abort();
+    }
+    async close() {
+        return this.streamReader.close();
+    }
+    supportsRandomAccess() {
+        return false;
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/BufferTokenizer.js
+
+
+class BufferTokenizer extends AbstractTokenizer {
+    /**
+     * Construct BufferTokenizer
+     * @param uint8Array - Uint8Array to tokenize
+     * @param options Tokenizer options
+     */
+    constructor(uint8Array, options) {
+        super(options);
+        this.uint8Array = uint8Array;
+        this.fileInfo = { ...options?.fileInfo ?? {}, ...{ size: uint8Array.length } };
+    }
+    /**
+     * Read buffer from tokenizer
+     * @param uint8Array - Uint8Array to tokenize
+     * @param options - Read behaviour options
+     * @returns {Promise<number>}
+     */
+    async readBuffer(uint8Array, options) {
+        if (options?.position) {
+            this.position = options.position;
+        }
+        const bytesRead = await this.peekBuffer(uint8Array, options);
+        this.position += bytesRead;
+        return bytesRead;
+    }
+    /**
+     * Peek (read ahead) buffer from tokenizer
+     * @param uint8Array
+     * @param options - Read behaviour options
+     * @returns {Promise<number>}
+     */
+    async peekBuffer(uint8Array, options) {
+        const normOptions = this.normalizeOptions(uint8Array, options);
+        const bytes2read = Math.min(this.uint8Array.length - normOptions.position, normOptions.length);
+        if ((!normOptions.mayBeLess) && bytes2read < normOptions.length) {
+            throw new EndOfStreamError();
+        }
+        uint8Array.set(this.uint8Array.subarray(normOptions.position, normOptions.position + bytes2read));
+        return bytes2read;
+    }
+    close() {
+        return super.close();
+    }
+    supportsRandomAccess() {
+        return true;
+    }
+    setPosition(position) {
+        this.position = position;
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/BlobTokenizer.js
+
+
+class BlobTokenizer extends AbstractTokenizer {
+    /**
+     * Construct BufferTokenizer
+     * @param blob - Uint8Array to tokenize
+     * @param options Tokenizer options
+     */
+    constructor(blob, options) {
+        super(options);
+        this.blob = blob;
+        this.fileInfo = { ...options?.fileInfo ?? {}, ...{ size: blob.size, mimeType: blob.type } };
+    }
+    /**
+     * Read buffer from tokenizer
+     * @param uint8Array - Uint8Array to tokenize
+     * @param options - Read behaviour options
+     * @returns {Promise<number>}
+     */
+    async readBuffer(uint8Array, options) {
+        if (options?.position) {
+            this.position = options.position;
+        }
+        const bytesRead = await this.peekBuffer(uint8Array, options);
+        this.position += bytesRead;
+        return bytesRead;
+    }
+    /**
+     * Peek (read ahead) buffer from tokenizer
+     * @param buffer
+     * @param options - Read behaviour options
+     * @returns {Promise<number>}
+     */
+    async peekBuffer(buffer, options) {
+        const normOptions = this.normalizeOptions(buffer, options);
+        const bytes2read = Math.min(this.blob.size - normOptions.position, normOptions.length);
+        if ((!normOptions.mayBeLess) && bytes2read < normOptions.length) {
+            throw new EndOfStreamError();
+        }
+        const arrayBuffer = await this.blob.slice(normOptions.position, normOptions.position + bytes2read).arrayBuffer();
+        buffer.set(new Uint8Array(arrayBuffer));
+        return bytes2read;
+    }
+    close() {
+        return super.close();
+    }
+    supportsRandomAccess() {
+        return true;
+    }
+    setPosition(position) {
+        this.position = position;
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/strtok3/lib/core.js
+
+
+
+
+
+
+/**
+ * Construct ReadStreamTokenizer from given Stream.
+ * Will set fileSize, if provided given Stream has set the .path property/
+ * @param stream - Read from Node.js Stream.Readable
+ * @param options - Tokenizer options
+ * @returns ReadStreamTokenizer
+ */
+function fromStream(stream, options) {
+    const streamReader = new StreamReader(stream);
+    const _options = options ?? {};
+    const chainedClose = _options.onClose;
+    _options.onClose = async () => {
+        await streamReader.close();
+        if (chainedClose) {
+            return chainedClose();
+        }
+    };
+    return new ReadStreamTokenizer(streamReader, _options);
+}
+/**
+ * Construct ReadStreamTokenizer from given ReadableStream (WebStream API).
+ * Will set fileSize, if provided given Stream has set the .path property/
+ * @param webStream - Read from Node.js Stream.Readable (must be a byte stream)
+ * @param options - Tokenizer options
+ * @returns ReadStreamTokenizer
+ */
+function fromWebStream(webStream, options) {
+    const webStreamReader = makeWebStreamReader(webStream);
+    const _options = options ?? {};
+    const chainedClose = _options.onClose;
+    _options.onClose = async () => {
+        await webStreamReader.close();
+        if (chainedClose) {
+            return chainedClose();
+        }
+    };
+    return new ReadStreamTokenizer_ReadStreamTokenizer(webStreamReader, _options);
+}
+/**
+ * Construct ReadStreamTokenizer from given Buffer.
+ * @param uint8Array - Uint8Array to tokenize
+ * @param options - Tokenizer options
+ * @returns BufferTokenizer
+ */
+function fromBuffer(uint8Array, options) {
+    return new BufferTokenizer(uint8Array, options);
+}
+/**
+ * Construct ReadStreamTokenizer from given Blob.
+ * @param blob - Uint8Array to tokenize
+ * @param options - Tokenizer options
+ * @returns BufferTokenizer
+ */
+function fromBlob(blob, options) {
+    return new BlobTokenizer(blob, options);
+}
+
+// EXTERNAL MODULE: ./node_modules/debug/src/index.js
+var debug_src = __nccwpck_require__(2830);
+;// CONCATENATED MODULE: ./node_modules/@tokenizer/inflate/lib/ZipToken.js
+/**
+ * Ref https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
+ */
+
+const Signature = {
+    LocalFileHeader: 0x04034b50,
+    DataDescriptor: 0x08074b50,
+    CentralFileHeader: 0x02014b50,
+    EndOfCentralDirectory: 0x06054b50
+};
+const DataDescriptor = {
+    get(array) {
+        return {
+            signature: UINT32_LE.get(array, 0),
+            compressedSize: UINT32_LE.get(array, 8),
+            uncompressedSize: UINT32_LE.get(array, 12),
+        };
+    }, len: 16
+};
+/**
+ * First part of the ZIP Local File Header
+ * Offset | Bytes| Description
+ * -------|------+-------------------------------------------------------------------
+ *      0 |    4 | Signature (0x04034b50)
+ *      4 |    2 | Minimum version needed to extract
+ *      6 |    2 | Bit flag
+ *      8 |    2 | Compression method
+ *     10 |    2 | File last modification time (MS-DOS format)
+ *     12 |    2 | File last modification date (MS-DOS format)
+ *     14 |    4 | CRC-32 of uncompressed data
+ *     18 |    4 | Compressed size
+ *     22 |    4 | Uncompressed size
+ *     26 |    2 | File name length (n)
+ *     28 |    2 | Extra field length (m)
+ *     30 |    n | File name
+ * 30 + n |    m | Extra field
+ */
+const LocalFileHeaderToken = {
+    get(array) {
+        const flags = UINT16_LE.get(array, 6);
+        return {
+            signature: UINT32_LE.get(array, 0),
+            minVersion: UINT16_LE.get(array, 4),
+            dataDescriptor: !!(flags & 0x0008),
+            compressedMethod: UINT16_LE.get(array, 8),
+            compressedSize: UINT32_LE.get(array, 18),
+            uncompressedSize: UINT32_LE.get(array, 22),
+            filenameLength: UINT16_LE.get(array, 26),
+            extraFieldLength: UINT16_LE.get(array, 28),
+            filename: null
+        };
+    }, len: 30
+};
+/**
+ * 4.3.16  End of central directory record:
+ *  end of central dir signature (0x06064b50)                                      4 bytes
+ *  number of this disk                                                            2 bytes
+ *  number of the disk with the start of the central directory                     2 bytes
+ *  total number of entries in the central directory on this disk                  2 bytes
+ *  total number of entries in the size of the central directory                   2 bytes
+ *  sizeOfTheCentralDirectory                                                      4 bytes
+ *  offset of start of central directory with respect to the starting disk number  4 bytes
+ *  .ZIP file comment length                                                       2 bytes
+ *  .ZIP file comment       (variable size)
+ */
+const EndOfCentralDirectoryRecordToken = {
+    get(array) {
+        return {
+            signature: UINT32_LE.get(array, 0),
+            nrOfThisDisk: UINT16_LE.get(array, 4),
+            nrOfThisDiskWithTheStart: UINT16_LE.get(array, 6),
+            nrOfEntriesOnThisDisk: UINT16_LE.get(array, 8),
+            nrOfEntriesOfSize: UINT16_LE.get(array, 10),
+            sizeOfCd: UINT32_LE.get(array, 12),
+            offsetOfStartOfCd: UINT32_LE.get(array, 16),
+            zipFileCommentLength: UINT16_LE.get(array, 20),
+        };
+    }, len: 22
+};
+/**
+ * File header:
+ *    central file header signature   4 bytes   0 (0x02014b50)
+ *    version made by                 2 bytes   4
+ *    version needed to extract       2 bytes   6
+ *    general purpose bit flag        2 bytes   8
+ *    compression method              2 bytes  10
+ *    last mod file time              2 bytes  12
+ *    last mod file date              2 bytes  14
+ *    crc-32                          4 bytes  16
+ *    compressed size                 4 bytes  20
+ *    uncompressed size               4 bytes  24
+ *    file name length                2 bytes  28
+ *    extra field length              2 bytes  30
+ *    file comment length             2 bytes  32
+ *    disk number start               2 bytes  34
+ *    internal file attributes        2 bytes  36
+ *    external file attributes        4 bytes  38
+ *    relative offset of local header 4 bytes  42
+ */
+const FileHeader = {
+    get(array) {
+        const flags = UINT16_LE.get(array, 8);
+        return {
+            signature: UINT32_LE.get(array, 0),
+            minVersion: UINT16_LE.get(array, 6),
+            dataDescriptor: !!(flags & 0x0008),
+            compressedMethod: UINT16_LE.get(array, 10),
+            compressedSize: UINT32_LE.get(array, 20),
+            uncompressedSize: UINT32_LE.get(array, 24),
+            filenameLength: UINT16_LE.get(array, 28),
+            extraFieldLength: UINT16_LE.get(array, 30),
+            fileCommentLength: UINT16_LE.get(array, 32),
+            relativeOffsetOfLocalHeader: UINT32_LE.get(array, 42),
+            filename: null
+        };
+    }, len: 46
+};
+
+;// CONCATENATED MODULE: ./node_modules/@tokenizer/inflate/lib/ZipHandler.js
+
+
+
+function signatureToArray(signature) {
+    const signatureBytes = new Uint8Array(UINT32_LE.len);
+    UINT32_LE.put(signatureBytes, 0, signature);
+    return signatureBytes;
+}
+const debug = debug_src('tokenizer:inflate');
+const syncBufferSize = 256 * 1024;
+const ddSignatureArray = signatureToArray(Signature.DataDescriptor);
+const eocdSignatureBytes = signatureToArray(Signature.EndOfCentralDirectory);
+class ZipHandler {
+    constructor(tokenizer) {
+        this.tokenizer = tokenizer;
+        this.syncBuffer = new Uint8Array(syncBufferSize);
+    }
+    async isZip() {
+        return await this.peekSignature() === Signature.LocalFileHeader;
+    }
+    peekSignature() {
+        return this.tokenizer.peekToken(UINT32_LE);
+    }
+    async findEndOfCentralDirectoryLocator() {
+        const randomReadTokenizer = this.tokenizer;
+        const chunkLength = Math.min(16 * 1024, randomReadTokenizer.fileInfo.size);
+        const buffer = this.syncBuffer.subarray(0, chunkLength);
+        await this.tokenizer.readBuffer(buffer, { position: randomReadTokenizer.fileInfo.size - chunkLength });
+        // Search the buffer from end to beginning for EOCD signature
+        // const signature = 0x06054b50;
+        for (let i = buffer.length - 4; i >= 0; i--) {
+            // Compare 4 bytes directly without calling readUInt32LE
+            if (buffer[i] === eocdSignatureBytes[0] &&
+                buffer[i + 1] === eocdSignatureBytes[1] &&
+                buffer[i + 2] === eocdSignatureBytes[2] &&
+                buffer[i + 3] === eocdSignatureBytes[3]) {
+                return randomReadTokenizer.fileInfo.size - chunkLength + i;
+            }
+        }
+        return -1;
+    }
+    async readCentralDirectory() {
+        if (!this.tokenizer.supportsRandomAccess()) {
+            debug('Cannot reading central-directory without random-read support');
+            return;
+        }
+        debug('Reading central-directory...');
+        const pos = this.tokenizer.position;
+        const offset = await this.findEndOfCentralDirectoryLocator();
+        if (offset > 0) {
+            debug('Central-directory 32-bit signature found');
+            const eocdHeader = await this.tokenizer.readToken(EndOfCentralDirectoryRecordToken, offset);
+            const files = [];
+            this.tokenizer.setPosition(eocdHeader.offsetOfStartOfCd);
+            for (let n = 0; n < eocdHeader.nrOfEntriesOfSize; ++n) {
+                const entry = await this.tokenizer.readToken(FileHeader);
+                if (entry.signature !== Signature.CentralFileHeader) {
+                    throw new Error('Expected Central-File-Header signature');
+                }
+                entry.filename = await this.tokenizer.readToken(new StringType(entry.filenameLength, 'utf-8'));
+                await this.tokenizer.ignore(entry.extraFieldLength);
+                await this.tokenizer.ignore(entry.fileCommentLength);
+                files.push(entry);
+                debug(`Add central-directory file-entry: n=${n + 1}/${files.length}: filename=${files[n].filename}`);
+            }
+            this.tokenizer.setPosition(pos);
+            return files;
+        }
+        this.tokenizer.setPosition(pos);
+    }
+    async unzip(fileCb) {
+        const entries = await this.readCentralDirectory();
+        if (entries) {
+            // Use Central Directory to iterate over files
+            return this.iterateOverCentralDirectory(entries, fileCb);
+        }
+        // Scan Zip files for local-file-header
+        let stop = false;
+        do {
+            const zipHeader = await this.readLocalFileHeader();
+            if (!zipHeader)
+                break;
+            const next = fileCb(zipHeader);
+            stop = !!next.stop;
+            let fileData;
+            await this.tokenizer.ignore(zipHeader.extraFieldLength);
+            if (zipHeader.dataDescriptor && zipHeader.compressedSize === 0) {
+                const chunks = [];
+                let len = syncBufferSize;
+                debug('Compressed-file-size unknown, scanning for next data-descriptor-signature....');
+                let nextHeaderIndex = -1;
+                while (nextHeaderIndex < 0 && len === syncBufferSize) {
+                    len = await this.tokenizer.peekBuffer(this.syncBuffer, { mayBeLess: true });
+                    nextHeaderIndex = indexOf(this.syncBuffer.subarray(0, len), ddSignatureArray);
+                    const size = nextHeaderIndex >= 0 ? nextHeaderIndex : len;
+                    if (next.handler) {
+                        const data = new Uint8Array(size);
+                        await this.tokenizer.readBuffer(data);
+                        chunks.push(data);
+                    }
+                    else {
+                        // Move position to the next header if found, skip the whole buffer otherwise
+                        await this.tokenizer.ignore(size);
+                    }
+                }
+                debug(`Found data-descriptor-signature at pos=${this.tokenizer.position}`);
+                if (next.handler) {
+                    await this.inflate(zipHeader, mergeArrays(chunks), next.handler);
+                }
+            }
+            else {
+                if (next.handler) {
+                    debug(`Reading compressed-file-data: ${zipHeader.compressedSize} bytes`);
+                    fileData = new Uint8Array(zipHeader.compressedSize);
+                    await this.tokenizer.readBuffer(fileData);
+                    await this.inflate(zipHeader, fileData, next.handler);
+                }
+                else {
+                    debug(`Ignoring compressed-file-data: ${zipHeader.compressedSize} bytes`);
+                    await this.tokenizer.ignore(zipHeader.compressedSize);
+                }
+            }
+            debug(`Reading data-descriptor at pos=${this.tokenizer.position}`);
+            if (zipHeader.dataDescriptor) {
+                // await this.tokenizer.ignore(DataDescriptor.len);
+                const dataDescriptor = await this.tokenizer.readToken(DataDescriptor);
+                if (dataDescriptor.signature !== 0x08074b50) {
+                    throw new Error(`Expected data-descriptor-signature at position ${this.tokenizer.position - DataDescriptor.len}`);
+                }
+            }
+        } while (!stop);
+    }
+    async iterateOverCentralDirectory(entries, fileCb) {
+        for (const fileHeader of entries) {
+            const next = fileCb(fileHeader);
+            if (next.handler) {
+                this.tokenizer.setPosition(fileHeader.relativeOffsetOfLocalHeader);
+                const zipHeader = await this.readLocalFileHeader();
+                if (zipHeader) {
+                    await this.tokenizer.ignore(zipHeader.extraFieldLength);
+                    const fileData = new Uint8Array(fileHeader.compressedSize);
+                    await this.tokenizer.readBuffer(fileData);
+                    await this.inflate(zipHeader, fileData, next.handler);
+                }
+            }
+            if (next.stop)
+                break;
+        }
+    }
+    async inflate(zipHeader, fileData, cb) {
+        if (zipHeader.compressedMethod === 0) {
+            // Stored (uncompressed)
+            return cb(fileData);
+        }
+        if (zipHeader.compressedMethod !== 8) {
+            throw new Error(`Unsupported ZIP compression method: ${zipHeader.compressedMethod}`);
+        }
+        debug(`Decompress filename=${zipHeader.filename}, compressed-size=${fileData.length}`);
+        const uncompressedData = await ZipHandler.decompressDeflateRaw(fileData);
+        return cb(uncompressedData);
+    }
+    static async decompressDeflateRaw(data) {
+        // Wrap Uint8Array in a ReadableStream without copying
+        const input = new ReadableStream({
+            start(controller) {
+                controller.enqueue(data);
+                controller.close();
+            }
+        });
+        const ds = new DecompressionStream("deflate-raw");
+        const output = input.pipeThrough(ds);
+        try {
+            // Collect decompressed bytes from the output stream
+            const response = new Response(output);
+            const buffer = await response.arrayBuffer();
+            return new Uint8Array(buffer);
+        }
+        catch (err) {
+            // Provide ZIP-specific error context
+            const message = err instanceof Error
+                ? `Failed to deflate ZIP entry: ${err.message}`
+                : "Unknown decompression error in ZIP entry";
+            throw new TypeError(message);
+        }
+    }
+    async readLocalFileHeader() {
+        const signature = await this.tokenizer.peekToken(UINT32_LE);
+        if (signature === Signature.LocalFileHeader) {
+            const header = await this.tokenizer.readToken(LocalFileHeaderToken);
+            header.filename = await this.tokenizer.readToken(new StringType(header.filenameLength, 'utf-8'));
+            return header;
+        }
+        if (signature === Signature.CentralFileHeader) {
+            return false;
+        }
+        if (signature === 0xE011CFD0) {
+            throw new Error('Encrypted ZIP');
+        }
+        throw new Error('Unexpected signature');
+    }
+}
+function indexOf(buffer, portion) {
+    const bufferLength = buffer.length;
+    const portionLength = portion.length;
+    // Return -1 if the portion is longer than the buffer
+    if (portionLength > bufferLength)
+        return -1;
+    // Search for the portion in the buffer
+    for (let i = 0; i <= bufferLength - portionLength; i++) {
+        let found = true;
+        for (let j = 0; j < portionLength; j++) {
+            if (buffer[i + j] !== portion[j]) {
+                found = false;
+                break;
+            }
+        }
+        if (found) {
+            return i; // Return the starting offset
+        }
+    }
+    return -1; // Not found
+}
+function mergeArrays(chunks) {
+    // Concatenate chunks into a single Uint8Array
+    const totalLength = chunks.reduce((acc, curr) => acc + curr.length, 0);
+    const mergedArray = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+        mergedArray.set(chunk, offset);
+        offset += chunk.length;
+    }
+    return mergedArray;
+}
+
+;// CONCATENATED MODULE: ./node_modules/@tokenizer/inflate/lib/GzipHandler.js
+class GzipHandler {
+    constructor(tokenizer) {
+        this.tokenizer = tokenizer;
+    }
+    inflate() {
+        const tokenizer = this.tokenizer;
+        return new ReadableStream({
+            async pull(controller) {
+                const buffer = new Uint8Array(1024);
+                const size = await tokenizer.readBuffer(buffer, { mayBeLess: true });
+                if (size === 0) {
+                    controller.close();
+                    return;
+                }
+                controller.enqueue(buffer.subarray(0, size));
+            }
+        }).pipeThrough(new DecompressionStream("gzip"));
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/@tokenizer/inflate/lib/index.js
+
+
+
+;// CONCATENATED MODULE: ./node_modules/uint8array-extras/index.js
+const objectToString = Object.prototype.toString;
+const uint8ArrayStringified = '[object Uint8Array]';
+const arrayBufferStringified = '[object ArrayBuffer]';
+
+function isType(value, typeConstructor, typeStringified) {
+	if (!value) {
+		return false;
+	}
+
+	if (value.constructor === typeConstructor) {
+		return true;
+	}
+
+	return objectToString.call(value) === typeStringified;
+}
+
+function isUint8Array(value) {
+	return isType(value, Uint8Array, uint8ArrayStringified);
+}
+
+function isArrayBuffer(value) {
+	return isType(value, ArrayBuffer, arrayBufferStringified);
+}
+
+function isUint8ArrayOrArrayBuffer(value) {
+	return isUint8Array(value) || isArrayBuffer(value);
+}
+
+function assertUint8Array(value) {
+	if (!isUint8Array(value)) {
+		throw new TypeError(`Expected \`Uint8Array\`, got \`${typeof value}\``);
+	}
+}
+
+function assertUint8ArrayOrArrayBuffer(value) {
+	if (!isUint8ArrayOrArrayBuffer(value)) {
+		throw new TypeError(`Expected \`Uint8Array\` or \`ArrayBuffer\`, got \`${typeof value}\``);
+	}
+}
+
+function toUint8Array(value) {
+	if (value instanceof ArrayBuffer) {
+		return new Uint8Array(value);
+	}
+
+	if (ArrayBuffer.isView(value)) {
+		return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+	}
+
+	throw new TypeError(`Unsupported value, got \`${typeof value}\`.`);
+}
+
+function concatUint8Arrays(arrays, totalLength) {
+	if (arrays.length === 0) {
+		return new Uint8Array(0);
+	}
+
+	totalLength ??= arrays.reduce((accumulator, currentValue) => accumulator + currentValue.length, 0);
+
+	const returnValue = new Uint8Array(totalLength);
+
+	let offset = 0;
+	for (const array of arrays) {
+		assertUint8Array(array);
+		returnValue.set(array, offset);
+		offset += array.length;
+	}
+
+	return returnValue;
+}
+
+function areUint8ArraysEqual(a, b) {
+	assertUint8Array(a);
+	assertUint8Array(b);
+
+	if (a === b) {
+		return true;
+	}
+
+	if (a.length !== b.length) {
+		return false;
+	}
+
+	// eslint-disable-next-line unicorn/no-for-loop
+	for (let index = 0; index < a.length; index++) {
+		if (a[index] !== b[index]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function compareUint8Arrays(a, b) {
+	assertUint8Array(a);
+	assertUint8Array(b);
+
+	const length = Math.min(a.length, b.length);
+
+	for (let index = 0; index < length; index++) {
+		const diff = a[index] - b[index];
+		if (diff !== 0) {
+			return Math.sign(diff);
+		}
+	}
+
+	// At this point, all the compared elements are equal.
+	// The shorter array should come first if the arrays are of different lengths.
+	return Math.sign(a.length - b.length);
+}
+
+const cachedDecoders = {
+	utf8: new globalThis.TextDecoder('utf8'),
+};
+
+function uint8ArrayToString(array, encoding = 'utf8') {
+	assertUint8ArrayOrArrayBuffer(array);
+	cachedDecoders[encoding] ??= new globalThis.TextDecoder(encoding);
+	return cachedDecoders[encoding].decode(array);
+}
+
+function assertString(value) {
+	if (typeof value !== 'string') {
+		throw new TypeError(`Expected \`string\`, got \`${typeof value}\``);
+	}
+}
+
+const cachedEncoder = new globalThis.TextEncoder();
+
+function stringToUint8Array(string) {
+	assertString(string);
+	return cachedEncoder.encode(string);
+}
+
+function base64ToBase64Url(base64) {
+	return base64.replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
+}
+
+function base64UrlToBase64(base64url) {
+	const base64 = base64url.replaceAll('-', '+').replaceAll('_', '/');
+	const padding = (4 - (base64.length % 4)) % 4;
+	return base64 + '='.repeat(padding);
+}
+
+// Reference: https://phuoc.ng/collection/this-vs-that/concat-vs-push/
+// Important: Keep this value divisible by 3 so intermediate chunks produce no Base64 padding.
+const MAX_BLOCK_SIZE = 65_535;
+
+function uint8ArrayToBase64(array, {urlSafe = false} = {}) {
+	assertUint8Array(array);
+
+	let base64 = '';
+
+	for (let index = 0; index < array.length; index += MAX_BLOCK_SIZE) {
+		const chunk = array.subarray(index, index + MAX_BLOCK_SIZE);
+		// Required as `btoa` and `atob` don't properly support Unicode: https://developer.mozilla.org/en-US/docs/Glossary/Base64#the_unicode_problem
+		base64 += globalThis.btoa(String.fromCodePoint.apply(undefined, chunk));
+	}
+
+	return urlSafe ? base64ToBase64Url(base64) : base64;
+}
+
+function base64ToUint8Array(base64String) {
+	assertString(base64String);
+	return Uint8Array.from(globalThis.atob(base64UrlToBase64(base64String)), x => x.codePointAt(0));
+}
+
+function stringToBase64(string, {urlSafe = false} = {}) {
+	assertString(string);
+	return uint8ArrayToBase64(stringToUint8Array(string), {urlSafe});
+}
+
+function base64ToString(base64String) {
+	assertString(base64String);
+	return uint8ArrayToString(base64ToUint8Array(base64String));
+}
+
+const byteToHexLookupTable = Array.from({length: 256}, (_, index) => index.toString(16).padStart(2, '0'));
+
+function uint8ArrayToHex(array) {
+	assertUint8Array(array);
+
+	// Concatenating a string is faster than using an array.
+	let hexString = '';
+
+	// eslint-disable-next-line unicorn/no-for-loop -- Max performance is critical.
+	for (let index = 0; index < array.length; index++) {
+		hexString += byteToHexLookupTable[array[index]];
+	}
+
+	return hexString;
+}
+
+const hexToDecimalLookupTable = {
+	0: 0,
+	1: 1,
+	2: 2,
+	3: 3,
+	4: 4,
+	5: 5,
+	6: 6,
+	7: 7,
+	8: 8,
+	9: 9,
+	a: 10,
+	b: 11,
+	c: 12,
+	d: 13,
+	e: 14,
+	f: 15,
+	A: 10,
+	B: 11,
+	C: 12,
+	D: 13,
+	E: 14,
+	F: 15,
+};
+
+function hexToUint8Array(hexString) {
+	assertString(hexString);
+
+	if (hexString.length % 2 !== 0) {
+		throw new Error('Invalid Hex string length.');
+	}
+
+	const resultLength = hexString.length / 2;
+	const bytes = new Uint8Array(resultLength);
+
+	for (let index = 0; index < resultLength; index++) {
+		const highNibble = hexToDecimalLookupTable[hexString[index * 2]];
+		const lowNibble = hexToDecimalLookupTable[hexString[(index * 2) + 1]];
+
+		if (highNibble === undefined || lowNibble === undefined) {
+			throw new Error(`Invalid Hex character encountered at position ${index * 2}`);
+		}
+
+		bytes[index] = (highNibble << 4) | lowNibble; // eslint-disable-line no-bitwise
+	}
+
+	return bytes;
+}
+
+/**
+@param {DataView} view
+@returns {number}
+*/
+function getUintBE(view) {
+	const {byteLength} = view;
+
+	if (byteLength === 6) {
+		return (view.getUint16(0) * (2 ** 32)) + view.getUint32(2);
+	}
+
+	if (byteLength === 5) {
+		return (view.getUint8(0) * (2 ** 32)) + view.getUint32(1);
+	}
+
+	if (byteLength === 4) {
+		return view.getUint32(0);
+	}
+
+	if (byteLength === 3) {
+		return (view.getUint8(0) * (2 ** 16)) + view.getUint16(1);
+	}
+
+	if (byteLength === 2) {
+		return view.getUint16(0);
+	}
+
+	if (byteLength === 1) {
+		return view.getUint8(0);
+	}
+}
+
+/**
+@param {Uint8Array} array
+@param {Uint8Array} value
+@returns {number}
+*/
+function uint8array_extras_indexOf(array, value) {
+	const arrayLength = array.length;
+	const valueLength = value.length;
+
+	if (valueLength === 0) {
+		return -1;
+	}
+
+	if (valueLength > arrayLength) {
+		return -1;
+	}
+
+	const validOffsetLength = arrayLength - valueLength;
+
+	for (let index = 0; index <= validOffsetLength; index++) {
+		let isMatch = true;
+		for (let index2 = 0; index2 < valueLength; index2++) {
+			if (array[index + index2] !== value[index2]) {
+				isMatch = false;
+				break;
+			}
+		}
+
+		if (isMatch) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
+/**
+@param {Uint8Array} array
+@param {Uint8Array} value
+@returns {boolean}
+*/
+function includes(array, value) {
+	return uint8array_extras_indexOf(array, value) !== -1;
+}
 
 ;// CONCATENATED MODULE: ./node_modules/file-type/util.js
-function stringToBytes(string) {
+
+
+function stringToBytes(string, encoding) {
+	if (encoding === 'utf-16le') {
+		const bytes = [];
+		for (let index = 0; index < string.length; index++) {
+			const code = string.charCodeAt(index); // eslint-disable-line unicorn/prefer-code-point
+			bytes.push(code & 0xFF, (code >> 8) & 0xFF); // High byte
+		}
+
+		return bytes;
+	}
+
+	if (encoding === 'utf-16be') {
+		const bytes = [];
+		for (let index = 0; index < string.length; index++) {
+			const code = string.charCodeAt(index); // eslint-disable-line unicorn/prefer-code-point
+			bytes.push((code >> 8) & 0xFF, code & 0xFF); // Low byte
+		}
+
+		return bytes;
+	}
+
 	return [...string].map(character => character.charCodeAt(0)); // eslint-disable-line unicorn/prefer-code-point
 }
 
 /**
 Checks whether the TAR checksum is valid.
 
-@param {Buffer} buffer - The TAR header `[offset ... offset + 512]`.
+@param {Uint8Array} arrayBuffer - The TAR header `[offset ... offset + 512]`.
 @param {number} offset - TAR header offset.
 @returns {boolean} `true` if the TAR checksum is valid, otherwise `false`.
 */
-function tarHeaderChecksumMatches(buffer, offset = 0) {
-	const readSum = Number.parseInt(buffer.toString('utf8', 148, 154).replace(/\0.*$/, '').trim(), 8); // Read sum in header
+function tarHeaderChecksumMatches(arrayBuffer, offset = 0) {
+	const readSum = Number.parseInt(new StringType(6).get(arrayBuffer, 148).replace(/\0.*$/, '').trim(), 8); // Read sum in header
 	if (Number.isNaN(readSum)) {
 		return false;
 	}
@@ -16916,11 +19243,11 @@ function tarHeaderChecksumMatches(buffer, offset = 0) {
 	let sum = 8 * 0x20; // Initialize signed bit sum
 
 	for (let index = offset; index < offset + 148; index++) {
-		sum += buffer[index];
+		sum += arrayBuffer[index];
 	}
 
 	for (let index = offset + 156; index < offset + 512; index++) {
-		sum += buffer[index];
+		sum += arrayBuffer[index];
 	}
 
 	return readSum === sum;
@@ -16986,6 +19313,7 @@ const extensions = [
 	'pdf',
 	'epub',
 	'elf',
+	'macho',
 	'exe',
 	'swf',
 	'rtf',
@@ -16995,6 +19323,7 @@ const extensions = [
 	'eot',
 	'ttf',
 	'otf',
+	'ttc',
 	'ico',
 	'flv',
 	'ps',
@@ -17019,6 +19348,7 @@ const extensions = [
 	'xlsx',
 	'3gp',
 	'3g2',
+	'j2c',
 	'jp2',
 	'jpm',
 	'jpx',
@@ -17063,7 +19393,6 @@ const extensions = [
 	'it',
 	's3m',
 	'xm',
-	'ai',
 	'skp',
 	'avif',
 	'eps',
@@ -17076,6 +19405,45 @@ const extensions = [
 	'zst',
 	'jxl',
 	'vcf',
+	'jls',
+	'pst',
+	'dwg',
+	'parquet',
+	'class',
+	'arj',
+	'cpio',
+	'ace',
+	'avro',
+	'icc',
+	'fbx',
+	'vsdx',
+	'vtt',
+	'apk',
+	'drc',
+	'lz4',
+	'potx',
+	'xltx',
+	'dotx',
+	'xltm',
+	'ott',
+	'ots',
+	'otp',
+	'odg',
+	'otg',
+	'xlsm',
+	'docm',
+	'dotm',
+	'potm',
+	'pptm',
+	'jar',
+	'jmp',
+	'rm',
+	'sav',
+	'ppsm',
+	'ppsx',
+	'tar.gz',
+	'reg',
+	'dat',
 ];
 
 const supported_mimeTypes = [
@@ -17094,12 +19462,14 @@ const supported_mimeTypes = [
 	'application/x-indesign',
 	'application/epub+zip',
 	'application/x-xpinstall',
+	'application/vnd.ms-powerpoint.slideshow.macroenabled.12',
 	'application/vnd.oasis.opendocument.text',
 	'application/vnd.oasis.opendocument.spreadsheet',
 	'application/vnd.oasis.opendocument.presentation',
 	'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 	'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+	'application/vnd.openxmlformats-officedocument.presentationml.slideshow',
 	'application/zip',
 	'application/x-tar',
 	'application/x-rar-compressed',
@@ -17107,14 +19477,14 @@ const supported_mimeTypes = [
 	'application/x-bzip2',
 	'application/x-7z-compressed',
 	'application/x-apple-diskimage',
-	'application/x-apache-arrow',
+	'application/vnd.apache.arrow.file',
 	'video/mp4',
 	'audio/midi',
-	'video/x-matroska',
+	'video/matroska',
 	'video/webm',
 	'video/quicktime',
 	'video/vnd.avi',
-	'audio/vnd.wave',
+	'audio/wav',
 	'audio/qcelp',
 	'audio/x-ms-asf',
 	'video/x-ms-asf',
@@ -17123,16 +19493,17 @@ const supported_mimeTypes = [
 	'video/3gpp',
 	'audio/mpeg',
 	'audio/mp4', // RFC 4337
-	'audio/opus',
 	'video/ogg',
 	'audio/ogg',
+	'audio/ogg; codecs=opus',
 	'application/ogg',
-	'audio/x-flac',
+	'audio/flac',
 	'audio/ape',
 	'audio/wavpack',
 	'audio/amr',
 	'application/pdf',
 	'application/x-elf',
+	'application/x-mach-binary',
 	'application/x-msdownload',
 	'application/x-shockwave-flash',
 	'application/rtf',
@@ -17142,6 +19513,7 @@ const supported_mimeTypes = [
 	'application/vnd.ms-fontobject',
 	'font/ttf',
 	'font/otf',
+	'font/collection',
 	'image/x-icon',
 	'video/x-flv',
 	'application/postscript',
@@ -17162,6 +19534,7 @@ const supported_mimeTypes = [
 	'video/mp2t',
 	'application/x-blender',
 	'image/bpg',
+	'image/j2c',
 	'image/jp2',
 	'image/jpx',
 	'image/jpm',
@@ -17179,6 +19552,7 @@ const supported_mimeTypes = [
 	'audio/x-musepack',
 	'text/calendar',
 	'text/vcard',
+	'text/vtt',
 	'model/gltf-binary',
 	'application/vnd.tcpdump.pcap',
 	'audio/x-dsf', // Non-standard
@@ -17213,38 +19587,514 @@ const supported_mimeTypes = [
 	'model/3mf',
 	'image/jxl',
 	'application/zstd',
+	'image/jls',
+	'application/vnd.ms-outlook',
+	'image/vnd.dwg',
+	'application/vnd.apache.parquet',
+	'application/java-vm',
+	'application/x-arj',
+	'application/x-cpio',
+	'application/x-ace-compressed',
+	'application/avro',
+	'application/vnd.iccprofile',
+	'application/x.autodesk.fbx', // Invented by us
+	'application/vnd.visio',
+	'application/vnd.android.package-archive',
+	'application/vnd.google.draco', // Invented by us
+	'application/x-lz4', // Invented by us
+	'application/vnd.openxmlformats-officedocument.presentationml.template',
+	'application/vnd.openxmlformats-officedocument.spreadsheetml.template',
+	'application/vnd.openxmlformats-officedocument.wordprocessingml.template',
+	'application/vnd.ms-excel.template.macroenabled.12',
+	'application/vnd.oasis.opendocument.text-template',
+	'application/vnd.oasis.opendocument.spreadsheet-template',
+	'application/vnd.oasis.opendocument.presentation-template',
+	'application/vnd.oasis.opendocument.graphics',
+	'application/vnd.oasis.opendocument.graphics-template',
+	'application/vnd.ms-excel.sheet.macroenabled.12',
+	'application/vnd.ms-word.document.macroenabled.12',
+	'application/vnd.ms-word.template.macroenabled.12',
+	'application/vnd.ms-powerpoint.template.macroenabled.12',
+	'application/vnd.ms-powerpoint.presentation.macroenabled.12',
+	'application/java-archive',
+	'application/vnd.rn-realmedia',
+	'application/x-spss-sav',
+	'application/x-ms-regedit',
+	'application/x-ft-windows-registry-hive',
+	'application/x-jmp-data',
 ];
 
 ;// CONCATENATED MODULE: ./node_modules/file-type/core.js
+/**
+Primary entry point, Node.js specific entry point is index.js
+*/
 
 
- // eslint-disable-line n/file-extension-in-import
 
 
 
-const minimumBytes = 4100; // A fair amount of file-types are detectable within this range.
 
-async function fileTypeFromStream(stream) {
-	const tokenizer = await strtok3.fromStream(stream);
-	try {
-		return await core_fileTypeFromTokenizer(tokenizer);
-	} finally {
-		await tokenizer.close();
+
+
+const reasonableDetectionSizeInBytes = 4100; // A fair amount of file-types are detectable within this range.
+// Keep defensive limits small enough to avoid accidental memory spikes from untrusted inputs.
+const maximumMpegOffsetTolerance = reasonableDetectionSizeInBytes - 2;
+const maximumZipEntrySizeInBytes = 1024 * 1024;
+const maximumZipEntryCount = 1024;
+const maximumZipBufferedReadSizeInBytes = (2 ** 31) - 1;
+const maximumUntrustedSkipSizeInBytes = 16 * 1024 * 1024;
+const maximumZipTextEntrySizeInBytes = maximumZipEntrySizeInBytes;
+const maximumNestedGzipDetectionSizeInBytes = maximumUntrustedSkipSizeInBytes;
+const maximumNestedGzipProbeDepth = 1;
+const maximumId3HeaderSizeInBytes = maximumUntrustedSkipSizeInBytes;
+const maximumEbmlDocumentTypeSizeInBytes = 64;
+const maximumEbmlElementPayloadSizeInBytes = maximumUntrustedSkipSizeInBytes;
+const maximumEbmlElementCount = 256;
+const maximumPngChunkCount = 512;
+const maximumAsfHeaderObjectCount = 512;
+const maximumTiffTagCount = 512;
+const maximumDetectionReentryCount = 256;
+const maximumPngChunkSizeInBytes = maximumUntrustedSkipSizeInBytes;
+const maximumTiffIfdOffsetInBytes = maximumUntrustedSkipSizeInBytes;
+const recoverableZipErrorMessages = new Set([
+	'Unexpected signature',
+	'Encrypted ZIP',
+	'Expected Central-File-Header signature',
+]);
+const recoverableZipErrorMessagePrefixes = [
+	'ZIP entry count exceeds ',
+	'Unsupported ZIP compression method:',
+	'ZIP entry compressed data exceeds ',
+	'ZIP entry decompressed data exceeds ',
+];
+const recoverableZipErrorCodes = new Set([
+	'Z_BUF_ERROR',
+	'Z_DATA_ERROR',
+	'ERR_INVALID_STATE',
+]);
+
+class ParserHardLimitError extends Error {}
+
+function getSafeBound(value, maximum, reason) {
+	if (
+		!Number.isFinite(value)
+		|| value < 0
+		|| value > maximum
+	) {
+		throw new ParserHardLimitError(`${reason} has invalid size ${value} (maximum ${maximum} bytes)`);
 	}
+
+	return value;
 }
 
-async function fileTypeFromBuffer(input) {
-	if (!(input instanceof Uint8Array || input instanceof ArrayBuffer)) {
-		throw new TypeError(`Expected the \`input\` argument to be of type \`Uint8Array\` or \`Buffer\` or \`ArrayBuffer\`, got \`${typeof input}\``);
+async function safeIgnore(tokenizer, length, {maximumLength = maximumUntrustedSkipSizeInBytes, reason = 'skip'} = {}) {
+	const safeLength = getSafeBound(length, maximumLength, reason);
+	await tokenizer.ignore(safeLength);
+}
+
+async function safeReadBuffer(tokenizer, buffer, options, {maximumLength = buffer.length, reason = 'read'} = {}) {
+	const length = options?.length ?? buffer.length;
+	const safeLength = getSafeBound(length, maximumLength, reason);
+	return tokenizer.readBuffer(buffer, {
+		...options,
+		length: safeLength,
+	});
+}
+
+async function decompressDeflateRawWithLimit(data, {maximumLength = maximumZipEntrySizeInBytes} = {}) {
+	const input = new ReadableStream({
+		start(controller) {
+			controller.enqueue(data);
+			controller.close();
+		},
+	});
+	const output = input.pipeThrough(new DecompressionStream('deflate-raw'));
+	const reader = output.getReader();
+	const chunks = [];
+	let totalLength = 0;
+
+	try {
+		for (;;) {
+			const {done, value} = await reader.read();
+			if (done) {
+				break;
+			}
+
+			totalLength += value.length;
+			if (totalLength > maximumLength) {
+				await reader.cancel();
+				throw new Error(`ZIP entry decompressed data exceeds ${maximumLength} bytes`);
+			}
+
+			chunks.push(value);
+		}
+	} finally {
+		reader.releaseLock();
 	}
 
-	const buffer = input instanceof Uint8Array ? input : new Uint8Array(input);
+	const uncompressedData = new Uint8Array(totalLength);
+	let offset = 0;
+	for (const chunk of chunks) {
+		uncompressedData.set(chunk, offset);
+		offset += chunk.length;
+	}
 
-	if (!(buffer?.length > 1)) {
+	return uncompressedData;
+}
+
+const zipDataDescriptorSignature = 0x08_07_4B_50;
+const zipDataDescriptorLengthInBytes = 16;
+const zipDataDescriptorOverlapLengthInBytes = zipDataDescriptorLengthInBytes - 1;
+
+function findZipDataDescriptorOffset(buffer, bytesConsumed) {
+	if (buffer.length < zipDataDescriptorLengthInBytes) {
+		return -1;
+	}
+
+	const lastPossibleDescriptorOffset = buffer.length - zipDataDescriptorLengthInBytes;
+	for (let index = 0; index <= lastPossibleDescriptorOffset; index++) {
+		if (
+			UINT32_LE.get(buffer, index) === zipDataDescriptorSignature
+			&& UINT32_LE.get(buffer, index + 8) === bytesConsumed + index
+		) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
+function mergeByteChunks(chunks, totalLength) {
+	const merged = new Uint8Array(totalLength);
+	let offset = 0;
+
+	for (const chunk of chunks) {
+		merged.set(chunk, offset);
+		offset += chunk.length;
+	}
+
+	return merged;
+}
+
+async function readZipDataDescriptorEntryWithLimit(zipHandler, {shouldBuffer, maximumLength = maximumZipEntrySizeInBytes} = {}) {
+	const {syncBuffer} = zipHandler;
+	const {length: syncBufferLength} = syncBuffer;
+	const chunks = [];
+	let bytesConsumed = 0;
+
+	for (;;) {
+		const length = await zipHandler.tokenizer.peekBuffer(syncBuffer, {mayBeLess: true});
+		const dataDescriptorOffset = findZipDataDescriptorOffset(syncBuffer.subarray(0, length), bytesConsumed);
+		const retainedLength = dataDescriptorOffset >= 0
+			? 0
+			: (
+				length === syncBufferLength
+					? Math.min(zipDataDescriptorOverlapLengthInBytes, length - 1)
+					: 0
+			);
+		const chunkLength = dataDescriptorOffset >= 0 ? dataDescriptorOffset : length - retainedLength;
+
+		if (chunkLength === 0) {
+			break;
+		}
+
+		bytesConsumed += chunkLength;
+		if (bytesConsumed > maximumLength) {
+			throw new Error(`ZIP entry compressed data exceeds ${maximumLength} bytes`);
+		}
+
+		if (shouldBuffer) {
+			const data = new Uint8Array(chunkLength);
+			await zipHandler.tokenizer.readBuffer(data);
+			chunks.push(data);
+		} else {
+			await zipHandler.tokenizer.ignore(chunkLength);
+		}
+
+		if (dataDescriptorOffset >= 0) {
+			break;
+		}
+	}
+
+	if (!shouldBuffer) {
 		return;
 	}
 
-	return core_fileTypeFromTokenizer(fromBuffer(buffer));
+	return mergeByteChunks(chunks, bytesConsumed);
+}
+
+async function readZipEntryData(zipHandler, zipHeader, {shouldBuffer} = {}) {
+	if (
+		zipHeader.dataDescriptor
+		&& zipHeader.compressedSize === 0
+	) {
+		return readZipDataDescriptorEntryWithLimit(zipHandler, {shouldBuffer});
+	}
+
+	if (!shouldBuffer) {
+		await zipHandler.tokenizer.ignore(zipHeader.compressedSize);
+		return;
+	}
+
+	const maximumLength = getMaximumZipBufferedReadLength(zipHandler.tokenizer);
+	if (
+		!Number.isFinite(zipHeader.compressedSize)
+		|| zipHeader.compressedSize < 0
+		|| zipHeader.compressedSize > maximumLength
+	) {
+		throw new Error(`ZIP entry compressed data exceeds ${maximumLength} bytes`);
+	}
+
+	const fileData = new Uint8Array(zipHeader.compressedSize);
+	await zipHandler.tokenizer.readBuffer(fileData);
+	return fileData;
+}
+
+// Override the default inflate to enforce decompression size limits, since @tokenizer/inflate does not expose a configuration hook for this.
+ZipHandler.prototype.inflate = async function (zipHeader, fileData, callback) {
+	if (zipHeader.compressedMethod === 0) {
+		return callback(fileData);
+	}
+
+	if (zipHeader.compressedMethod !== 8) {
+		throw new Error(`Unsupported ZIP compression method: ${zipHeader.compressedMethod}`);
+	}
+
+	const uncompressedData = await decompressDeflateRawWithLimit(fileData, {maximumLength: maximumZipEntrySizeInBytes});
+	return callback(uncompressedData);
+};
+
+ZipHandler.prototype.unzip = async function (fileCallback) {
+	let stop = false;
+	let zipEntryCount = 0;
+	do {
+		const zipHeader = await this.readLocalFileHeader();
+		if (!zipHeader) {
+			break;
+		}
+
+		zipEntryCount++;
+		if (zipEntryCount > maximumZipEntryCount) {
+			throw new Error(`ZIP entry count exceeds ${maximumZipEntryCount}`);
+		}
+
+		const next = fileCallback(zipHeader);
+		stop = Boolean(next.stop);
+		await this.tokenizer.ignore(zipHeader.extraFieldLength);
+		const fileData = await readZipEntryData(this, zipHeader, {
+			shouldBuffer: Boolean(next.handler),
+		});
+
+		if (next.handler) {
+			await this.inflate(zipHeader, fileData, next.handler);
+		}
+
+		if (zipHeader.dataDescriptor) {
+			const dataDescriptor = new Uint8Array(zipDataDescriptorLengthInBytes);
+			await this.tokenizer.readBuffer(dataDescriptor);
+			if (UINT32_LE.get(dataDescriptor, 0) !== zipDataDescriptorSignature) {
+				throw new Error(`Expected data-descriptor-signature at position ${this.tokenizer.position - dataDescriptor.length}`);
+			}
+		}
+	} while (!stop);
+};
+
+function createByteLimitedReadableStream(stream, maximumBytes) {
+	const reader = stream.getReader();
+	let emittedBytes = 0;
+	let sourceDone = false;
+	let sourceCanceled = false;
+
+	const cancelSource = async reason => {
+		if (
+			sourceDone
+			|| sourceCanceled
+		) {
+			return;
+		}
+
+		sourceCanceled = true;
+		await reader.cancel(reason);
+	};
+
+	return new ReadableStream({
+		async pull(controller) {
+			if (emittedBytes >= maximumBytes) {
+				controller.close();
+				await cancelSource();
+				return;
+			}
+
+			const {done, value} = await reader.read();
+			if (
+				done
+				|| !value
+			) {
+				sourceDone = true;
+				controller.close();
+				return;
+			}
+
+			const remainingBytes = maximumBytes - emittedBytes;
+			if (value.length > remainingBytes) {
+				controller.enqueue(value.subarray(0, remainingBytes));
+				emittedBytes += remainingBytes;
+				controller.close();
+				await cancelSource();
+				return;
+			}
+
+			controller.enqueue(value);
+			emittedBytes += value.length;
+		},
+		async cancel(reason) {
+			await cancelSource(reason);
+		},
+	});
+}
+
+async function fileTypeFromStream(stream, options) {
+	return new FileTypeParser(options).fromStream(stream);
+}
+
+async function fileTypeFromBuffer(input, options) {
+	return new FileTypeParser(options).fromBuffer(input);
+}
+
+async function fileTypeFromBlob(blob, options) {
+	return new FileTypeParser(options).fromBlob(blob);
+}
+
+function getFileTypeFromMimeType(mimeType) {
+	mimeType = mimeType.toLowerCase();
+	switch (mimeType) {
+		case 'application/epub+zip':
+			return {
+				ext: 'epub',
+				mime: mimeType,
+			};
+		case 'application/vnd.oasis.opendocument.text':
+			return {
+				ext: 'odt',
+				mime: mimeType,
+			};
+		case 'application/vnd.oasis.opendocument.text-template':
+			return {
+				ext: 'ott',
+				mime: mimeType,
+			};
+		case 'application/vnd.oasis.opendocument.spreadsheet':
+			return {
+				ext: 'ods',
+				mime: mimeType,
+			};
+		case 'application/vnd.oasis.opendocument.spreadsheet-template':
+			return {
+				ext: 'ots',
+				mime: mimeType,
+			};
+		case 'application/vnd.oasis.opendocument.presentation':
+			return {
+				ext: 'odp',
+				mime: mimeType,
+			};
+		case 'application/vnd.oasis.opendocument.presentation-template':
+			return {
+				ext: 'otp',
+				mime: mimeType,
+			};
+		case 'application/vnd.oasis.opendocument.graphics':
+			return {
+				ext: 'odg',
+				mime: mimeType,
+			};
+		case 'application/vnd.oasis.opendocument.graphics-template':
+			return {
+				ext: 'otg',
+				mime: mimeType,
+			};
+		case 'application/vnd.openxmlformats-officedocument.presentationml.slideshow':
+			return {
+				ext: 'ppsx',
+				mime: mimeType,
+			};
+		case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+			return {
+				ext: 'xlsx',
+				mime: mimeType,
+			};
+		case 'application/vnd.ms-excel.sheet.macroenabled':
+			return {
+				ext: 'xlsm',
+				mime: 'application/vnd.ms-excel.sheet.macroenabled.12',
+			};
+		case 'application/vnd.openxmlformats-officedocument.spreadsheetml.template':
+			return {
+				ext: 'xltx',
+				mime: mimeType,
+			};
+		case 'application/vnd.ms-excel.template.macroenabled':
+			return {
+				ext: 'xltm',
+				mime: 'application/vnd.ms-excel.template.macroenabled.12',
+			};
+		case 'application/vnd.ms-powerpoint.slideshow.macroenabled':
+			return {
+				ext: 'ppsm',
+				mime: 'application/vnd.ms-powerpoint.slideshow.macroenabled.12',
+			};
+		case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+			return {
+				ext: 'docx',
+				mime: mimeType,
+			};
+		case 'application/vnd.ms-word.document.macroenabled':
+			return {
+				ext: 'docm',
+				mime: 'application/vnd.ms-word.document.macroenabled.12',
+			};
+		case 'application/vnd.openxmlformats-officedocument.wordprocessingml.template':
+			return {
+				ext: 'dotx',
+				mime: mimeType,
+			};
+		case 'application/vnd.ms-word.template.macroenabledtemplate':
+			return {
+				ext: 'dotm',
+				mime: 'application/vnd.ms-word.template.macroenabled.12',
+			};
+		case 'application/vnd.openxmlformats-officedocument.presentationml.template':
+			return {
+				ext: 'potx',
+				mime: mimeType,
+			};
+		case 'application/vnd.ms-powerpoint.template.macroenabled':
+			return {
+				ext: 'potm',
+				mime: 'application/vnd.ms-powerpoint.template.macroenabled.12',
+			};
+		case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+			return {
+				ext: 'pptx',
+				mime: mimeType,
+			};
+		case 'application/vnd.ms-powerpoint.presentation.macroenabled':
+			return {
+				ext: 'pptm',
+				mime: 'application/vnd.ms-powerpoint.presentation.macroenabled.12',
+			};
+		case 'application/vnd.ms-visio.drawing':
+			return {
+				ext: 'vsdx',
+				mime: 'application/vnd.visio',
+			};
+		case 'application/vnd.ms-package.3dmanufacturing-3dmodel+xml':
+			return {
+				ext: '3mf',
+				mime: 'model/3mf',
+			};
+		default:
+	}
 }
 
 function _check(buffer, headers, options) {
@@ -17268,27 +20118,344 @@ function _check(buffer, headers, options) {
 	return true;
 }
 
-async function core_fileTypeFromTokenizer(tokenizer) {
-	try {
-		return new FileTypeParser().parse(tokenizer);
-	} catch (error) {
-		if (!(error instanceof EndOfStreamError)) {
-			throw error;
+function normalizeSampleSize(sampleSize) {
+	// Accept odd caller input, but preserve valid caller-requested probe depth.
+	if (!Number.isFinite(sampleSize)) {
+		return reasonableDetectionSizeInBytes;
+	}
+
+	return Math.max(1, Math.trunc(sampleSize));
+}
+
+function normalizeMpegOffsetTolerance(mpegOffsetTolerance) {
+	// This value controls scan depth and therefore worst-case CPU work.
+	if (!Number.isFinite(mpegOffsetTolerance)) {
+		return 0;
+	}
+
+	return Math.max(0, Math.min(maximumMpegOffsetTolerance, Math.trunc(mpegOffsetTolerance)));
+}
+
+function getKnownFileSizeOrMaximum(fileSize) {
+	if (!Number.isFinite(fileSize)) {
+		return Number.MAX_SAFE_INTEGER;
+	}
+
+	return Math.max(0, fileSize);
+}
+
+function hasUnknownFileSize(tokenizer) {
+	const fileSize = tokenizer.fileInfo.size;
+	return (
+		!Number.isFinite(fileSize)
+		|| fileSize === Number.MAX_SAFE_INTEGER
+	);
+}
+
+function hasExceededUnknownSizeScanBudget(tokenizer, startOffset, maximumBytes) {
+	return (
+		hasUnknownFileSize(tokenizer)
+		&& tokenizer.position - startOffset > maximumBytes
+	);
+}
+
+function getMaximumZipBufferedReadLength(tokenizer) {
+	const fileSize = tokenizer.fileInfo.size;
+	const remainingBytes = Number.isFinite(fileSize)
+		? Math.max(0, fileSize - tokenizer.position)
+		: Number.MAX_SAFE_INTEGER;
+
+	return Math.min(remainingBytes, maximumZipBufferedReadSizeInBytes);
+}
+
+function isRecoverableZipError(error) {
+	if (error instanceof EndOfStreamError) {
+		return true;
+	}
+
+	if (error instanceof ParserHardLimitError) {
+		return true;
+	}
+
+	if (!(error instanceof Error)) {
+		return false;
+	}
+
+	if (recoverableZipErrorMessages.has(error.message)) {
+		return true;
+	}
+
+	if (recoverableZipErrorCodes.has(error.code)) {
+		return true;
+	}
+
+	for (const prefix of recoverableZipErrorMessagePrefixes) {
+		if (error.message.startsWith(prefix)) {
+			return true;
 		}
+	}
+
+	return false;
+}
+
+function canReadZipEntryForDetection(zipHeader, maximumSize = maximumZipEntrySizeInBytes) {
+	const sizes = [zipHeader.compressedSize, zipHeader.uncompressedSize];
+	for (const size of sizes) {
+		if (
+			!Number.isFinite(size)
+			|| size < 0
+			|| size > maximumSize
+		) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function createOpenXmlZipDetectionState() {
+	return {
+		hasContentTypesEntry: false,
+		hasParsedContentTypesEntry: false,
+		isParsingContentTypes: false,
+		hasUnparseableContentTypes: false,
+		hasWordDirectory: false,
+		hasPresentationDirectory: false,
+		hasSpreadsheetDirectory: false,
+		hasThreeDimensionalModelEntry: false,
+	};
+}
+
+function updateOpenXmlZipDetectionStateFromFilename(openXmlState, filename) {
+	if (filename.startsWith('word/')) {
+		openXmlState.hasWordDirectory = true;
+	}
+
+	if (filename.startsWith('ppt/')) {
+		openXmlState.hasPresentationDirectory = true;
+	}
+
+	if (filename.startsWith('xl/')) {
+		openXmlState.hasSpreadsheetDirectory = true;
+	}
+
+	if (
+		filename.startsWith('3D/')
+		&& filename.endsWith('.model')
+	) {
+		openXmlState.hasThreeDimensionalModelEntry = true;
 	}
 }
 
+function getOpenXmlFileTypeFromZipEntries(openXmlState) {
+	// Only use directory-name heuristic when [Content_Types].xml was present in the archive
+	// but its handler was skipped (not invoked, not currently running, and not already resolved).
+	// This avoids guessing from directory names when content-type parsing already gave a definitive answer or failed.
+	if (
+		!openXmlState.hasContentTypesEntry
+		|| openXmlState.hasUnparseableContentTypes
+		|| openXmlState.isParsingContentTypes
+		|| openXmlState.hasParsedContentTypesEntry
+	) {
+		return;
+	}
+
+	if (openXmlState.hasWordDirectory) {
+		return {
+			ext: 'docx',
+			mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+		};
+	}
+
+	if (openXmlState.hasPresentationDirectory) {
+		return {
+			ext: 'pptx',
+			mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+		};
+	}
+
+	if (openXmlState.hasSpreadsheetDirectory) {
+		return {
+			ext: 'xlsx',
+			mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		};
+	}
+
+	if (openXmlState.hasThreeDimensionalModelEntry) {
+		return {
+			ext: '3mf',
+			mime: 'model/3mf',
+		};
+	}
+}
+
+function getOpenXmlMimeTypeFromContentTypesXml(xmlContent) {
+	// We only need the `ContentType="...main+xml"` value, so a small string scan is enough and avoids full XML parsing.
+	const endPosition = xmlContent.indexOf('.main+xml"');
+	if (endPosition === -1) {
+		const mimeType = 'application/vnd.ms-package.3dmanufacturing-3dmodel+xml';
+		if (xmlContent.includes(`ContentType="${mimeType}"`)) {
+			return mimeType;
+		}
+
+		return;
+	}
+
+	const truncatedContent = xmlContent.slice(0, endPosition);
+	const firstQuotePosition = truncatedContent.lastIndexOf('"');
+	// If no quote is found, `lastIndexOf` returns -1 and this intentionally falls back to the full truncated prefix.
+	return truncatedContent.slice(firstQuotePosition + 1);
+}
+
+async function fileTypeFromTokenizer(tokenizer, options) {
+	return new FileTypeParser(options).fromTokenizer(tokenizer);
+}
+
+async function fileTypeStream(webStream, options) {
+	return new FileTypeParser(options).toDetectionStream(webStream, options);
+}
+
 class FileTypeParser {
+	constructor(options) {
+		const normalizedMpegOffsetTolerance = normalizeMpegOffsetTolerance(options?.mpegOffsetTolerance);
+		this.options = {
+			...options,
+			mpegOffsetTolerance: normalizedMpegOffsetTolerance,
+		};
+
+		this.detectors = [...(this.options.customDetectors ?? []),
+			{id: 'core', detect: this.detectConfident},
+			{id: 'core.imprecise', detect: this.detectImprecise}];
+		this.tokenizerOptions = {
+			abortSignal: this.options.signal,
+		};
+		this.gzipProbeDepth = 0;
+	}
+
+	getTokenizerOptions() {
+		return {
+			...this.tokenizerOptions,
+		};
+	}
+
+	async fromTokenizer(tokenizer, detectionReentryCount = 0) {
+		this.detectionReentryCount = detectionReentryCount;
+		const initialPosition = tokenizer.position;
+		// Iterate through all file-type detectors
+		for (const detector of this.detectors) {
+			let fileType;
+			try {
+				fileType = await detector.detect(tokenizer);
+			} catch (error) {
+				if (error instanceof EndOfStreamError) {
+					return;
+				}
+
+				if (error instanceof ParserHardLimitError) {
+					return;
+				}
+
+				throw error;
+			}
+
+			if (fileType) {
+				return fileType;
+			}
+
+			if (initialPosition !== tokenizer.position) {
+				return undefined; // Cannot proceed scanning of the tokenizer is at an arbitrary position
+			}
+		}
+	}
+
+	async fromBuffer(input) {
+		if (!(input instanceof Uint8Array || input instanceof ArrayBuffer)) {
+			throw new TypeError(`Expected the \`input\` argument to be of type \`Uint8Array\` or \`ArrayBuffer\`, got \`${typeof input}\``);
+		}
+
+		const buffer = input instanceof Uint8Array ? input : new Uint8Array(input);
+
+		if (!(buffer?.length > 1)) {
+			return;
+		}
+
+		return this.fromTokenizer(fromBuffer(buffer, this.getTokenizerOptions()));
+	}
+
+	async fromBlob(blob) {
+		const tokenizer = fromBlob(blob, this.getTokenizerOptions());
+		try {
+			return await this.fromTokenizer(tokenizer);
+		} finally {
+			await tokenizer.close();
+		}
+	}
+
+	async fromStream(stream) {
+		const tokenizer = fromWebStream(stream, this.getTokenizerOptions());
+		try {
+			return await this.fromTokenizer(tokenizer);
+		} finally {
+			await tokenizer.close();
+		}
+	}
+
+	async toDetectionStream(stream, options) {
+		const sampleSize = normalizeSampleSize(options?.sampleSize ?? reasonableDetectionSizeInBytes);
+		let detectedFileType;
+		let firstChunk;
+
+		const reader = stream.getReader({mode: 'byob'});
+		try {
+			// Read the first chunk from the stream
+			const {value: chunk, done} = await reader.read(new Uint8Array(sampleSize));
+			firstChunk = chunk;
+			if (!done && chunk) {
+				try {
+					// Attempt to detect the file type from the chunk
+					detectedFileType = await this.fromBuffer(chunk.subarray(0, sampleSize));
+				} catch (error) {
+					if (!(error instanceof EndOfStreamError)) {
+						throw error; // Re-throw non-EndOfStreamError
+					}
+
+					detectedFileType = undefined;
+				}
+			}
+
+			firstChunk = chunk;
+		} finally {
+			reader.releaseLock(); // Ensure the reader is released
+		}
+
+		// Create a new ReadableStream to manage locking issues
+		const transformStream = new TransformStream({
+			async start(controller) {
+				controller.enqueue(firstChunk); // Enqueue the initial chunk
+			},
+			transform(chunk, controller) {
+				// Pass through the chunks without modification
+				controller.enqueue(chunk);
+			},
+		});
+
+		const newStream = stream.pipeThrough(transformStream);
+		newStream.fileType = detectedFileType;
+
+		return newStream;
+	}
+
 	check(header, options) {
 		return _check(this.buffer, header, options);
 	}
 
 	checkString(header, options) {
-		return this.check(stringToBytes(header), options);
+		return this.check(stringToBytes(header, options?.encoding), options);
 	}
 
-	async parse(tokenizer) {
-		this.buffer = external_node_buffer_namespaceObject.Buffer.alloc(minimumBytes);
+	// Detections with a high degree of certainty in identifying the correct file type
+	detectConfident = async tokenizer => {
+		this.buffer = new Uint8Array(reasonableDetectionSizeInBytes);
 
 		// Keep reading until EOF if the file size is unknown.
 		if (tokenizer.fileInfo.size === undefined) {
@@ -17297,7 +20464,7 @@ class FileTypeParser {
 
 		this.tokenizer = tokenizer;
 
-		await tokenizer.peekBuffer(this.buffer, {length: 12, mayBeLess: true});
+		await tokenizer.peekBuffer(this.buffer, {length: 32, mayBeLess: true});
 
 		// -- 2-byte signatures --
 
@@ -17358,25 +20525,37 @@ class FileTypeParser {
 			};
 		}
 
+		if (this.check([0xC7, 0x71])) {
+			return {
+				ext: 'cpio',
+				mime: 'application/x-cpio',
+			};
+		}
+
+		if (this.check([0x60, 0xEA])) {
+			return {
+				ext: 'arj',
+				mime: 'application/x-arj',
+			};
+		}
+
 		// -- 3-byte signatures --
 
 		if (this.check([0xEF, 0xBB, 0xBF])) { // UTF-8-BOM
+			if (this.detectionReentryCount >= maximumDetectionReentryCount) {
+				return;
+			}
+
+			this.detectionReentryCount++;
 			// Strip off UTF-8-BOM
-			this.tokenizer.ignore(3);
-			return this.parse(tokenizer);
+			await this.tokenizer.ignore(3);
+			return this.detectConfident(tokenizer);
 		}
 
 		if (this.check([0x47, 0x49, 0x46])) {
 			return {
 				ext: 'gif',
 				mime: 'image/gif',
-			};
-		}
-
-		if (this.check([0xFF, 0xD8, 0xFF])) {
-			return {
-				ext: 'jpg',
-				mime: 'image/jpeg',
 			};
 		}
 
@@ -17388,6 +20567,37 @@ class FileTypeParser {
 		}
 
 		if (this.check([0x1F, 0x8B, 0x8])) {
+			if (this.gzipProbeDepth >= maximumNestedGzipProbeDepth) {
+				return {
+					ext: 'gz',
+					mime: 'application/gzip',
+				};
+			}
+
+			const gzipHandler = new GzipHandler(tokenizer);
+			const limitedInflatedStream = createByteLimitedReadableStream(gzipHandler.inflate(), maximumNestedGzipDetectionSizeInBytes);
+			let compressedFileType;
+			try {
+				this.gzipProbeDepth++;
+				compressedFileType = await this.fromStream(limitedInflatedStream);
+			} catch (error) {
+				if (error?.name === 'AbortError') {
+					throw error;
+				}
+
+				// Decompression or inner-detection failures are expected for non-tar gzip files.
+			} finally {
+				this.gzipProbeDepth--;
+			}
+
+			// We only need enough inflated bytes to confidently decide whether this is tar.gz.
+			if (compressedFileType?.ext === 'tar') {
+				return {
+					ext: 'tar.gz',
+					mime: 'application/gzip',
+				};
+			}
+
 			return {
 				ext: 'gz',
 				mime: 'application/gzip',
@@ -17402,18 +20612,54 @@ class FileTypeParser {
 		}
 
 		if (this.checkString('ID3')) {
-			await tokenizer.ignore(6); // Skip ID3 header until the header size
+			await safeIgnore(tokenizer, 6, {
+				maximumLength: 6,
+				reason: 'ID3 header prefix',
+			}); // Skip ID3 header until the header size
 			const id3HeaderLength = await tokenizer.readToken(uint32SyncSafeToken);
+			const isUnknownFileSize = hasUnknownFileSize(tokenizer);
+			if (
+				!Number.isFinite(id3HeaderLength)
+					|| id3HeaderLength < 0
+				// Keep ID3 probing bounded for unknown-size streams to avoid attacker-controlled large skips.
+				|| (
+					isUnknownFileSize
+					&& id3HeaderLength > maximumId3HeaderSizeInBytes
+				)
+			) {
+				return;
+			}
+
 			if (tokenizer.position + id3HeaderLength > tokenizer.fileInfo.size) {
-				// Guess file type based on ID3 header for backward compatibility
+				if (isUnknownFileSize) {
+					return;
+				}
+
 				return {
 					ext: 'mp3',
 					mime: 'audio/mpeg',
 				};
 			}
 
-			await tokenizer.ignore(id3HeaderLength);
-			return core_fileTypeFromTokenizer(tokenizer); // Skip ID3 header, recursion
+			try {
+				await safeIgnore(tokenizer, id3HeaderLength, {
+					maximumLength: isUnknownFileSize ? maximumId3HeaderSizeInBytes : tokenizer.fileInfo.size,
+					reason: 'ID3 payload',
+				});
+			} catch (error) {
+				if (error instanceof EndOfStreamError) {
+					return;
+				}
+
+				throw error;
+			}
+
+			if (this.detectionReentryCount >= maximumDetectionReentryCount) {
+				return;
+			}
+
+			this.detectionReentryCount++;
+			return this.fromTokenizer(tokenizer, this.detectionReentryCount); // Skip ID3 header, recursion
 		}
 
 		// Musepack, SV7
@@ -17436,6 +20682,28 @@ class FileTypeParser {
 
 		// -- 4-byte signatures --
 
+		// Requires a sample size of 4 bytes
+		if (this.check([0xFF, 0xD8, 0xFF])) {
+			if (this.check([0xF7], {offset: 3})) { // JPG7/SOF55, indicating a ISO/IEC 14495 / JPEG-LS file
+				return {
+					ext: 'jls',
+					mime: 'image/jls',
+				};
+			}
+
+			return {
+				ext: 'jpg',
+				mime: 'image/jpeg',
+			};
+		}
+
+		if (this.check([0x4F, 0x62, 0x6A, 0x01])) {
+			return {
+				ext: 'avro',
+				mime: 'application/avro',
+			};
+		}
+
 		if (this.checkString('FLIF')) {
 			return {
 				ext: 'flif',
@@ -17447,13 +20715,6 @@ class FileTypeParser {
 			return {
 				ext: 'psd',
 				mime: 'image/vnd.adobe.photoshop',
-			};
-		}
-
-		if (this.checkString('WEBP', {offset: 8})) {
-			return {
-				ext: 'webp',
-				mime: 'image/webp',
 			};
 		}
 
@@ -17482,125 +20743,105 @@ class FileTypeParser {
 		// Zip-based file formats
 		// Need to be before the `zip` check
 		if (this.check([0x50, 0x4B, 0x3, 0x4])) { // Local file header signature
+			let fileType;
+			const openXmlState = createOpenXmlZipDetectionState();
+
 			try {
-				while (tokenizer.position + 30 < tokenizer.fileInfo.size) {
-					await tokenizer.readBuffer(this.buffer, {length: 30});
+				await new ZipHandler(tokenizer).unzip(zipHeader => {
+					updateOpenXmlZipDetectionStateFromFilename(openXmlState, zipHeader.filename);
 
-					// https://en.wikipedia.org/wiki/Zip_(file_format)#File_headers
-					const zipHeader = {
-						compressedSize: this.buffer.readUInt32LE(18),
-						uncompressedSize: this.buffer.readUInt32LE(22),
-						filenameLength: this.buffer.readUInt16LE(26),
-						extraFieldLength: this.buffer.readUInt16LE(28),
-					};
-
-					zipHeader.filename = await tokenizer.readToken(new StringType(zipHeader.filenameLength, 'utf-8'));
-					await tokenizer.ignore(zipHeader.extraFieldLength);
-
-					// Assumes signed `.xpi` from addons.mozilla.org
-					if (zipHeader.filename === 'META-INF/mozilla.rsa') {
+					const isOpenXmlContentTypesEntry = zipHeader.filename === '[Content_Types].xml';
+					const openXmlFileTypeFromEntries = getOpenXmlFileTypeFromZipEntries(openXmlState);
+					if (
+						!isOpenXmlContentTypesEntry
+						&& openXmlFileTypeFromEntries
+					) {
+						fileType = openXmlFileTypeFromEntries;
 						return {
-							ext: 'xpi',
-							mime: 'application/x-xpinstall',
+							stop: true,
 						};
 					}
 
-					if (zipHeader.filename.endsWith('.rels') || zipHeader.filename.endsWith('.xml')) {
-						const type = zipHeader.filename.split('/')[0];
-						switch (type) {
-							case '_rels':
-								break;
-							case 'word':
-								return {
-									ext: 'docx',
-									mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-								};
-							case 'ppt':
-								return {
-									ext: 'pptx',
-									mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-								};
-							case 'xl':
-								return {
-									ext: 'xlsx',
-									mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-								};
-							default:
-								break;
+					switch (zipHeader.filename) {
+						case 'META-INF/mozilla.rsa':
+							fileType = {
+								ext: 'xpi',
+								mime: 'application/x-xpinstall',
+							};
+							return {
+								stop: true,
+							};
+						case 'META-INF/MANIFEST.MF':
+							fileType = {
+								ext: 'jar',
+								mime: 'application/java-archive',
+							};
+							return {
+								stop: true,
+							};
+						case 'mimetype':
+							if (!canReadZipEntryForDetection(zipHeader, maximumZipTextEntrySizeInBytes)) {
+								return {};
+							}
+
+							return {
+								async handler(fileData) {
+									// Use TextDecoder to decode the UTF-8 encoded data
+									const mimeType = new TextDecoder('utf-8').decode(fileData).trim();
+									fileType = getFileTypeFromMimeType(mimeType);
+								},
+								stop: true,
+							};
+
+						case '[Content_Types].xml': {
+							openXmlState.hasContentTypesEntry = true;
+
+							if (!canReadZipEntryForDetection(zipHeader, maximumZipTextEntrySizeInBytes)) {
+								openXmlState.hasUnparseableContentTypes = true;
+								return {};
+							}
+
+							openXmlState.isParsingContentTypes = true;
+							return {
+								async handler(fileData) {
+									// Use TextDecoder to decode the UTF-8 encoded data
+									const xmlContent = new TextDecoder('utf-8').decode(fileData);
+									const mimeType = getOpenXmlMimeTypeFromContentTypesXml(xmlContent);
+									if (mimeType) {
+										fileType = getFileTypeFromMimeType(mimeType);
+									}
+
+									openXmlState.hasParsedContentTypesEntry = true;
+									openXmlState.isParsingContentTypes = false;
+								},
+								stop: true,
+							};
 						}
-					}
 
-					if (zipHeader.filename.startsWith('xl/')) {
-						return {
-							ext: 'xlsx',
-							mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-						};
-					}
-
-					if (zipHeader.filename.startsWith('3D/') && zipHeader.filename.endsWith('.model')) {
-						return {
-							ext: '3mf',
-							mime: 'model/3mf',
-						};
-					}
-
-					// The docx, xlsx and pptx file types extend the Office Open XML file format:
-					// https://en.wikipedia.org/wiki/Office_Open_XML_file_formats
-					// We look for:
-					// - one entry named '[Content_Types].xml' or '_rels/.rels',
-					// - one entry indicating specific type of file.
-					// MS Office, OpenOffice and LibreOffice may put the parts in different order, so the check should not rely on it.
-					if (zipHeader.filename === 'mimetype' && zipHeader.compressedSize === zipHeader.uncompressedSize) {
-						let mimeType = await tokenizer.readToken(new StringType(zipHeader.compressedSize, 'utf-8'));
-						mimeType = mimeType.trim();
-
-						switch (mimeType) {
-							case 'application/epub+zip':
-								return {
-									ext: 'epub',
-									mime: 'application/epub+zip',
+						default:
+							if (/classes\d*\.dex/.test(zipHeader.filename)) {
+								fileType = {
+									ext: 'apk',
+									mime: 'application/vnd.android.package-archive',
 								};
-							case 'application/vnd.oasis.opendocument.text':
-								return {
-									ext: 'odt',
-									mime: 'application/vnd.oasis.opendocument.text',
-								};
-							case 'application/vnd.oasis.opendocument.spreadsheet':
-								return {
-									ext: 'ods',
-									mime: 'application/vnd.oasis.opendocument.spreadsheet',
-								};
-							case 'application/vnd.oasis.opendocument.presentation':
-								return {
-									ext: 'odp',
-									mime: 'application/vnd.oasis.opendocument.presentation',
-								};
-							default:
-						}
+								return {stop: true};
+							}
+
+							return {};
 					}
-
-					// Try to find next header manually when current one is corrupted
-					if (zipHeader.compressedSize === 0) {
-						let nextHeaderIndex = -1;
-
-						while (nextHeaderIndex < 0 && (tokenizer.position < tokenizer.fileInfo.size)) {
-							await tokenizer.peekBuffer(this.buffer, {mayBeLess: true});
-
-							nextHeaderIndex = this.buffer.indexOf('504B0304', 0, 'hex');
-							// Move position to the next header if found, skip the whole buffer otherwise
-							await tokenizer.ignore(nextHeaderIndex >= 0 ? nextHeaderIndex : this.buffer.length);
-						}
-					} else {
-						await tokenizer.ignore(zipHeader.compressedSize);
-					}
-				}
+				});
 			} catch (error) {
-				if (!(error instanceof EndOfStreamError)) {
+				if (!isRecoverableZipError(error)) {
 					throw error;
+				}
+
+				if (openXmlState.isParsingContentTypes) {
+					openXmlState.isParsingContentTypes = false;
+					openXmlState.hasUnparseableContentTypes = true;
 				}
 			}
 
-			return {
+			return fileType ?? getOpenXmlFileTypeFromZipEntries(openXmlState) ?? {
 				ext: 'zip',
 				mime: 'application/zip',
 			};
@@ -17609,14 +20850,14 @@ class FileTypeParser {
 		if (this.checkString('OggS')) {
 			// This is an OGG container
 			await tokenizer.ignore(28);
-			const type = external_node_buffer_namespaceObject.Buffer.alloc(8);
+			const type = new Uint8Array(8);
 			await tokenizer.readBuffer(type);
 
 			// Needs to be before `ogg` check
 			if (_check(type, [0x4F, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64])) {
 				return {
 					ext: 'opus',
-					mime: 'audio/opus',
+					mime: 'audio/ogg; codecs=opus',
 				};
 			}
 
@@ -17678,68 +20919,6 @@ class FileTypeParser {
 			};
 		}
 
-		//
-
-		// File Type Box (https://en.wikipedia.org/wiki/ISO_base_media_file_format)
-		// It's not required to be first, but it's recommended to be. Almost all ISO base media files start with `ftyp` box.
-		// `ftyp` box must contain a brand major identifier, which must consist of ISO 8859-1 printable characters.
-		// Here we check for 8859-1 printable characters (for simplicity, it's a mask which also catches one non-printable character).
-		if (
-			this.checkString('ftyp', {offset: 4})
-			&& (this.buffer[8] & 0x60) !== 0x00 // Brand major, first character ASCII?
-		) {
-			// They all can have MIME `video/mp4` except `application/mp4` special-case which is hard to detect.
-			// For some cases, we're specific, everything else falls to `video/mp4` with `mp4` extension.
-			const brandMajor = this.buffer.toString('binary', 8, 12).replace('\0', ' ').trim();
-			switch (brandMajor) {
-				case 'avif':
-				case 'avis':
-					return {ext: 'avif', mime: 'image/avif'};
-				case 'mif1':
-					return {ext: 'heic', mime: 'image/heif'};
-				case 'msf1':
-					return {ext: 'heic', mime: 'image/heif-sequence'};
-				case 'heic':
-				case 'heix':
-					return {ext: 'heic', mime: 'image/heic'};
-				case 'hevc':
-				case 'hevx':
-					return {ext: 'heic', mime: 'image/heic-sequence'};
-				case 'qt':
-					return {ext: 'mov', mime: 'video/quicktime'};
-				case 'M4V':
-				case 'M4VH':
-				case 'M4VP':
-					return {ext: 'm4v', mime: 'video/x-m4v'};
-				case 'M4P':
-					return {ext: 'm4p', mime: 'video/mp4'};
-				case 'M4B':
-					return {ext: 'm4b', mime: 'audio/mp4'};
-				case 'M4A':
-					return {ext: 'm4a', mime: 'audio/x-m4a'};
-				case 'F4V':
-					return {ext: 'f4v', mime: 'video/mp4'};
-				case 'F4P':
-					return {ext: 'f4p', mime: 'video/mp4'};
-				case 'F4A':
-					return {ext: 'f4a', mime: 'audio/mp4'};
-				case 'F4B':
-					return {ext: 'f4b', mime: 'audio/mp4'};
-				case 'crx':
-					return {ext: 'cr3', mime: 'image/x-canon-cr3'};
-				default:
-					if (brandMajor.startsWith('3g')) {
-						if (brandMajor.startsWith('3g2')) {
-							return {ext: '3g2', mime: 'video/3gpp2'};
-						}
-
-						return {ext: '3gp', mime: 'video/3gpp'};
-					}
-
-					return {ext: 'mp4', mime: 'video/mp4'};
-			}
-		}
-
 		if (this.checkString('MThd')) {
 			return {
 				ext: 'mid',
@@ -17798,7 +20977,7 @@ class FileTypeParser {
 		if (this.checkString('fLaC')) {
 			return {
 				ext: 'flac',
-				mime: 'audio/x-flac',
+				mime: 'audio/flac',
 			};
 		}
 
@@ -17817,19 +20996,6 @@ class FileTypeParser {
 		}
 
 		if (this.checkString('%PDF')) {
-			await tokenizer.ignore(1350);
-			const maxBufferSize = 10 * 1024 * 1024;
-			const buffer = external_node_buffer_namespaceObject.Buffer.alloc(Math.min(maxBufferSize, tokenizer.fileInfo.size));
-			await tokenizer.readBuffer(buffer, {mayBeLess: true});
-
-			// Check if this is an Adobe Illustrator file
-			if (buffer.includes(external_node_buffer_namespaceObject.Buffer.from('AIPrivateData'))) {
-				return {
-					ext: 'ai',
-					mime: 'application/postscript',
-				};
-			}
-
 			// Assume this is just a normal PDF
 			return {
 				ext: 'pdf',
@@ -17867,52 +21033,92 @@ class FileTypeParser {
 			};
 		}
 
-		// https://github.com/threatstack/libmagic/blob/master/magic/Magdir/matroska
+		// https://github.com/file/file/blob/master/magic/Magdir/matroska
 		if (this.check([0x1A, 0x45, 0xDF, 0xA3])) { // Root element: EBML
 			async function readField() {
 				const msb = await tokenizer.peekNumber(UINT8);
 				let mask = 0x80;
-				let ic = 0; // 0 = A, 1 = B, 2 = C, 3
-				// = D
+				let ic = 0; // 0 = A, 1 = B, 2 = C, 3 = D
 
 				while ((msb & mask) === 0 && mask !== 0) {
 					++ic;
 					mask >>= 1;
 				}
 
-				const id = external_node_buffer_namespaceObject.Buffer.alloc(ic + 1);
-				await tokenizer.readBuffer(id);
+				const id = new Uint8Array(ic + 1);
+				await safeReadBuffer(tokenizer, id, undefined, {
+					maximumLength: id.length,
+					reason: 'EBML field',
+				});
 				return id;
 			}
 
 			async function readElement() {
-				const id = await readField();
+				const idField = await readField();
 				const lengthField = await readField();
+
 				lengthField[0] ^= 0x80 >> (lengthField.length - 1);
 				const nrLength = Math.min(6, lengthField.length); // JavaScript can max read 6 bytes integer
+
+				const idView = new DataView(idField.buffer);
+				const lengthView = new DataView(lengthField.buffer, lengthField.length - nrLength, nrLength);
+
 				return {
-					id: id.readUIntBE(0, id.length),
-					len: lengthField.readUIntBE(lengthField.length - nrLength, nrLength),
+					id: getUintBE(idView),
+					len: getUintBE(lengthView),
 				};
 			}
 
 			async function readChildren(children) {
+				let ebmlElementCount = 0;
 				while (children > 0) {
-					const element = await readElement();
-					if (element.id === 0x42_82) {
-						const rawValue = await tokenizer.readToken(new StringType(element.len, 'utf-8'));
-						return rawValue.replace(/\00.*$/g, ''); // Return DocType
+					ebmlElementCount++;
+					if (ebmlElementCount > maximumEbmlElementCount) {
+						return;
 					}
 
-					await tokenizer.ignore(element.len); // ignore payload
+					const previousPosition = tokenizer.position;
+					const element = await readElement();
+
+					if (element.id === 0x42_82) {
+						// `DocType` is a short string ("webm", "matroska", ...), reject implausible lengths to avoid large allocations.
+						if (element.len > maximumEbmlDocumentTypeSizeInBytes) {
+							return;
+						}
+
+						const documentTypeLength = getSafeBound(element.len, maximumEbmlDocumentTypeSizeInBytes, 'EBML DocType');
+						const rawValue = await tokenizer.readToken(new StringType(documentTypeLength));
+						return rawValue.replaceAll(/\00.*$/g, ''); // Return DocType
+					}
+
+					if (
+						hasUnknownFileSize(tokenizer)
+						&& (
+							!Number.isFinite(element.len)
+							|| element.len < 0
+							|| element.len > maximumEbmlElementPayloadSizeInBytes
+						)
+					) {
+						return;
+					}
+
+					await safeIgnore(tokenizer, element.len, {
+						maximumLength: hasUnknownFileSize(tokenizer) ? maximumEbmlElementPayloadSizeInBytes : tokenizer.fileInfo.size,
+						reason: 'EBML payload',
+					}); // ignore payload
 					--children;
+
+					// Safeguard against malformed files: bail if the position did not advance.
+					if (tokenizer.position <= previousPosition) {
+						return;
+					}
 				}
 			}
 
-			const re = await readElement();
-			const docType = await readChildren(re.len);
+			const rootElement = await readElement();
+			const documentType = await readChildren(rootElement.len);
 
-			switch (docType) {
+			switch (documentType) {
 				case 'webm':
 					return {
 						ext: 'webm',
@@ -17922,36 +21128,11 @@ class FileTypeParser {
 				case 'matroska':
 					return {
 						ext: 'mkv',
-						mime: 'video/x-matroska',
+						mime: 'video/matroska',
 					};
 
 				default:
 					return;
-			}
-		}
-
-		// RIFF file format which might be AVI, WAV, QCP, etc
-		if (this.check([0x52, 0x49, 0x46, 0x46])) {
-			if (this.check([0x41, 0x56, 0x49], {offset: 8})) {
-				return {
-					ext: 'avi',
-					mime: 'video/vnd.avi',
-				};
-			}
-
-			if (this.check([0x57, 0x41, 0x56, 0x45], {offset: 8})) {
-				return {
-					ext: 'wav',
-					mime: 'audio/vnd.wave',
-				};
-			}
-
-			// QLCM, QCP file
-			if (this.check([0x51, 0x4C, 0x43, 0x4D], {offset: 8})) {
-				return {
-					ext: 'qcp',
-					mime: 'audio/qcelp',
-				};
 			}
 		}
 
@@ -18011,6 +21192,61 @@ class FileTypeParser {
 			return {
 				ext: 'elf',
 				mime: 'application/x-elf',
+			};
+		}
+
+		if (this.check([0x21, 0x42, 0x44, 0x4E])) {
+			return {
+				ext: 'pst',
+				mime: 'application/vnd.ms-outlook',
+			};
+		}
+
+		if (this.checkString('PAR1') || this.checkString('PARE')) {
+			return {
+				ext: 'parquet',
+				mime: 'application/vnd.apache.parquet',
+			};
+		}
+
+		if (this.checkString('ttcf')) {
+			return {
+				ext: 'ttc',
+				mime: 'font/collection',
+			};
+		}
+
+		if (
+			this.check([0xFE, 0xED, 0xFA, 0xCE]) // 32-bit, big-endian
+			|| this.check([0xFE, 0xED, 0xFA, 0xCF]) // 64-bit, big-endian
+			|| this.check([0xCE, 0xFA, 0xED, 0xFE]) // 32-bit, little-endian
+			|| this.check([0xCF, 0xFA, 0xED, 0xFE]) // 64-bit, little-endian
+		) {
+			return {
+				ext: 'macho',
+				mime: 'application/x-mach-binary',
+			};
+		}
+
+		if (this.check([0x04, 0x22, 0x4D, 0x18])) {
+			return {
+				ext: 'lz4',
+				mime: 'application/x-lz4', // Invented by us
+			};
+		}
+
+		if (this.checkString('regf')) {
+			return {
+				ext: 'dat',
+				mime: 'application/x-ft-windows-registry-hive',
+			};
+		}
+
+		// SPSS Statistical Data File
+		if (this.checkString('$FL2') || this.checkString('$FL3')) {
+			return {
+				ext: 'sav',
+				mime: 'application/x-spss-sav',
 			};
 		}
 
@@ -18097,6 +21333,44 @@ class FileTypeParser {
 			};
 		}
 
+		if (this.check([0xCA, 0xFE, 0xBA, 0xBE])) {
+			// Java bytecode and Mach-O universal binaries have the same magic number.
+			// We disambiguate based on the next 4 bytes, as done by `file`.
+			// See https://github.com/file/file/blob/master/magic/Magdir/cafebabe
+			const machOArchitectureCount = UINT32_BE.get(this.buffer, 4);
+			const javaClassFileMajorVersion = UINT16_BE.get(this.buffer, 6);
+
+			if (machOArchitectureCount > 0 && machOArchitectureCount <= 30) {
+				return {
+					ext: 'macho',
+					mime: 'application/x-mach-binary',
+				};
+			}
+
+			if (javaClassFileMajorVersion > 30) {
+				return {
+					ext: 'class',
+					mime: 'application/java-vm',
+				};
+			}
+		}
+
+		if (this.checkString('.RMF')) {
+			return {
+				ext: 'rm',
+				mime: 'application/vnd.rn-realmedia',
+			};
+		}
+
+		// -- 5-byte signatures --
+
+		if (this.checkString('DRACO')) {
+			return {
+				ext: 'drc',
+				mime: 'application/vnd.google.draco', // Invented by us
+			};
+		}
+
 		// -- 6-byte signatures --
 
 		if (this.check([0xFD, 0x37, 0x7A, 0x58, 0x5A, 0x00])) {
@@ -18137,6 +21411,23 @@ class FileTypeParser {
 			};
 		}
 
+		if (this.checkString('AC')) {
+			const version = new StringType(4, 'latin1').get(this.buffer, 2);
+			if (version.match('^d*') && version >= 1000 && version <= 1050) {
+				return {
+					ext: 'dwg',
+					mime: 'image/vnd.dwg',
+				};
+			}
+		}
+
+		if (this.checkString('070707')) {
+			return {
+				ext: 'cpio',
+				mime: 'application/x-cpio',
+			};
+		}
+
 		// -- 7-byte signatures --
 
 		if (this.checkString('BLENDER')) {
@@ -18162,9 +21453,31 @@ class FileTypeParser {
 			};
 		}
 
+		if (
+			this.checkString('WEBVTT')
+			&&	(
+				// One of LF, CR, tab, space, or end of file must follow "WEBVTT" per the spec (see `fixture/fixture-vtt-*.vtt` for examples). Note that `\0` is technically the null character (there is no such thing as an EOF character). However, checking for `\0` gives us the same result as checking for the end of the stream.
+				(['\n', '\r', '\t', ' ', '\0'].some(char7 => this.checkString(char7, {offset: 6}))))
+		) {
+			return {
+				ext: 'vtt',
+				mime: 'text/vtt',
+			};
+		}
+
 		// -- 8-byte signatures --
 
 		if (this.check([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])) {
+			const pngFileType = {
+				ext: 'png',
+				mime: 'image/png',
+			};
+
+			const apngFileType = {
+				ext: 'apng',
+				mime: 'image/apng',
+			};
+
 			// APNG format (https://wiki.mozilla.org/APNG_Specification)
 			// 1. Find the first IDAT (image data) chunk (49 44 41 54)
 			// 2. Check if there is an "acTL" chunk before the IDAT one (61 63 54 4C)
@@ -18178,11 +21491,24 @@ class FileTypeParser {
 			async function readChunkHeader() {
 				return {
 					length: await tokenizer.readToken(INT32_BE),
-					type: await tokenizer.readToken(new StringType(4, 'binary')),
+					type: await tokenizer.readToken(new StringType(4, 'latin1')),
 				};
 			}
 
+			const isUnknownPngStream = hasUnknownFileSize(tokenizer);
+			const pngScanStart = tokenizer.position;
+			let pngChunkCount = 0;
 			do {
+				pngChunkCount++;
+				if (pngChunkCount > maximumPngChunkCount) {
+					break;
+				}
+
+				if (hasExceededUnknownSizeScanBudget(tokenizer, pngScanStart, maximumPngChunkSizeInBytes)) {
+					break;
+				}
+
+				const previousPosition = tokenizer.position;
 				const chunk = await readChunkHeader();
 				if (chunk.length < 0) {
 					return; // Invalid chunk length
@@ -18190,30 +21516,51 @@ class FileTypeParser {
 
 				switch (chunk.type) {
 					case 'IDAT':
-						return {
-							ext: 'png',
-							mime: 'image/png',
-						};
+						return pngFileType;
 					case 'acTL':
-						return {
-							ext: 'apng',
-							mime: 'image/apng',
-						};
+						return apngFileType;
 					default:
-						await tokenizer.ignore(chunk.length + 4); // Ignore chunk-data + CRC
+						if (
+							isUnknownPngStream
+								&& chunk.length > maximumPngChunkSizeInBytes
+						) {
+							// Avoid huge attacker-controlled skips when probing unknown-size streams.
+							return;
+						}
+
+						try {
+							await safeIgnore(tokenizer, chunk.length + 4, {
+								maximumLength: isUnknownPngStream ? maximumPngChunkSizeInBytes + 4 : tokenizer.fileInfo.size,
+								reason: 'PNG chunk payload',
+							}); // Ignore chunk-data + CRC
+						} catch (error) {
+							if (
+								!isUnknownPngStream
+									&& (
+										error instanceof ParserHardLimitError
+										|| error instanceof EndOfStreamError
+									)
+							) {
+								return pngFileType;
+							}
+
+							throw error;
+						}
+				}
+
+				// Safeguard against malformed files: bail if the position did not advance.
+				if (tokenizer.position <= previousPosition) {
+					break;
 				}
 			} while (tokenizer.position + 8 < tokenizer.fileInfo.size);
 
-			return {
-				ext: 'png',
-				mime: 'image/png',
-			};
+			return pngFileType;
 		}
 
 		if (this.check([0x41, 0x52, 0x52, 0x4F, 0x57, 0x31, 0x00, 0x00])) {
 			return {
 				ext: 'arrow',
-				mime: 'application/x-apache-arrow',
+				mime: 'application/vnd.apache.arrow.file',
 			};
 		}
 
@@ -18253,7 +21600,108 @@ class FileTypeParser {
 			};
 		}
 
+		// File Type Box (https://en.wikipedia.org/wiki/ISO_base_media_file_format)
+		// It's not required to be first, but it's recommended to be. Almost all ISO base media files start with `ftyp` box.
+		// `ftyp` box must contain a brand major identifier, which must consist of ISO 8859-1 printable characters.
+		// Here we check for 8859-1 printable characters (for simplicity, it's a mask which also catches one non-printable character).
+		if (
+			this.checkString('ftyp', {offset: 4})
+			&& (this.buffer[8] & 0x60) !== 0x00 // Brand major, first character ASCII?
+		) {
+			// They all can have MIME `video/mp4` except `application/mp4` special-case which is hard to detect.
+			// For some cases, we're specific, everything else falls to `video/mp4` with `mp4` extension.
+			const brandMajor = new StringType(4, 'latin1').get(this.buffer, 8).replace('\0', ' ').trim();
+			switch (brandMajor) {
+				case 'avif':
+				case 'avis':
+					return {ext: 'avif', mime: 'image/avif'};
+				case 'mif1':
+					return {ext: 'heic', mime: 'image/heif'};
+				case 'msf1':
+					return {ext: 'heic', mime: 'image/heif-sequence'};
+				case 'heic':
+				case 'heix':
+					return {ext: 'heic', mime: 'image/heic'};
+				case 'hevc':
+				case 'hevx':
+					return {ext: 'heic', mime: 'image/heic-sequence'};
+				case 'qt':
+					return {ext: 'mov', mime: 'video/quicktime'};
+				case 'M4V':
+				case 'M4VH':
+				case 'M4VP':
+					return {ext: 'm4v', mime: 'video/x-m4v'};
+				case 'M4P':
+					return {ext: 'm4p', mime: 'video/mp4'};
+				case 'M4B':
+					return {ext: 'm4b', mime: 'audio/mp4'};
+				case 'M4A':
+					return {ext: 'm4a', mime: 'audio/x-m4a'};
+				case 'F4V':
+					return {ext: 'f4v', mime: 'video/mp4'};
+				case 'F4P':
+					return {ext: 'f4p', mime: 'video/mp4'};
+				case 'F4A':
+					return {ext: 'f4a', mime: 'audio/mp4'};
+				case 'F4B':
+					return {ext: 'f4b', mime: 'audio/mp4'};
+				case 'crx':
+					return {ext: 'cr3', mime: 'image/x-canon-cr3'};
+				default:
+					if (brandMajor.startsWith('3g')) {
+						if (brandMajor.startsWith('3g2')) {
+							return {ext: '3g2', mime: 'video/3gpp2'};
+						}
+
+						return {ext: '3gp', mime: 'video/3gpp'};
+					}
+
+					return {ext: 'mp4', mime: 'video/mp4'};
+			}
+		}
+
+		// -- 10-byte signatures --
+
+		if (this.checkString('REGEDIT4\r\n')) {
+			return {
+				ext: 'reg',
+				mime: 'application/x-ms-regedit',
+			};
+		}
+
 		// -- 12-byte signatures --
+
+		// RIFF file format which might be AVI, WAV, QCP, etc
+		if (this.check([0x52, 0x49, 0x46, 0x46])) {
+			if (this.checkString('WEBP', {offset: 8})) {
+				return {
+					ext: 'webp',
+					mime: 'image/webp',
+				};
+			}
+
+			if (this.check([0x41, 0x56, 0x49], {offset: 8})) {
+				return {
+					ext: 'avi',
+					mime: 'video/vnd.avi',
+				};
+			}
+
+			if (this.check([0x57, 0x41, 0x56, 0x45], {offset: 8})) {
+				return {
+					ext: 'wav',
+					mime: 'audio/wav',
+				};
+			}
+
+			// QLCM, QCP file
+			if (this.check([0x51, 0x4C, 0x43, 0x4D], {offset: 8})) {
+				return {
+					ext: 'qcp',
+					mime: 'audio/qcelp',
+				};
+			}
+		}
 
 		if (this.check([0x49, 0x49, 0x55, 0x00, 0x18, 0x00, 0x00, 0x00, 0x88, 0xE7, 0x74, 0xD8])) {
 			return {
@@ -18264,45 +21712,101 @@ class FileTypeParser {
 
 		// ASF_Header_Object first 80 bytes
 		if (this.check([0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9])) {
-			async function readHeader() {
-				const guid = external_node_buffer_namespaceObject.Buffer.alloc(16);
-				await tokenizer.readBuffer(guid);
-				return {
-					id: guid,
-					size: Number(await tokenizer.readToken(UINT64_LE)),
-				};
-			}
-
-			await tokenizer.ignore(30);
-			// Search for header should be in first 1KB of file.
-			while (tokenizer.position + 24 < tokenizer.fileInfo.size) {
-				const header = await readHeader();
-				let payload = header.size - 24;
-				if (_check(header.id, [0x91, 0x07, 0xDC, 0xB7, 0xB7, 0xA9, 0xCF, 0x11, 0x8E, 0xE6, 0x00, 0xC0, 0x0C, 0x20, 0x53, 0x65])) {
-					// Sync on Stream-Properties-Object (B7DC0791-A9B7-11CF-8EE6-00C00C205365)
-					const typeId = external_node_buffer_namespaceObject.Buffer.alloc(16);
-					payload -= await tokenizer.readBuffer(typeId);
-
-					if (_check(typeId, [0x40, 0x9E, 0x69, 0xF8, 0x4D, 0x5B, 0xCF, 0x11, 0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44, 0x2B])) {
-						// Found audio:
-						return {
-							ext: 'asf',
-							mime: 'audio/x-ms-asf',
-						};
-					}
-
-					if (_check(typeId, [0xC0, 0xEF, 0x19, 0xBC, 0x4D, 0x5B, 0xCF, 0x11, 0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44, 0x2B])) {
-						// Found video:
-						return {
-							ext: 'asf',
-							mime: 'video/x-ms-asf',
-						};
-					}
-
-					break;
+			let isMalformedAsf = false;
+			try {
+				async function readHeader() {
+					const guid = new Uint8Array(16);
+					await safeReadBuffer(tokenizer, guid, undefined, {
+						maximumLength: guid.length,
+						reason: 'ASF header GUID',
+					});
+					return {
+						id: guid,
+						size: Number(await tokenizer.readToken(UINT64_LE)),
+					};
 				}
 
-				await tokenizer.ignore(payload);
+				await safeIgnore(tokenizer, 30, {
+					maximumLength: 30,
+					reason: 'ASF header prelude',
+				});
+				const isUnknownFileSize = hasUnknownFileSize(tokenizer);
+				const asfHeaderScanStart = tokenizer.position;
+				let asfHeaderObjectCount = 0;
+				while (tokenizer.position + 24 < tokenizer.fileInfo.size) {
+					asfHeaderObjectCount++;
+					if (asfHeaderObjectCount > maximumAsfHeaderObjectCount) {
+						break;
+					}
+
+					if (hasExceededUnknownSizeScanBudget(tokenizer, asfHeaderScanStart, maximumUntrustedSkipSizeInBytes)) {
+						break;
+					}
+
+					const previousPosition = tokenizer.position;
+					const header = await readHeader();
+					let payload = header.size - 24;
+					if (
+						!Number.isFinite(payload)
+						|| payload < 0
+					) {
+						isMalformedAsf = true;
+						break;
+					}
+
+					if (_check(header.id, [0x91, 0x07, 0xDC, 0xB7, 0xB7, 0xA9, 0xCF, 0x11, 0x8E, 0xE6, 0x00, 0xC0, 0x0C, 0x20, 0x53, 0x65])) {
+						// Sync on Stream-Properties-Object (B7DC0791-A9B7-11CF-8EE6-00C00C205365)
+						const typeId = new Uint8Array(16);
+						payload -= await safeReadBuffer(tokenizer, typeId, undefined, {
+							maximumLength: typeId.length,
+							reason: 'ASF stream type GUID',
+						});
+
+						if (_check(typeId, [0x40, 0x9E, 0x69, 0xF8, 0x4D, 0x5B, 0xCF, 0x11, 0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44, 0x2B])) {
+							// Found audio:
+							return {
+								ext: 'asf',
+								mime: 'audio/x-ms-asf',
+							};
+						}
+
+						if (_check(typeId, [0xC0, 0xEF, 0x19, 0xBC, 0x4D, 0x5B, 0xCF, 0x11, 0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44, 0x2B])) {
+							// Found video:
+							return {
+								ext: 'asf',
+								mime: 'video/x-ms-asf',
+							};
+						}
+
+						break;
+					}
+
+					await safeIgnore(tokenizer, payload, {
+						maximumLength: isUnknownFileSize ? maximumUntrustedSkipSizeInBytes : tokenizer.fileInfo.size,
+						reason: 'ASF header payload',
+					});
+
+					// Safeguard against malformed files: break if the position did not advance.
+					if (tokenizer.position <= previousPosition) {
+						isMalformedAsf = true;
+						break;
+					}
+				}
+			} catch (error) {
+				if (
+					error instanceof EndOfStreamError
+					|| error instanceof ParserHardLimitError
+				) {
+					if (hasUnknownFileSize(tokenizer)) {
+						isMalformedAsf = true;
+					}
+				} else {
+					throw error;
+				}
+			}
+
+			if (isMalformedAsf) {
+				return;
 			}
 
 			// Default to ASF generic extension
@@ -18330,6 +21834,13 @@ class FileTypeParser {
 			return {
 				ext: 'shp',
 				mime: 'application/x-esri-shape',
+			};
+		}
+
+		if (this.check([0xFF, 0x4F, 0xFF, 0x51])) {
+			return {
+				ext: 'j2c',
+				mime: 'image/j2c',
 			};
 		}
 
@@ -18374,8 +21885,8 @@ class FileTypeParser {
 			};
 		}
 
-		if (this.check([0xFE, 0xFF])) { // UTF-16-BOM-LE
-			if (this.check([0, 60, 0, 63, 0, 120, 0, 109, 0, 108], {offset: 2})) {
+		if (this.check([0xFE, 0xFF])) { // UTF-16-BOM-BE
+			if (this.checkString('<?xml ', {offset: 2, encoding: 'utf-16be'})) {
 				return {
 					ext: 'xml',
 					mime: 'application/xml',
@@ -18383,39 +21894,6 @@ class FileTypeParser {
 			}
 
 			return undefined; // Some unknown text based format
-		}
-
-		// -- Unsafe signatures --
-
-		if (
-			this.check([0x0, 0x0, 0x1, 0xBA])
-			|| this.check([0x0, 0x0, 0x1, 0xB3])
-		) {
-			return {
-				ext: 'mpg',
-				mime: 'video/mpeg',
-			};
-		}
-
-		if (this.check([0x00, 0x01, 0x00, 0x00, 0x00])) {
-			return {
-				ext: 'ttf',
-				mime: 'font/ttf',
-			};
-		}
-
-		if (this.check([0x00, 0x00, 0x01, 0x00])) {
-			return {
-				ext: 'ico',
-				mime: 'image/x-icon',
-			};
-		}
-
-		if (this.check([0x00, 0x00, 0x02, 0x00])) {
-			return {
-				ext: 'cur',
-				mime: 'image/x-icon',
-			};
 		}
 
 		if (this.check([0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1])) {
@@ -18426,8 +21904,23 @@ class FileTypeParser {
 			};
 		}
 
-		// Increase sample size from 12 to 256.
+		// Increase sample size from 32 to 256.
 		await tokenizer.peekBuffer(this.buffer, {length: Math.min(256, tokenizer.fileInfo.size), mayBeLess: true});
+
+		if (this.check([0x61, 0x63, 0x73, 0x70], {offset: 36})) {
+			return {
+				ext: 'icc',
+				mime: 'application/vnd.iccprofile',
+			};
+		}
+
+		// ACE: requires 14 bytes in the buffer
+		if (this.checkString('**ACE', {offset: 7}) && this.checkString('**', {offset: 12})) {
+			return {
+				ext: 'ace',
+				mime: 'application/x-ace-compressed',
+			};
+		}
 
 		// -- 15-byte signatures --
 
@@ -18470,10 +21963,11 @@ class FileTypeParser {
 		}
 
 		if (this.check([0x04, 0x00, 0x00, 0x00]) && this.buffer.length >= 16) { // Rough & quick check Pickle/ASAR
-			const jsonSize = this.buffer.readUInt32LE(12);
+			const jsonSize = new DataView(this.buffer.buffer).getUint32(12, true);
+
 			if (jsonSize > 12 && this.buffer.length >= jsonSize + 16) {
 				try {
-					const header = this.buffer.slice(16, jsonSize + 16).toString();
+					const header = new TextDecoder().decode(this.buffer.subarray(16, jsonSize + 16));
 					const json = JSON.parse(header);
 					// Check if Pickle is ASAR
 					if (json.files) { // Final check, assuring Pickle/ASAR format
@@ -18544,6 +22038,13 @@ class FileTypeParser {
 			};
 		}
 
+		if (this.checkString('Kaydara FBX Binary  \u0000')) {
+			return {
+				ext: 'fbx',
+				mime: 'application/x.autodesk.fbx', // Invented by us
+			};
+		}
+
 		if (
 			this.check([0x4C, 0x50], {offset: 34})
 			&& (
@@ -18565,29 +22066,49 @@ class FileTypeParser {
 			};
 		}
 
+		// -- 16-byte signatures --
+
+		// JMP files - check for both Little Endian and Big Endian signatures
+		if (this.check([0xFF, 0xFF, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00])
+			|| this.check([0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x04, 0x00, 0x01, 0x00, 0x01])) {
+			return {
+				ext: 'jmp',
+				mime: 'application/x-jmp-data',
+			};
+		}
+
 		// Increase sample size from 256 to 512
 		await tokenizer.peekBuffer(this.buffer, {length: Math.min(512, tokenizer.fileInfo.size), mayBeLess: true});
 
 		// Requires a buffer size of 512 bytes
-		if (tarHeaderChecksumMatches(this.buffer)) {
+		if ((this.checkString('ustar', {offset: 257}) && (this.checkString('\0', {offset: 262}) || this.checkString(' ', {offset: 262})))
+			|| (this.check([0, 0, 0, 0, 0, 0], {offset: 257}) && tarHeaderChecksumMatches(this.buffer))) {
 			return {
 				ext: 'tar',
 				mime: 'application/x-tar',
 			};
 		}
 
-		if (this.check([0xFF, 0xFE])) { // UTF-16-BOM-BE
-			if (this.check([60, 0, 63, 0, 120, 0, 109, 0, 108, 0], {offset: 2})) {
+		if (this.check([0xFF, 0xFE])) { // UTF-16-BOM-LE
+			const encoding = 'utf-16le';
+			if (this.checkString('<?xml ', {offset: 2, encoding})) {
 				return {
 					ext: 'xml',
 					mime: 'application/xml',
 				};
 			}
 
-			if (this.check([0xFF, 0x0E, 0x53, 0x00, 0x6B, 0x00, 0x65, 0x00, 0x74, 0x00, 0x63, 0x00, 0x68, 0x00, 0x55, 0x00, 0x70, 0x00, 0x20, 0x00, 0x4D, 0x00, 0x6F, 0x00, 0x64, 0x00, 0x65, 0x00, 0x6C, 0x00], {offset: 2})) {
+			if (this.check([0xFF, 0x0E], {offset: 2}) && this.checkString('SketchUp Model', {offset: 4, encoding})) {
 				return {
 					ext: 'skp',
 					mime: 'application/vnd.sketchup.skp',
+				};
+			}
+
+			if (this.checkString('Windows Registry Editor Version 5.00\r\n', {offset: 2, encoding})) {
+				return {
+					ext: 'reg',
+					mime: 'application/x-ms-regedit',
 				};
 			}
 
@@ -18600,55 +22121,63 @@ class FileTypeParser {
 				mime: 'application/pgp-encrypted',
 			};
 		}
+	};
+	// Detections with limited supporting data, resulting in a higher likelihood of false positives
+	detectImprecise = async tokenizer => {
+		this.buffer = new Uint8Array(reasonableDetectionSizeInBytes);
+		const fileSize = getKnownFileSizeOrMaximum(tokenizer.fileInfo.size);
+
+		// Read initial sample size of 8 bytes
+		await tokenizer.peekBuffer(this.buffer, {length: Math.min(8, fileSize), mayBeLess: true});
+
+		if (
+			this.check([0x0, 0x0, 0x1, 0xBA])
+			|| this.check([0x0, 0x0, 0x1, 0xB3])
+		) {
+			return {
+				ext: 'mpg',
+				mime: 'video/mpeg',
+			};
+		}
+
+		if (this.check([0x00, 0x01, 0x00, 0x00, 0x00])) {
+			return {
+				ext: 'ttf',
+				mime: 'font/ttf',
+			};
+		}
+
+		if (this.check([0x00, 0x00, 0x01, 0x00])) {
+			return {
+				ext: 'ico',
+				mime: 'image/x-icon',
+			};
+		}
+
+		if (this.check([0x00, 0x00, 0x02, 0x00])) {
+			return {
+				ext: 'cur',
+				mime: 'image/x-icon',
+			};
+		}
+
+		// Adjust buffer to `mpegOffsetTolerance`
+		await tokenizer.peekBuffer(this.buffer, {length: Math.min(2 + this.options.mpegOffsetTolerance, fileSize), mayBeLess: true});
 
 		// Check MPEG 1 or 2 Layer 3 header, or 'layer 0' for ADTS (MPEG sync-word 0xFFE)
-		if (this.buffer.length >= 2 && this.check([0xFF, 0xE0], {offset: 0, mask: [0xFF, 0xE0]})) {
-			if (this.check([0x10], {offset: 1, mask: [0x16]})) {
-				// Check for (ADTS) MPEG-2
-				if (this.check([0x08], {offset: 1, mask: [0x08]})) {
-					return {
-						ext: 'aac',
-						mime: 'audio/aac',
-					};
+		if (this.buffer.length >= (2 + this.options.mpegOffsetTolerance)) {
+			for (let depth = 0; depth <= this.options.mpegOffsetTolerance; ++depth) {
+				const type = this.scanMpeg(depth);
+				if (type) {
+					return type;
 				}
-
-				// Must be (ADTS) MPEG-4
-				return {
-					ext: 'aac',
-					mime: 'audio/aac',
-				};
-			}
-
-			// MPEG 1 or 2 Layer 3 header
-			// Check for MPEG layer 3
-			if (this.check([0x02], {offset: 1, mask: [0x06]})) {
-				return {
-					ext: 'mp3',
-					mime: 'audio/mpeg',
-				};
-			}
-
-			// Check for MPEG layer 2
-			if (this.check([0x04], {offset: 1, mask: [0x06]})) {
-				return {
-					ext: 'mp2',
-					mime: 'audio/mpeg',
-				};
-			}
-
-			// Check for MPEG layer 1
-			if (this.check([0x06], {offset: 1, mask: [0x06]})) {
-				return {
-					ext: 'mp1',
-					mime: 'audio/mpeg',
-				};
 			}
 		}
-	}
+	};
 
 	async readTiffTag(bigEndian) {
 		const tagId = await this.tokenizer.readToken(bigEndian ? UINT16_BE : UINT16_LE);
-		this.tokenizer.ignore(10);
+		await this.tokenizer.ignore(10);
 		switch (tagId) {
 			case 50_341:
 				return {
@@ -18666,6 +22195,17 @@ class FileTypeParser {
 
 	async readTiffIFD(bigEndian) {
 		const numberOfTags = await this.tokenizer.readToken(bigEndian ? UINT16_BE : UINT16_LE);
+		if (numberOfTags > maximumTiffTagCount) {
+			return;
+		}
+
+		if (
+			hasUnknownFileSize(this.tokenizer)
+			&& (2 + (numberOfTags * 12)) > maximumTiffIfdOffsetInBytes
+		) {
+			return;
+		}
+
 		for (let n = 0; n < numberOfTags; ++n) {
 			const fileType = await this.readTiffTag(bigEndian);
 			if (fileType) {
@@ -18675,6 +22215,11 @@ class FileTypeParser {
 	}
 
 	async readTiffHeader(bigEndian) {
+		const tiffFileType = {
+			ext: 'tif',
+			mime: 'image/tiff',
+		};
+
 		const version = (bigEndian ? UINT16_BE : UINT16_LE).get(this.buffer, 2);
 		const ifdOffset = (bigEndian ? UINT32_BE : UINT32_LE).get(this.buffer, 4);
 
@@ -18688,83 +22233,109 @@ class FileTypeParser {
 					};
 				}
 
-				if (ifdOffset >= 8 && (this.check([0x1C, 0x00, 0xFE, 0x00], {offset: 8}) || this.check([0x1F, 0x00, 0x0B, 0x00], {offset: 8}))) {
-					return {
-						ext: 'nef',
-						mime: 'image/x-nikon-nef',
-					};
+				if (ifdOffset >= 8) {
+					const someId1 = (bigEndian ? UINT16_BE : UINT16_LE).get(this.buffer, 8);
+					const someId2 = (bigEndian ? UINT16_BE : UINT16_LE).get(this.buffer, 10);
+
+					if (
+						(someId1 === 0x1C && someId2 === 0xFE)
+						|| (someId1 === 0x1F && someId2 === 0x0B)) {
+						return {
+							ext: 'nef',
+							mime: 'image/x-nikon-nef',
+						};
+					}
 				}
 			}
 
-			await this.tokenizer.ignore(ifdOffset);
-			const fileType = await this.readTiffIFD(false);
-			return fileType ? fileType : {
-				ext: 'tif',
-				mime: 'image/tiff',
-			};
+			const maximumTiffOffset = hasUnknownFileSize(this.tokenizer) ? maximumTiffIfdOffsetInBytes : this.tokenizer.fileInfo.size;
+
+			try {
+				await safeIgnore(this.tokenizer, ifdOffset, {
+					maximumLength: maximumTiffOffset,
+					reason: 'TIFF IFD offset',
+				});
+			} catch (error) {
+				if (error instanceof EndOfStreamError) {
+					return;
+				}
+
+				throw error;
+			}
+
+			let fileType;
+			try {
+				fileType = await this.readTiffIFD(bigEndian);
+			} catch (error) {
+				if (error instanceof EndOfStreamError) {
+					return;
+				}
+
+				throw error;
+			}
+
+			return fileType ?? tiffFileType;
 		}
 
 		if (version === 43) {	// Big TIFF file header
-			return {
-				ext: 'tif',
-				mime: 'image/tiff',
-			};
+			return tiffFileType;
 		}
 	}
-}
 
-async function fileTypeStream(readableStream, {sampleSize = minimumBytes} = {}) {
-	const {default: stream} = await Promise.resolve(/* import() */).then(__nccwpck_require__.t.bind(__nccwpck_require__, 7075, 19));
+	/**
+	Scan check MPEG 1 or 2 Layer 3 header, or 'layer 0' for ADTS (MPEG sync-word 0xFFE).
 
-	return new Promise((resolve, reject) => {
-		readableStream.on('error', reject);
-
-		readableStream.once('readable', () => {
-			(async () => {
-				try {
-					// Set up output stream
-					const pass = new stream.PassThrough();
-					const outputStream = stream.pipeline ? stream.pipeline(readableStream, pass, () => {}) : readableStream.pipe(pass);
-
-					// Read the input stream and detect the filetype
-					const chunk = readableStream.read(sampleSize) ?? readableStream.read() ?? Buffer.alloc(0);
-					try {
-						const fileType = await fileTypeFromBuffer(chunk);
-						pass.fileType = fileType;
-					} catch (error) {
-						if (error instanceof strtok3.EndOfStreamError) {
-							pass.fileType = undefined;
-						} else {
-							reject(error);
-						}
-					}
-
-					resolve(outputStream);
-				} catch (error) {
-					reject(error);
+	@param offset - Offset to scan for sync-preamble.
+	@returns {{ext: string, mime: string}}
+	*/
+	scanMpeg(offset) {
+		if (this.check([0xFF, 0xE0], {offset, mask: [0xFF, 0xE0]})) {
+			if (this.check([0x10], {offset: offset + 1, mask: [0x16]})) {
+				// Check for (ADTS) MPEG-2
+				if (this.check([0x08], {offset: offset + 1, mask: [0x08]})) {
+					return {
+						ext: 'aac',
+						mime: 'audio/aac',
+					};
 				}
-			})();
-		});
-	});
+
+				// Must be (ADTS) MPEG-4
+				return {
+					ext: 'aac',
+					mime: 'audio/aac',
+				};
+			}
+
+			// MPEG 1 or 2 Layer 3 header
+			// Check for MPEG layer 3
+			if (this.check([0x02], {offset: offset + 1, mask: [0x06]})) {
+				return {
+					ext: 'mp3',
+					mime: 'audio/mpeg',
+				};
+			}
+
+			// Check for MPEG layer 2
+			if (this.check([0x04], {offset: offset + 1, mask: [0x06]})) {
+				return {
+					ext: 'mp2',
+					mime: 'audio/mpeg',
+				};
+			}
+
+			// Check for MPEG layer 1
+			if (this.check([0x06], {offset: offset + 1, mask: [0x06]})) {
+				return {
+					ext: 'mp1',
+					mime: 'audio/mpeg',
+				};
+			}
+		}
+	}
 }
 
 const supportedExtensions = new Set(extensions);
 const supportedMimeTypes = new Set(supported_mimeTypes);
-
-;// CONCATENATED MODULE: ./node_modules/file-type/index.js
-
-
-
-async function fileTypeFromFile(path) {
-	const tokenizer = await strtok3.fromFile(path);
-	try {
-		return await fileTypeFromTokenizer(tokenizer);
-	} finally {
-		await tokenizer.close();
-	}
-}
-
-
 
 // EXTERNAL MODULE: ./node_modules/ext-name/index.js
 var ext_name = __nccwpck_require__(7125);
@@ -18874,54 +22445,54 @@ async function download(uri, output_, opts_) {
 
 async function main() {
     try {
-        const fileURL = lib_core.getInput('file-url', { required: true });
-        const fileName = lib_core.getInput('file-name') || undefined;
-        const fileLocation = lib_core.getInput('location') || process.cwd();
-        const fileMd5 = lib_core.getInput('md5').toLowerCase();
-        const fileSha256 = lib_core.getInput('sha256').toLowerCase();
-        lib_core.info('Downloading file:');
-        lib_core.info(`\turl: ${fileURL}`);
-        lib_core.info(`\tname: ${fileName || 'Not set'}`);
-        lib_core.info(`\tlocation: ${fileLocation}`);
-        lib_core.info(`\tMD5: ${fileMd5 || 'Not set'}`);
-        lib_core.info(`\tSHA256: ${fileSha256 || 'Not set'}`);
+        const fileURL = core.getInput('file-url', { required: true });
+        const fileName = core.getInput('file-name') || undefined;
+        const fileLocation = core.getInput('location') || process.cwd();
+        const fileMd5 = core.getInput('md5').toLowerCase();
+        const fileSha256 = core.getInput('sha256').toLowerCase();
+        core.info('Downloading file:');
+        core.info(`\turl: ${fileURL}`);
+        core.info(`\tname: ${fileName || 'Not set'}`);
+        core.info(`\tlocation: ${fileLocation}`);
+        core.info(`\tMD5: ${fileMd5 || 'Not set'}`);
+        core.info(`\tSHA256: ${fileSha256 || 'Not set'}`);
         let filePath = await download(fileURL, fileLocation, {
             filename: fileName,
         });
         filePath = external_path_.resolve(filePath);
-        lib_core.info(`Downloaded: ${filePath}`);
+        core.info(`Downloaded: ${filePath}`);
         if (fileMd5) {
-            lib_core.info('Verifying MD5...');
+            core.info('Verifying MD5...');
             let downloadMd5 = await md5_file(filePath);
             downloadMd5 = downloadMd5.toLowerCase();
-            lib_core.info(`Downloaded file MD5: ${downloadMd5}`);
+            core.info(`Downloaded file MD5: ${downloadMd5}`);
             if (downloadMd5 !== fileMd5) {
                 throw new Error(`File MD5 (left) doesn't match expected value (right): ${downloadMd5} != ${fileMd5}`);
             }
             else {
-                lib_core.info('Provided MD5 hash matches.');
+                core.info('Provided MD5 hash matches.');
             }
         }
         if (fileSha256) {
-            lib_core.info('Verifying SHA256...');
+            core.info('Verifying SHA256...');
             const fileBuffer = external_fs_.readFileSync(filePath);
             const hashSum = external_crypto_.createHash('sha256');
             hashSum.update(fileBuffer);
             const downloadSha256 = hashSum.digest('hex').toLowerCase();
-            lib_core.info(`Downloaded file SHA256: ${downloadSha256}`);
+            core.info(`Downloaded file SHA256: ${downloadSha256}`);
             if (downloadSha256 !== fileSha256) {
                 throw new Error(`File SHA256 (left) doesn't match expected value (right): ${downloadSha256} != ${fileSha256}`);
             }
             else {
-                lib_core.info('Provided SHA256 hash matches.');
+                core.info('Provided SHA256 hash matches.');
             }
         }
-        lib_core.info('File successfully downloaded.');
-        lib_core.setOutput('file-path', filePath);
+        core.info('File successfully downloaded.');
+        core.setOutput('file-path', filePath);
     }
     catch (error) {
         if (error instanceof Error)
-            lib_core.setFailed(error.message);
+            core.setFailed(error.message);
     }
 }
 main();
