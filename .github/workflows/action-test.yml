@@ -7,7 +7,7 @@ jobs:
     name: Build, test & run
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: npm install
       - run: npm run all
       - name: Simple test to check built output does not throw errors
@@ -29,7 +29,7 @@ jobs:
     name: Test Action - ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Test no "file-url" parameter
         continue-on-error: true
