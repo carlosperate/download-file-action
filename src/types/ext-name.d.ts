@@ -7,5 +7,5 @@ declare module 'ext-name' {
   namespace extName {
     function mime(mimeType: string): ExtNameEntry[];
   }
-  export = extName;
+  export default extName;
 }
