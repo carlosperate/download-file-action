@@ -19638,18 +19638,23 @@ const maximumZipEntrySizeInBytes = 1024 * 1024;
 const maximumZipEntryCount = 1024;
 const maximumZipBufferedReadSizeInBytes = (2 ** 31) - 1;
 const maximumUntrustedSkipSizeInBytes = 16 * 1024 * 1024;
+const maximumUnknownSizePayloadProbeSizeInBytes = maximumZipEntrySizeInBytes;
 const maximumZipTextEntrySizeInBytes = maximumZipEntrySizeInBytes;
 const maximumNestedGzipDetectionSizeInBytes = maximumUntrustedSkipSizeInBytes;
 const maximumNestedGzipProbeDepth = 1;
+const unknownSizeGzipProbeTimeoutInMilliseconds = 100;
 const maximumId3HeaderSizeInBytes = maximumUntrustedSkipSizeInBytes;
 const maximumEbmlDocumentTypeSizeInBytes = 64;
-const maximumEbmlElementPayloadSizeInBytes = maximumUntrustedSkipSizeInBytes;
+const maximumEbmlElementPayloadSizeInBytes = maximumUnknownSizePayloadProbeSizeInBytes;
 const maximumEbmlElementCount = 256;
 const maximumPngChunkCount = 512;
+const maximumPngStreamScanBudgetInBytes = maximumUntrustedSkipSizeInBytes;
 const maximumAsfHeaderObjectCount = 512;
 const maximumTiffTagCount = 512;
 const maximumDetectionReentryCount = 256;
-const maximumPngChunkSizeInBytes = maximumUntrustedSkipSizeInBytes;
+const maximumPngChunkSizeInBytes = maximumUnknownSizePayloadProbeSizeInBytes;
+const maximumAsfHeaderPayloadSizeInBytes = maximumUnknownSizePayloadProbeSizeInBytes;
+const maximumTiffStreamIfdOffsetInBytes = maximumUnknownSizePayloadProbeSizeInBytes;
 const maximumTiffIfdOffsetInBytes = maximumUntrustedSkipSizeInBytes;
 const recoverableZipErrorMessages = new Set([
 	'Unexpected signature',
@@ -19661,6 +19666,7 @@ const recoverableZipErrorMessagePrefixes = [
 	'Unsupported ZIP compression method:',
 	'ZIP entry compressed data exceeds ',
 	'ZIP entry decompressed data exceeds ',
+	'Expected data-descriptor-signature at position ',
 ];
 const recoverableZipErrorCodes = new Set([
 	'Z_BUF_ERROR',
@@ -19669,6 +19675,27 @@ const recoverableZipErrorCodes = new Set([
 ]);
 
 class ParserHardLimitError extends Error {}
+
+function patchWebByobTokenizerClose(tokenizer) {
+	const streamReader = tokenizer?.streamReader;
+	if (streamReader?.constructor?.name !== 'WebStreamByobReader') {
+		return tokenizer;
+	}
+
+	const {reader} = streamReader;
+	const cancelAndRelease = async () => {
+		await reader.cancel();
+		reader.releaseLock();
+	};
+
+	streamReader.close = cancelAndRelease;
+	streamReader.abort = async () => {
+		streamReader.interrupted = true;
+		await cancelAndRelease();
+	};
+
+	return tokenizer;
+}
 
 function getSafeBound(value, maximum, reason) {
 	if (
@@ -19759,6 +19786,10 @@ function findZipDataDescriptorOffset(buffer, bytesConsumed) {
 	return -1;
 }
 
+function isPngAncillaryChunk(type) {
+	return (type.codePointAt(0) & 0x20) !== 0;
+}
+
 function mergeByteChunks(chunks, totalLength) {
 	const merged = new Uint8Array(totalLength);
 	let offset = 0;
@@ -19811,6 +19842,10 @@ async function readZipDataDescriptorEntryWithLimit(zipHandler, {shouldBuffer, ma
 		}
 	}
 
+	if (!hasUnknownFileSize(zipHandler.tokenizer)) {
+		zipHandler.knownSizeDescriptorScannedBytes += bytesConsumed;
+	}
+
 	if (!shouldBuffer) {
 		return;
 	}
@@ -19818,16 +19853,30 @@ async function readZipDataDescriptorEntryWithLimit(zipHandler, {shouldBuffer, ma
 	return mergeByteChunks(chunks, bytesConsumed);
 }
 
-async function readZipEntryData(zipHandler, zipHeader, {shouldBuffer} = {}) {
+function getRemainingZipScanBudget(zipHandler, startOffset) {
+	if (hasUnknownFileSize(zipHandler.tokenizer)) {
+		return Math.max(0, maximumUntrustedSkipSizeInBytes - (zipHandler.tokenizer.position - startOffset));
+	}
+
+	return Math.max(0, maximumZipEntrySizeInBytes - zipHandler.knownSizeDescriptorScannedBytes);
+}
+
+async function readZipEntryData(zipHandler, zipHeader, {shouldBuffer, maximumDescriptorLength = maximumZipEntrySizeInBytes} = {}) {
 	if (
 		zipHeader.dataDescriptor
 		&& zipHeader.compressedSize === 0
 	) {
-		return readZipDataDescriptorEntryWithLimit(zipHandler, {shouldBuffer});
+		return readZipDataDescriptorEntryWithLimit(zipHandler, {
+			shouldBuffer,
+			maximumLength: maximumDescriptorLength,
+		});
 	}
 
 	if (!shouldBuffer) {
-		await zipHandler.tokenizer.ignore(zipHeader.compressedSize);
+		await safeIgnore(zipHandler.tokenizer, zipHeader.compressedSize, {
+			maximumLength: hasUnknownFileSize(zipHandler.tokenizer) ? maximumZipEntrySizeInBytes : zipHandler.tokenizer.fileInfo.size,
+			reason: 'ZIP entry compressed data',
+		});
 		return;
 	}
 
@@ -19862,7 +19911,13 @@ ZipHandler.prototype.inflate = async function (zipHeader, fileData, callback) {
 ZipHandler.prototype.unzip = async function (fileCallback) {
 	let stop = false;
 	let zipEntryCount = 0;
+	const zipScanStart = this.tokenizer.position;
+	this.knownSizeDescriptorScannedBytes = 0;
 	do {
+		if (hasExceededUnknownSizeScanBudget(this.tokenizer, zipScanStart, maximumUntrustedSkipSizeInBytes)) {
+			throw new ParserHardLimitError(`ZIP stream probing exceeds ${maximumUntrustedSkipSizeInBytes} bytes`);
+		}
+
 		const zipHeader = await this.readLocalFileHeader();
 		if (!zipHeader) {
 			break;
@@ -19878,6 +19933,7 @@ ZipHandler.prototype.unzip = async function (fileCallback) {
 		await this.tokenizer.ignore(zipHeader.extraFieldLength);
 		const fileData = await readZipEntryData(this, zipHeader, {
 			shouldBuffer: Boolean(next.handler),
+			maximumDescriptorLength: Math.min(maximumZipEntrySizeInBytes, getRemainingZipScanBudget(this, zipScanStart)),
 		});
 
 		if (next.handler) {
@@ -19890,6 +19946,10 @@ ZipHandler.prototype.unzip = async function (fileCallback) {
 			if (UINT32_LE.get(dataDescriptor, 0) !== zipDataDescriptorSignature) {
 				throw new Error(`Expected data-descriptor-signature at position ${this.tokenizer.position - dataDescriptor.length}`);
 			}
+		}
+
+		if (hasExceededUnknownSizeScanBudget(this.tokenizer, zipScanStart, maximumUntrustedSkipSizeInBytes)) {
+			throw new ParserHardLimitError(`ZIP stream probing exceeds ${maximumUntrustedSkipSizeInBytes} bytes`);
 		}
 	} while (!stop);
 };
@@ -20114,12 +20174,52 @@ function _check(buffer, headers, options) {
 }
 
 function normalizeSampleSize(sampleSize) {
-	// Accept odd caller input, but preserve valid caller-requested probe depth.
+	// `sampleSize` is an explicit caller-controlled tuning knob, not untrusted file input.
+	// Preserve valid caller-requested probe depth here; applications must bound attacker-derived option values themselves.
 	if (!Number.isFinite(sampleSize)) {
 		return reasonableDetectionSizeInBytes;
 	}
 
 	return Math.max(1, Math.trunc(sampleSize));
+}
+
+function readByobReaderWithSignal(reader, buffer, signal) {
+	if (signal === undefined) {
+		return reader.read(buffer);
+	}
+
+	signal.throwIfAborted();
+
+	return new Promise((resolve, reject) => {
+		const cleanup = () => {
+			signal.removeEventListener('abort', onAbort);
+		};
+
+		const onAbort = () => {
+			const abortReason = signal.reason;
+			cleanup();
+
+			(async () => {
+				try {
+					await reader.cancel(abortReason);
+				} catch {}
+			})();
+
+			reject(abortReason);
+		};
+
+		signal.addEventListener('abort', onAbort, {once: true});
+		(async () => {
+			try {
+				const result = await reader.read(buffer);
+				cleanup();
+				resolve(result);
+			} catch (error) {
+				cleanup();
+				reject(error);
+			}
+		})();
+	});
 }
 
 function normalizeMpegOffsetTolerance(mpegOffsetTolerance) {
@@ -20333,7 +20433,11 @@ class FileTypeParser {
 		};
 	}
 
-	async fromTokenizer(tokenizer, detectionReentryCount = 0) {
+	createTokenizerFromWebStream(stream) {
+		return patchWebByobTokenizerClose(fromWebStream(stream, this.getTokenizerOptions()));
+	}
+
+	async parseTokenizer(tokenizer, detectionReentryCount = 0) {
 		this.detectionReentryCount = detectionReentryCount;
 		const initialPosition = tokenizer.position;
 		// Iterate through all file-type detectors
@@ -20363,6 +20467,14 @@ class FileTypeParser {
 		}
 	}
 
+	async fromTokenizer(tokenizer) {
+		try {
+			return await this.parseTokenizer(tokenizer);
+		} finally {
+			await tokenizer.close();
+		}
+	}
+
 	async fromBuffer(input) {
 		if (!(input instanceof Uint8Array || input instanceof ArrayBuffer)) {
 			throw new TypeError(`Expected the \`input\` argument to be of type \`Uint8Array\` or \`ArrayBuffer\`, got \`${typeof input}\``);
@@ -20378,21 +20490,15 @@ class FileTypeParser {
 	}
 
 	async fromBlob(blob) {
+		this.options.signal?.throwIfAborted();
 		const tokenizer = fromBlob(blob, this.getTokenizerOptions());
-		try {
-			return await this.fromTokenizer(tokenizer);
-		} finally {
-			await tokenizer.close();
-		}
+		return this.fromTokenizer(tokenizer);
 	}
 
 	async fromStream(stream) {
-		const tokenizer = fromWebStream(stream, this.getTokenizerOptions());
-		try {
-			return await this.fromTokenizer(tokenizer);
-		} finally {
-			await tokenizer.close();
-		}
+		this.options.signal?.throwIfAborted();
+		const tokenizer = this.createTokenizerFromWebStream(stream);
+		return this.fromTokenizer(tokenizer);
 	}
 
 	async toDetectionStream(stream, options) {
@@ -20403,7 +20509,7 @@ class FileTypeParser {
 		const reader = stream.getReader({mode: 'byob'});
 		try {
 			// Read the first chunk from the stream
-			const {value: chunk, done} = await reader.read(new Uint8Array(sampleSize));
+			const {value: chunk, done} = await readByobReaderWithSignal(reader, new Uint8Array(sampleSize), this.options.signal);
 			firstChunk = chunk;
 			if (!done && chunk) {
 				try {
@@ -20440,6 +20546,71 @@ class FileTypeParser {
 		return newStream;
 	}
 
+	async detectGzip(tokenizer) {
+		if (this.gzipProbeDepth >= maximumNestedGzipProbeDepth) {
+			return {
+				ext: 'gz',
+				mime: 'application/gzip',
+			};
+		}
+
+		const gzipHandler = new GzipHandler(tokenizer);
+		const limitedInflatedStream = createByteLimitedReadableStream(gzipHandler.inflate(), maximumNestedGzipDetectionSizeInBytes);
+		const hasUnknownSize = hasUnknownFileSize(tokenizer);
+		let timeout;
+		let probeSignal;
+		let probeParser;
+		let compressedFileType;
+
+		if (hasUnknownSize) {
+			const timeoutController = new AbortController();
+			timeout = setTimeout(() => {
+				timeoutController.abort(new DOMException(`Operation timed out after ${unknownSizeGzipProbeTimeoutInMilliseconds} ms`, 'TimeoutError'));
+			}, unknownSizeGzipProbeTimeoutInMilliseconds);
+			probeSignal = this.options.signal === undefined
+				? timeoutController.signal
+				// eslint-disable-next-line n/no-unsupported-features/node-builtins
+				: AbortSignal.any([this.options.signal, timeoutController.signal]);
+			probeParser = new FileTypeParser({
+				...this.options,
+				signal: probeSignal,
+			});
+			probeParser.gzipProbeDepth = this.gzipProbeDepth + 1;
+		} else {
+			this.gzipProbeDepth++;
+		}
+
+		try {
+			compressedFileType = await (probeParser ?? this).fromStream(limitedInflatedStream);
+		} catch (error) {
+			if (
+				error?.name === 'AbortError'
+				&& probeSignal?.reason?.name !== 'TimeoutError'
+			) {
+				throw error;
+			}
+
+			// Timeout, decompression, or inner-detection failures are expected for non-tar gzip files.
+		} finally {
+			clearTimeout(timeout);
+			if (!hasUnknownSize) {
+				this.gzipProbeDepth--;
+			}
+		}
+
+		if (compressedFileType?.ext === 'tar') {
+			return {
+				ext: 'tar.gz',
+				mime: 'application/gzip',
+			};
+		}
+
+		return {
+			ext: 'gz',
+			mime: 'application/gzip',
+		};
+	}
+
 	check(header, options) {
 		return _check(this.buffer, header, options);
 	}
@@ -20458,6 +20629,13 @@ class FileTypeParser {
 		}
 
 		this.tokenizer = tokenizer;
+
+		if (hasUnknownFileSize(tokenizer)) {
+			await tokenizer.peekBuffer(this.buffer, {length: 3, mayBeLess: true});
+			if (this.check([0x1F, 0x8B, 0x8])) {
+				return this.detectGzip(tokenizer);
+			}
+		}
 
 		await tokenizer.peekBuffer(this.buffer, {length: 32, mayBeLess: true});
 
@@ -20562,41 +20740,7 @@ class FileTypeParser {
 		}
 
 		if (this.check([0x1F, 0x8B, 0x8])) {
-			if (this.gzipProbeDepth >= maximumNestedGzipProbeDepth) {
-				return {
-					ext: 'gz',
-					mime: 'application/gzip',
-				};
-			}
-
-			const gzipHandler = new GzipHandler(tokenizer);
-			const limitedInflatedStream = createByteLimitedReadableStream(gzipHandler.inflate(), maximumNestedGzipDetectionSizeInBytes);
-			let compressedFileType;
-			try {
-				this.gzipProbeDepth++;
-				compressedFileType = await this.fromStream(limitedInflatedStream);
-			} catch (error) {
-				if (error?.name === 'AbortError') {
-					throw error;
-				}
-
-				// Decompression or inner-detection failures are expected for non-tar gzip files.
-			} finally {
-				this.gzipProbeDepth--;
-			}
-
-			// We only need enough inflated bytes to confidently decide whether this is tar.gz.
-			if (compressedFileType?.ext === 'tar') {
-				return {
-					ext: 'tar.gz',
-					mime: 'application/gzip',
-				};
-			}
-
-			return {
-				ext: 'gz',
-				mime: 'application/gzip',
-			};
+			return this.detectGzip(tokenizer);
 		}
 
 		if (this.check([0x42, 0x5A, 0x68])) {
@@ -20619,7 +20763,10 @@ class FileTypeParser {
 				// Keep ID3 probing bounded for unknown-size streams to avoid attacker-controlled large skips.
 				|| (
 					isUnknownFileSize
-					&& id3HeaderLength > maximumId3HeaderSizeInBytes
+					&& (
+						id3HeaderLength > maximumId3HeaderSizeInBytes
+						|| (tokenizer.position + id3HeaderLength) > maximumId3HeaderSizeInBytes
+					)
 				)
 			) {
 				return;
@@ -20654,7 +20801,7 @@ class FileTypeParser {
 			}
 
 			this.detectionReentryCount++;
-			return this.fromTokenizer(tokenizer, this.detectionReentryCount); // Skip ID3 header, recursion
+			return this.parseTokenizer(tokenizer, this.detectionReentryCount); // Skip ID3 header, recursion
 		}
 
 		// Musepack, SV7
@@ -21072,6 +21219,10 @@ class FileTypeParser {
 						return;
 					}
 
+					if (hasExceededUnknownSizeScanBudget(tokenizer, ebmlScanStart, maximumUntrustedSkipSizeInBytes)) {
+						return;
+					}
+
 					const previousPosition = tokenizer.position;
 					const element = await readElement();
 
@@ -21111,6 +21262,7 @@ class FileTypeParser {
 			}
 
 			const rootElement = await readElement();
+			const ebmlScanStart = tokenizer.position;
 			const documentType = await readChildren(rootElement.len);
 
 			switch (documentType) {
@@ -21493,13 +21645,14 @@ class FileTypeParser {
 			const isUnknownPngStream = hasUnknownFileSize(tokenizer);
 			const pngScanStart = tokenizer.position;
 			let pngChunkCount = 0;
+			let hasSeenImageHeader = false;
 			do {
 				pngChunkCount++;
 				if (pngChunkCount > maximumPngChunkCount) {
 					break;
 				}
 
-				if (hasExceededUnknownSizeScanBudget(tokenizer, pngScanStart, maximumPngChunkSizeInBytes)) {
+				if (hasExceededUnknownSizeScanBudget(tokenizer, pngScanStart, maximumPngStreamScanBudgetInBytes)) {
 					break;
 				}
 
@@ -21509,6 +21662,15 @@ class FileTypeParser {
 					return; // Invalid chunk length
 				}
 
+				if (chunk.type === 'IHDR') {
+					// PNG requires the first real image header to be a 13-byte IHDR chunk.
+					if (chunk.length !== 13) {
+						return;
+					}
+
+					hasSeenImageHeader = true;
+				}
+
 				switch (chunk.type) {
 					case 'IDAT':
 						return pngFileType;
@@ -21516,11 +21678,18 @@ class FileTypeParser {
 						return apngFileType;
 					default:
 						if (
+							!hasSeenImageHeader
+							&& chunk.type !== 'CgBI'
+						) {
+							return;
+						}
+
+						if (
 							isUnknownPngStream
 								&& chunk.length > maximumPngChunkSizeInBytes
 						) {
 							// Avoid huge attacker-controlled skips when probing unknown-size streams.
-							return;
+							return hasSeenImageHeader && isPngAncillaryChunk(chunk.type) ? pngFileType : undefined;
 						}
 
 						try {
@@ -21776,8 +21945,16 @@ class FileTypeParser {
 						break;
 					}
 
+					if (
+						isUnknownFileSize
+						&& payload > maximumAsfHeaderPayloadSizeInBytes
+					) {
+						isMalformedAsf = true;
+						break;
+					}
+
 					await safeIgnore(tokenizer, payload, {
-						maximumLength: isUnknownFileSize ? maximumUntrustedSkipSizeInBytes : tokenizer.fileInfo.size,
+						maximumLength: isUnknownFileSize ? maximumAsfHeaderPayloadSizeInBytes : tokenizer.fileInfo.size,
 						reason: 'ASF header payload',
 					});
 
@@ -22241,6 +22418,13 @@ class FileTypeParser {
 						};
 					}
 				}
+			}
+
+			if (
+				hasUnknownFileSize(this.tokenizer)
+				&& ifdOffset > maximumTiffStreamIfdOffsetInBytes
+			) {
+				return tiffFileType;
 			}
 
 			const maximumTiffOffset = hasUnknownFileSize(this.tokenizer) ? maximumTiffIfdOffsetInBytes : this.tokenizer.fileInfo.size;

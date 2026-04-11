@@ -4,8 +4,19 @@ import fs from 'fs';
 import os from 'os';
 import download from '../src/download-mod.js';
 
-// Minimal PNG signature (8 bytes) — enough for file-type magic bytes detection
-const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, ...Array(64).fill(0)]);
+// Minimal valid PNG: signature + IHDR chunk (file-type v21.3.3+ validates the IHDR chunk structure)
+const PNG_MAGIC = Buffer.from([
+  // PNG signature (8 bytes)
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+  // IHDR chunk length (4 bytes) = 13
+  0x00, 0x00, 0x00, 0x0d,
+  // IHDR chunk type (4 bytes) = "IHDR"
+  0x49, 0x48, 0x44, 0x52,
+  // IHDR data (13 bytes): width=1, height=1, bit-depth=8, color-type=2 (RGB), compress=0, filter=0, interlace=0
+  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x02, 0x00, 0x00, 0x00,
+  // CRC (4 bytes) — not validated by file-type
+  0x00, 0x00, 0x00, 0x00,
+]);
 
 describe('download-mod', () => {
   let server;

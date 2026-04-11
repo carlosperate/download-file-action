@@ -35,7 +35,7 @@
     "@actions/core": "^1.10.0",
     "content-disposition": "^0.5.4",
     "ext-name": "^5.0.0",
-    "file-type": "21.3.2",
+    "file-type": "^21.3.2",
     "filenamify": "^4.3.0",
     "get-stream": "^6.0.1",
     "got": "^13.0.0",
